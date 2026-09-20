@@ -546,7 +546,7 @@ function formatUpdateNoticeForUser(updateInfo, options = {}) {
     : (options.autoUpgradePrompt === false
       ? 'To update later, run: omc update'
       : 'Run /update to upgrade now, or use /plugin install oh-my-claudecode');
-  return `[OMC UPDATE AVAILABLE] oh-my-claudecode v${latestVersion} is available (current: v${currentVersion}). ${action}`;
+  return `[OMB UPDATE AVAILABLE] oh-my-claudecode v${latestVersion} is available (current: v${currentVersion}). ${action}`;
 }
 
 function buildSessionStartAdditionalContext(messages) {
@@ -1114,7 +1114,7 @@ async function main() {
     // Check for version drift between components
     const driftInfo = detectVersionDrift();
     if (driftInfo && shouldNotifyDrift(driftInfo)) {
-      let driftMsg = `[OMC VERSION DRIFT DETECTED]\n\nPlugin version: ${driftInfo.pluginVersion}\n`;
+      let driftMsg = `[OMB VERSION DRIFT DETECTED]\n\nPlugin version: ${driftInfo.pluginVersion}\n`;
       for (const d of driftInfo.drift) {
         driftMsg += `${d.component}: ${d.current} (expected ${d.expected})\n`;
       }

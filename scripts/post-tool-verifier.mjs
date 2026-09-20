@@ -61,7 +61,7 @@ function resolveOmcRoot(startDir) {
   // 1) OMC_STATE_DIR: full project-id derivation is TS-only; warn and fall through.
   if (process.env.OMC_STATE_DIR) {
     process.stderr.write(
-      '[omc] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
+      '[omb] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
       'resolution. Use resolveOmcStateRoot() for full OMC_STATE_DIR support.\n'
     );
   }
@@ -489,10 +489,10 @@ function shouldSuppressPreemptiveWarning(directory, sessionId, severity, now) {
 
 function buildPreemptiveContextMessage(percentUsed, severity) {
   if (severity === 'critical') {
-    return `[OMC CRITICAL] Context at ${percentUsed}% (critical threshold: ${getPreemptiveCriticalThreshold()}%). Run /compact now before continuing with more tools or agent fan-out.`;
+    return `[OMB CRITICAL] Context at ${percentUsed}% (critical threshold: ${getPreemptiveCriticalThreshold()}%). Run /compact now before continuing with more tools or agent fan-out.`;
   }
 
-  return `[OMC WARNING] Context at ${percentUsed}% (warning threshold: ${getPreemptiveWarningThreshold()}%). Plan a /compact soon to preserve room for the next large tool output.`;
+  return `[OMB WARNING] Context at ${percentUsed}% (warning threshold: ${getPreemptiveWarningThreshold()}%). Plan a /compact soon to preserve room for the next large tool output.`;
 }
 
 async function maybeBuildPreemptiveCompactionMessage(toolName, data, directory) {

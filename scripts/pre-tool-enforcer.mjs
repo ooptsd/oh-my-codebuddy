@@ -712,7 +712,7 @@ function resolveOmcRoot(startDir) {
   // 1) OMC_STATE_DIR: full project-id derivation is TS-only; warn and fall through.
   if (process.env.OMC_STATE_DIR) {
     process.stderr.write(
-      '[omc] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
+      '[omb] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
       'resolution. Use resolveOmcStateRoot() for full OMC_STATE_DIR support.\n'
     );
   }
