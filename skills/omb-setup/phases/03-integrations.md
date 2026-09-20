@@ -16,12 +16,12 @@ grep -q "oh-my-claudecode" "$CONFIG_DIR/settings.json" && echo "Plugin verified"
 
 ## Step 3.2: MCP Server Configuration (Pointer Only)
 
-MCP servers extend Claude Code with additional tools (web search, GitHub, etc.). OMC no longer ships an MCP setup skill; servers are registered through Claude Code's native MCP surfaces.
+MCP servers extend Claude Code with additional tools (web search, GitHub, etc.). omb no longer ships an MCP setup skill; servers are registered through Claude Code's native MCP surfaces.
 
 If the user asks about MCP servers, point them at the native registration path:
 
 - Claude Code: `claude mcp add <name> ...` (see `claude mcp --help`), or the native MCP config selected by `CLAUDE_MCP_CONFIG_PATH` (by default, the sibling `.claude.json` next to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`)
-- OMC keeps its own bundled MCP server (`bridge/mcp-server.cjs`) registered via `.mcp.json`; it requires no user action
+- omb keeps its own bundled MCP server (`bridge/mcp-server.cjs`) registered via `.mcp.json`; it requires no user action
 - Company-context guidance, if used, is documented in `docs/company-context-interface.md`
 
 Do **not** try to invoke an MCP setup skill — `mcp-setup` was removed in 5.0.0 and has no replacement skill; the native surfaces above are the whole story.
@@ -156,7 +156,7 @@ trap - EXIT
 echo "Teammate display mode set to: TEAMMATE_MODE"
 ```
 
-#### 3.3.3: Configure Team Defaults in omc-config
+#### 3.3.3: Configure Team Defaults in omb-config
 
 Use AskUserQuestion with multiple questions:
 

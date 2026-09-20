@@ -2,7 +2,7 @@
 description: ""
 ---
 
-# OMC psm
+# omb psm
 
 `/oh-my-claudecode:psm` is a compatibility alias for `/oh-my-claudecode:project-session-manager`.
 

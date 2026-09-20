@@ -98,7 +98,7 @@ Rules:
 - Always pass the `model` parameter explicitly when delegating to agents
 - Read `docs/shared/agent-tiers.md` before first delegation to select correct agent tiers
 - Deliver the full implementation: no scope reduction, no partial completion, no deleting tests to make them pass
-- If a Claude Code `/goal` is mentioned, treat it as a native session-loop handoff/evidence source only and use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. Ralph remains the OMC loop authority for this run; do not claim `/goal` independently ran tests or read files, and do not treat evaluator success as a substitute for Ralph reviewer verification.
+- If a Claude Code `/goal` is mentioned, treat it as a native session-loop handoff/evidence source only and use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. Ralph remains the omb loop authority for this run; do not claim `/goal` independently ran tests or read files, and do not treat evaluator success as a substitute for Ralph reviewer verification.
   </Execution_Policy>
 
 <Steps>
@@ -145,7 +145,7 @@ Rules:
    - Standard changes: STANDARD tier (architect-medium / Sonnet)
    - > 20 files or security/architectural changes: THOROUGH tier (architect / Opus)
    - If `--critic=critic`, use the Claude `critic` agent for the approval pass
-   - If `--critic=codex`, run `omc ask codex --agent-prompt critic "..."` for the approval pass. The Codex critic prompt MUST include:
+   - If `--critic=codex`, run `omb ask codex --agent-prompt critic "..."` for the approval pass. The Codex critic prompt MUST include:
      1. The full list of acceptance criteria from prd.json for verification
      2. A directive to evaluate whether the implementation is **OPTIMAL** — not just correct, but whether there exists a meaningfully better approach (simpler, faster, more maintainable) that the implementation missed
      3. A directive to review **all code related to the changes** (callers, callees, shared types, adjacent modules), not only the files directly modified
@@ -156,7 +156,7 @@ Rules:
 
 7.5 **Mandatory Deslop Pass** (runs unconditionally after Step 7 approval, unless `{{PROMPT}}` contains `--no-deslop`):
 
-- **Invoke the `ai-slop-cleaner` skill via the Skill tool: `Skill("oh-my-claudecode:ai-slop-cleaner")`** — it is a Skill, not an agent. If you mistakenly call it via `Task(subagent_type="oh-my-claudecode:ai-slop-cleaner")`, OMC's PreToolUse hook denies the call with the correct Skill-tool identifier; do not substitute a similarly-named agent. Run in standard mode (not `--review`) on the files changed during the current Ralph session only.
+- **Invoke the `ai-slop-cleaner` skill via the Skill tool: `Skill("oh-my-claudecode:ai-slop-cleaner")`** — it is a Skill, not an agent. If you mistakenly call it via `Task(subagent_type="oh-my-claudecode:ai-slop-cleaner")`, omb's PreToolUse hook denies the call with the correct Skill-tool identifier; do not substitute a similarly-named agent. Run in standard mode (not `--review`) on the files changed during the current Ralph session only.
 - Keep the scope bounded to the Ralph changed-file set; do not broaden the cleanup pass to unrelated files.
 - If the reviewer approved the implementation but the deslop pass introduces follow-up edits, keep those edits inside the same changed-file scope before proceeding.
 
@@ -176,11 +176,11 @@ Rules:
 
 - Use `Task(subagent_type="oh-my-claudecode:architect", ...)` for architect verification cross-checks when changes are security-sensitive, architectural, or involve complex multi-system integration
 - Use `Task(subagent_type="oh-my-claudecode:critic", ...)` when `--critic=critic`
-- Use `omc ask codex --agent-prompt critic "..."` when `--critic=codex`. Construct the prompt to include: (a) prd.json acceptance criteria, (b) files changed + related files, (c) explicit optimality question: "Is there a meaningfully simpler, faster, or more maintainable approach that achieves the same acceptance criteria?"
+- Use `omb ask codex --agent-prompt critic "..."` when `--critic=codex`. Construct the prompt to include: (a) prd.json acceptance criteria, (b) files changed + related files, (c) explicit optimality question: "Is there a meaningfully simpler, faster, or more maintainable approach that achieves the same acceptance criteria?"
 - Skip architect consultation for simple feature additions, well-tested changes, or time-critical verification
 - Proceed with architect agent verification alone -- never block on unavailable tools
 - Use `state_write` / `state_read` for ralph mode state persistence between iterations
-- **Skill vs agent invocation**: skills (e.g. `ai-slop-cleaner`) are invoked via the Skill tool: `Skill("oh-my-claudecode:ai-slop-cleaner")`; agents (e.g. `architect`, `critic`, `executor`) via `Task(subagent_type="oh-my-claudecode:<name>")`. OMC's PreToolUse hook denies a Task/Agent call whose `subagent_type` names a bundled skill and returns the correct Skill-tool identifier — do not substitute a similarly-named agent as a "closest match".
+- **Skill vs agent invocation**: skills (e.g. `ai-slop-cleaner`) are invoked via the Skill tool: `Skill("oh-my-claudecode:ai-slop-cleaner")`; agents (e.g. `architect`, `critic`, `executor`) via `Task(subagent_type="oh-my-claudecode:<name>")`. omb's PreToolUse hook denies a Task/Agent call whose `subagent_type` names a bundled skill and returns the correct Skill-tool identifier — do not substitute a similarly-named agent as a "closest match".
   </Tool_Usage>
 
 <Examples>

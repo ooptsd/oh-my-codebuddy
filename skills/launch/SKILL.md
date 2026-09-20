@@ -35,7 +35,7 @@ Between checkpoints the pipeline never idles: agents keep working every frontier
 
 ## Lifecycle posture
 
-Launch is a **stateless composition over OMC's existing lifecycle** — it owns no runtime state machine:
+Launch is a **stateless composition over omb's existing lifecycle** — it owns no runtime state machine:
 
 - Team owns task statuses, transitions, cancellation, and runtime cleanup; Launch never mutates them outside Team's contract.
 - The canonical `plan` → `execute` → `review` → `verify` surfaces own their existing lifecycle behavior. Launch-authored artifacts are limited to `.omc/specs/<feature-slug>/`, `CONTEXT.md`, `docs/adr/`, and `docs/business/` — plus, only after C5 approval, the sediment slots named in the Phase 5 table.

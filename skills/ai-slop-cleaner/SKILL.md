@@ -6,7 +6,7 @@ level: 3
 
 # AI Slop Cleaner
 
-Use this skill to clean AI-generated code slop without drifting scope or changing intended behavior. In OMC, this is the bounded cleanup workflow for code that works but feels bloated, repetitive, weakly tested, or over-abstracted.
+Use this skill to clean AI-generated code slop without drifting scope or changing intended behavior. In omb, this is the bounded cleanup workflow for code that works but feels bloated, repetitive, weakly tested, or over-abstracted.
 
 ## When to Use
 
@@ -25,7 +25,7 @@ Do not use this skill when:
 - the request is a generic refactor with no simplification or anti-slop intent
 - behavior is too unclear to protect with tests or a concrete verification plan
 
-## OMC Execution Posture
+## omb Execution Posture
 
 - Preserve behavior unless the user explicitly asks for behavior changes.
 - Lock behavior with focused regression tests first whenever practical.

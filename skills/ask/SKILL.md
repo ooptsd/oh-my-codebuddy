@@ -1,11 +1,11 @@
 ---
 name: ask
-description: Process-first advisor routing for Claude, Codex, Gemini, Antigravity, Grok, or Cursor via `omc ask`, with artifact capture and no raw CLI assembly
+description: Process-first advisor routing for Claude, Codex, Gemini, Antigravity, Grok, or Cursor via `omb ask`, with artifact capture and no raw CLI assembly
 ---
 
 # Ask
 
-Use OMC's canonical advisor skill to route a prompt through the local Claude, Codex, Gemini, Antigravity, Grok, or Cursor CLI and persist the result as an ask artifact.
+Use omb's canonical advisor skill to route a prompt through the local Claude, Codex, Gemini, Antigravity, Grok, or Cursor CLI and persist the result as an ask artifact.
 
 ## Usage
 
@@ -28,10 +28,10 @@ Examples:
 **Required execution path — always use this command:**
 
 ```bash
-omc ask {{ARGUMENTS}}
+omb ask {{ARGUMENTS}}
 ```
 
-**Do NOT manually construct raw provider CLI commands.** Never run `codex`, `claude`, `gemini`, `agy`, `grok`, or `cursor-agent` directly to fulfill this skill. The `omc ask` wrapper handles correct flag selection, artifact persistence, and provider-version compatibility automatically. Manually assembling provider CLI flags will produce incorrect or outdated invocations.
+**Do NOT manually construct raw provider CLI commands.** Never run `codex`, `claude`, `gemini`, `agy`, `grok`, or `cursor-agent` directly to fulfill this skill. The `omb ask` wrapper handles correct flag selection, artifact persistence, and provider-version compatibility automatically. Manually assembling provider CLI flags will produce incorrect or outdated invocations.
 
 ## Requirements
 
@@ -50,12 +50,12 @@ cursor-agent --version
 - **Antigravity CLI install** (Google's successor to the Gemini CLI): install the `agy`
   binary per the [official Antigravity instructions](https://antigravity.google) (inspect
   any installer before running it). Verify: `agy --version`
-  > **Platform note:** `omc ask antigravity` is supported on macOS/Linux. On Windows it is guarded with a clear error, because `agy --print` takes the prompt as an argv value (it cannot read stdin) and has known upstream Windows `-p` limitations; use `omc ask gemini` on Windows.
+  > **Platform note:** `omb ask antigravity` is supported on macOS/Linux. On Windows it is guarded with a clear error, because `agy --print` takes the prompt as an argv value (it cannot read stdin) and has known upstream Windows `-p` limitations; use `omb ask gemini` on Windows.
 - **Gemini CLI** remains supported for enterprise/API-key use cases.
 
 ## Artifacts
 
-`omc ask` writes artifacts to:
+`omb ask` writes artifacts to:
 
 ```text
 .omc/artifacts/ask/<provider>-<slug>-<timestamp>.md

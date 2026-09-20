@@ -4,7 +4,7 @@ description: Install or refresh oh-my-claudecode for plugin, npm, and local-dev 
 level: 2
 ---
 
-# OMC Setup
+# omb Setup
 
 This is the **only command you need to learn**. After running this, everything else is automatic.
 
@@ -14,7 +14,7 @@ Note: All `~/.claude/...` paths in this guide respect `CLAUDE_CONFIG_DIR` when t
 
 ## Best-Fit Use
 
-Choose this setup flow when the user wants to **install, refresh, or repair OMC itself**.
+Choose this setup flow when the user wants to **install, refresh, or repair omb itself**.
 
 - Marketplace/plugin install users should land here after `/plugin install oh-my-claudecode`
 - npm users should land here after `npm i -g oh-my-claude-sisyphus@latest`
@@ -34,7 +34,7 @@ Check for flags in the user's invocation:
 When user runs with `--help`, display this and stop:
 
 ```
-OMC Setup - Configure oh-my-claudecode
+omb Setup - Configure oh-my-claudecode
 
 USAGE:
   /oh-my-claudecode:omc-setup           Run initial setup wizard (or update if already configured)
@@ -57,16 +57,16 @@ MODES:
     - Invokes the plugin-local coordinator through `scripts/setup-claude-md.sh`; the shell validates the coordinator response and its exit status before any post-install work
     - Reports coordinator-created byte-identical backups only for files that required mutation
     - Project-specific settings
-    - Use this to update project config after OMC upgrades
+    - Use this to update project config after omb upgrades
 
   Global Configuration (--global)
     - Invokes the plugin-local coordinator through `scripts/setup-claude-md.sh`; the shell validates the coordinator response and its exit status before any post-install work
     - Reports coordinator-created byte-identical backups only for changed global files
-    - Default: explicitly overwrites ~/.claude/CLAUDE.md so plain `claude` also uses OMC
-    - Optional preserve mode keeps the user's base `CLAUDE.md` and installs OMC into `CLAUDE-omc.md` for `omc` launches
+    - Default: explicitly overwrites ~/.claude/CLAUDE.md so plain `claude` also uses omb
+    - Optional preserve mode keeps the user's base `CLAUDE.md` and installs omb into `CLAUDE-omc.md` for `omb` launches
     - Applies to all Claude Code sessions
     - Preserves same-named legacy hook files unless their exact historical contents are independently verified
-    - Use this to update global config after OMC upgrades
+    - Use this to update global config after omb upgrades
 
   Force Full Setup (--force)
     - Bypasses the "already configured" check
@@ -109,17 +109,17 @@ CONFIG_FILE="$CONFIG_DIR/.omc-config.json"
 
 if [ -f "$CONFIG_FILE" ]; then
   if ! command -v jq >/dev/null 2>&1; then
-    echo "ERROR: jq is required to inspect existing OMC setup state. Existing config was not modified."
+    echo "ERROR: jq is required to inspect existing omb setup state. Existing config was not modified."
     exit 1
   fi
   if ! SETUP_COMPLETED=$(jq -r '.setupCompleted // empty' "$CONFIG_FILE" 2>/dev/null) \
     || ! SETUP_VERSION=$(jq -r '.setupVersion // empty' "$CONFIG_FILE" 2>/dev/null); then
-    echo "ERROR: Existing OMC config is invalid JSON. Existing config was not modified."
+    echo "ERROR: Existing omb config is invalid JSON. Existing config was not modified."
     exit 1
   fi
 
   if [ -n "$SETUP_COMPLETED" ] && [ "$SETUP_COMPLETED" != "null" ]; then
-    echo "OMC setup was already completed on: $SETUP_COMPLETED"
+    echo "omb setup was already completed on: $SETUP_COMPLETED"
     [ -n "$SETUP_VERSION" ] && echo "Setup version: $SETUP_VERSION"
     ALREADY_CONFIGURED="true"
   fi
@@ -132,7 +132,7 @@ If `ALREADY_CONFIGURED` is true AND the user did NOT pass `--force`, `--local`, 
 
 Use AskUserQuestion to prompt:
 
-**Question:** "OMC is already configured. What would you like to do?"
+**Question:** "omb is already configured. What would you like to do?"
 
 **Options:**
 1. **Update CLAUDE.md and clear retired setup values** - Install the active plugin's canonical CLAUDE.md and run Phase 2 Step 2.4 without re-running the full setup
@@ -181,19 +181,19 @@ bash "${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/setup-progress.sh"
 ## Phase Execution
 
 ### For `--local` or `--global` flags:
-Read the file at `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omc-setup/phases/01-install-claude-md.md` and follow its instructions.
+Read the file at `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omb-setup/phases/01-install-claude-md.md` and follow its instructions.
 (The phase file handles early exit for flag mode.)
 
 ### For full setup (default or --force):
 Execute phases sequentially. For each phase, read the corresponding file and follow its instructions:
 
-1. **Phase 1 - Install CLAUDE.md**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omc-setup/phases/01-install-claude-md.md` and follow its instructions.
+1. **Phase 1 - Install CLAUDE.md**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omb-setup/phases/01-install-claude-md.md` and follow its instructions.
 
-2. **Phase 2 - Environment Configuration**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omc-setup/phases/02-configure.md` and follow its instructions. Phase 2 must delegate HUD/statusLine setup to the `hud` skill; do not generate or patch `statusLine` paths inline here.
+2. **Phase 2 - Environment Configuration**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omb-setup/phases/02-configure.md` and follow its instructions. Phase 2 must delegate HUD/statusLine setup to the `hud` skill; do not generate or patch `statusLine` paths inline here.
 
-3. **Phase 3 - Integration Setup**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omc-setup/phases/03-integrations.md` and follow its instructions.
+3. **Phase 3 - Integration Setup**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omb-setup/phases/03-integrations.md` and follow its instructions.
 
-4. **Phase 4 - Completion**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omc-setup/phases/04-welcome.md` and follow its instructions.
+4. **Phase 4 - Completion**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/skills/omb-setup/phases/04-welcome.md` and follow its instructions.
 
 ## Graceful Interrupt Handling
 

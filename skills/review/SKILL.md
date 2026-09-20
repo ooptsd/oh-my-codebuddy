@@ -1,5 +1,5 @@
 ---
-name: omc-review
+name: omb-review
 description: Evaluate finished work for defects, risk, and simplification before it ships
 ---
 

@@ -8,7 +8,7 @@ level: 4
 
 # Team Skill
 
-Spawn N coordinated agents working on a shared task list using Claude Code's implicit agent team. Claude Code 2.1.178+ removed native `TeamCreate`/`TeamDelete`; with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, each session has one implicit team and teammates are spawned directly with the Agent/Task tool using distinct `name` values. This skill still preserves OMC's legacy tmux/CLI worker orchestration where documented (`omc team` / `/omc-teams`).
+Spawn N coordinated agents working on a shared task list using Claude Code's implicit agent team. Claude Code 2.1.178+ removed native `TeamCreate`/`TeamDelete`; with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, each session has one implicit team and teammates are spawned directly with the Agent/Task tool using distinct `name` values. This skill still preserves omb's legacy tmux/CLI worker orchestration where documented (`omb team` / `/omc-teams`).
 
 The `swarm` compatibility alias was removed in #1131.
 
@@ -23,7 +23,7 @@ The `swarm` compatibility alias was removed in #1131.
 ### Parameters
 
 - **N** - Number of teammate agents (1-20). Optional; defaults to auto-sizing based on task decomposition.
-- **agent-type** - OMC agent to spawn for the `team-exec` stage (e.g., executor, debugger, designer, codex, gemini, antigravity). Optional; defaults to stage-aware routing. Use `codex` to spawn Codex CLI workers, `gemini` for Gemini CLI workers (enterprise/API-key tier), or `antigravity` for Antigravity CLI (`agy`) workers (Google's successor to the Gemini CLI; requires respective CLIs installed). See Stage Agent Routing below.
+- **agent-type** - omb agent to spawn for the `team-exec` stage (e.g., executor, debugger, designer, codex, gemini, antigravity). Optional; defaults to stage-aware routing. Use `codex` to spawn Codex CLI workers, `gemini` for Gemini CLI workers (enterprise/API-key tier), or `antigravity` for Antigravity CLI (`agy`) workers (Google's successor to the Gemini CLI; requires respective CLIs installed). See Stage Agent Routing below.
 - **task** - High-level task to decompose and distribute among teammates
 - **ralph** - Optional modifier. When present, wraps the team pipeline in Ralph's persistence loop (retry on failure, architect verification before completion). See Team + Ralph Composition below.
 
@@ -75,7 +75,7 @@ User: "/team 3:executor fix all TypeScript errors"
               +-- Completion
                       -> request shutdown from each teammate through the active team surface
                       <- shutdown acknowledgement from teammates
-                      -> clear OMC team state (no TeamDelete call)
+                      -> clear omb team state (no TeamDelete call)
                       -> rm .omc/state/team-state.json
 ```
 
@@ -90,7 +90,7 @@ User: "/team 3:executor fix all TypeScript errors"
 
 ## Goal Workflow Relationship
 
-Team is the OMC authority for parallel, staged execution. Use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. If a task mentions Claude Code `/goal`, Ralph, or artifact-only Ultragoal, keep Team as the primary loop authority unless the leader explicitly hands off. Use `/goal` only as a documented native Claude Code handoff target or as visible evidence from the lead session; do not claim the `/goal` evaluator independently runs commands, reads files, or replaces `team-verify` / `team-fix`. Artifact-only Ultragoal references should be treated as durable goal ledger/checkpoint/evidence artifacts, not as worker execution by themselves.
+Team is the omb authority for parallel, staged execution. Use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. If a task mentions Claude Code `/goal`, Ralph, or artifact-only Ultragoal, keep Team as the primary loop authority unless the leader explicitly hands off. Use `/goal` only as a documented native Claude Code handoff target or as visible evidence from the lead session; do not claim the `/goal` evaluator independently runs commands, reads files, or replaces `team-verify` / `team-fix`. Artifact-only Ultragoal references should be treated as durable goal ledger/checkpoint/evidence artifacts, not as worker execution by themselves.
 
 ## Staged Pipeline (Canonical Team Runtime)
 
@@ -211,7 +211,7 @@ Before blocking or falling back on Windows:
 ### Phase 1: Parse Input
 
 - Extract **N** (agent count), validate 1-20
-- Extract **agent-type**, validate it maps to a known OMC subagent
+- Extract **agent-type**, validate it maps to a known omb subagent
 - Extract **task** description
 
 ### Phase 2: Analyze & Decompose
@@ -227,9 +227,9 @@ Use `explore` or `architect` (via MCP or agent) to analyze the codebase and brea
 
 Use the session's implicit Claude Code team. Do **not** call `TeamCreate`; Claude Code 2.1.178+ removed that tool and automatically gives the session one implicit team when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is enabled.
 
-Derive a slug such as `fix-ts-errors` for OMC state, prompt labels, handoffs, and human-readable reporting only. Native Claude Code may accept `team_name` as legacy metadata, but it is ignored for routing.
+Derive a slug such as `fix-ts-errors` for omb state, prompt labels, handoffs, and human-readable reporting only. Native Claude Code may accept `team_name` as legacy metadata, but it is ignored for routing.
 
-Write OMC state using the `state_write` MCP tool for proper session-scoped persistence:
+Write omb state using the `state_write` MCP tool for proper session-scoped persistence:
 
 ```
 state_write(mode="team", active=true, current_phase="team-plan", state={
@@ -252,7 +252,7 @@ state_write(mode="team", active=true, current_phase="team-plan", state={
 | ---------------- | ------- | --------------------------------------------------------------------------------------- |
 | `active`         | boolean | Whether team mode is active                                                             |
 | `current_phase`  | string  | Current pipeline stage: `team-plan`, `team-prd`, `team-exec`, `team-verify`, `team-fix` |
-| `team_name`      | string  | OMC slug for state, handoffs, and reporting; ignored by native Claude Code routing |
+| `team_name`      | string  | omb slug for state, handoffs, and reporting; ignored by native Claude Code routing |
 | `agent_count`    | number  | Number of worker agents                                                                 |
 | `agent_types`    | string  | Comma-separated agent types used in team-exec                                           |
 | `task`           | string  | Original task description                                                               |
@@ -384,7 +384,7 @@ Monitor for stuck or failed teammates:
 
 ### Phase 6.5: Stage Transitions (State Persistence)
 
-On every stage transition, update OMC state:
+On every stage transition, update omb state:
 
 ```
 // Entering team-exec after planning
@@ -421,8 +421,8 @@ When all real tasks (non-internal) are completed or failed:
    }
    ```
 3. **Await responses** -- Each teammate responds with `shutdown_response(approve: true)` and terminates
-4. **Clean up native team state** -- Claude Code 2.1.178+ has no `TeamDelete`; after teammates acknowledge shutdown, clear OMC state and any local task bookkeeping.
-5. **Clean OMC state** -- Remove `.omc/state/team-state.json`
+4. **Clean up native team state** -- Claude Code 2.1.178+ has no `TeamDelete`; after teammates acknowledge shutdown, clear omb state and any local task bookkeeping.
+5. **Clean omb state** -- Remove `.omc/state/team-state.json`
 6. **Report summary** -- Present results to the user
 
 ## Agent Preamble
@@ -430,7 +430,7 @@ When all real tasks (non-internal) are completed or failed:
 When spawning teammates, include this preamble in the prompt to establish the work protocol. Adapt it per teammate with their specific task assignments.
 
 ```
-You are a TEAM WORKER in OMC team "{team_name}". Your name is "{worker_name}".
+You are a TEAM WORKER in omb team "{team_name}". Your name is "{worker_name}".
 You report to the team lead ("team-lead").
 You are not the leader and must not perform leader orchestration actions.
 
@@ -469,7 +469,7 @@ Do NOT mark the task as completed. Leave it in_progress so the lead can reassign
 == RULES ==
 - NEVER spawn sub-agents or use the Task tool
 - NEVER run tmux pane/session orchestration commands (for example `tmux split-window`, `tmux new-session`)
-- NEVER run team spawning/orchestration skills or commands (for example `$team`, `$autopilot`, `$ralph`, `omc team ...`, `omx team ...`)
+- NEVER run team spawning/orchestration skills or commands (for example `$team`, `$autopilot`, `$ralph`, `omb team ...`, `omx team ...`)
 - ALWAYS use absolute file paths
 - ALWAYS report progress to "team-lead" through the active team/conversation surface
 - Use direct team/conversation messages with type "message" only -- never "broadcast"
@@ -480,7 +480,7 @@ Do NOT mark the task as completed. Leave it in_progress so the lead can reassign
 When composing teammate prompts, append a short addendum based on worker type:
 
 - `claude_worker`: Emphasize strict TodoWrite/task-list updates, active team/conversation messages, and no orchestration commands.
-- `codex_worker`: Emphasize CLI API lifecycle (`omc team api ... --json`) and explicit failure ACKs with stderr.
+- `codex_worker`: Emphasize CLI API lifecycle (`omb team api ... --json`) and explicit failure ACKs with stderr.
 - `gemini_worker`: Emphasize bounded file ownership and milestone ACKs after each completed sub-step.
 - `antigravity_worker`: Same expectations as `gemini_worker`; emphasize bounded file ownership and milestone ACKs after each completed sub-step.
 
@@ -522,7 +522,7 @@ This addendum must preserve the core rule: **worker = executor only, never leade
 
 ### Shutdown Protocol (BLOCKING)
 
-**CRITICAL: Steps must execute in exact order. Never clear OMC team state before shutdown is confirmed or timed out.**
+**CRITICAL: Steps must execute in exact order. Never clear omb team state before shutdown is confirmed or timed out.**
 
 **Step 1: Verify completion**
 
@@ -558,23 +558,23 @@ Verify via TodoWrite or the active task-list surface — all real tasks (non-int
 }
 ```
 
-After approval, the teammate terminates or stops accepting new work. Claude Code 2.1.178+ does not expose per-team config membership or TeamDelete cleanup; track acknowledgements in OMC state/reporting instead.
+After approval, the teammate terminates or stops accepting new work. Claude Code 2.1.178+ does not expose per-team config membership or TeamDelete cleanup; track acknowledgements in omb state/reporting instead.
 
-**Step 4: Clear OMC team state — only after ALL teammates confirmed or timed out**
+**Step 4: Clear omb team state — only after ALL teammates confirmed or timed out**
 
-Claude Code 2.1.178+ has no `TeamDelete`. Clear OMC team state and local task bookkeeping after the blocking shutdown pass completes.
+Claude Code 2.1.178+ has no `TeamDelete`. Clear omb team state and local task bookkeeping after the blocking shutdown pass completes.
 
-**Step 5: Orphan scan for OMC tmux/CLI workers only**
+**Step 5: Orphan scan for omb tmux/CLI workers only**
 
-For legacy OMC tmux/CLI worker runs (`omc team` / `/omc-teams`), check for worker processes that survived cleanup:
+For legacy omb tmux/CLI worker runs (`omb team` / `/omc-teams`), check for worker processes that survived cleanup:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/cleanup-orphans.mjs" --team-name fix-ts-errors
 ```
 
-This scans for OMC worker processes matching the team name and terminates stale orphans (SIGTERM → 5s wait → SIGKILL). Supports `--dry-run` for inspection.
+This scans for omb worker processes matching the team name and terminates stale orphans (SIGTERM → 5s wait → SIGKILL). Supports `--dry-run` for inspection.
 
-**Shutdown sequence is BLOCKING:** Do not clear OMC team state until all teammates have either:
+**Shutdown sequence is BLOCKING:** Do not clear omb team state until all teammates have either:
 
 - Confirmed shutdown (`shutdown_response` with `approve: true`), OR
 - Timed out (30s with no response)
@@ -801,10 +801,10 @@ See Cancellation section below for details.
 
 ## Idempotent Recovery
 
-If the lead crashes mid-run, the team skill should detect existing OMC state and resume:
+If the lead crashes mid-run, the team skill should detect existing omb state and resume:
 
-1. Read `state_read(mode="team")` for the active OMC team slug, phase, and worker labels
-2. Use OMC handoffs and task-list/TodoWrite state to determine current progress
+1. Read `state_read(mode="team")` for the active omb team slug, phase, and worker labels
+2. Use omb handoffs and task-list/TodoWrite state to determine current progress
 3. Resume monitor mode instead of spawning duplicate teammates
 4. Continue from the last recorded stage
 
@@ -814,19 +814,19 @@ This prevents duplicate worker spawns and allows graceful recovery from lead fai
 
 | Aspect                  | Team (Native Claude Code 2.1.178+)                              | Swarm (Legacy SQLite)                  |
 | ----------------------- | ---------------------------------------------------------------- | -------------------------------------- |
-| **Storage**             | OMC state/handoffs plus Claude Code's current task-list surface   | SQLite in `.omc/state/swarm.db`        |
+| **Storage**             | omb state/handoffs plus Claude Code's current task-list surface   | SQLite in `.omc/state/swarm.db`        |
 | **Dependencies**        | `better-sqlite3` not needed                                      | Requires `better-sqlite3` npm package  |
 | **Task claiming**       | Lead pre-assigns named workers through task-list/TodoWrite state  | SQLite IMMEDIATE transaction -- atomic |
 | **Race conditions**     | Possible if two agents claim same task (mitigate by pre-assigning) | None (SQLite transactions)             |
 | **Communication**       | Native implicit-team messages / conversation turns                | None (fire-and-forget agents)          |
 | **Task dependencies**   | Lead-managed dependencies in task-list/TodoWrite state            | Not supported                          |
 | **Heartbeat**           | Lead detects via missing messages/status                          | Manual heartbeat table + polling       |
-| **Shutdown**            | Graceful request/response protocol plus OMC state clear           | Signal-based termination               |
-| **Agent lifecycle**     | Tracked by named Agent/Task spawns and OMC state                  | Manual tracking via heartbeat table    |
+| **Shutdown**            | Graceful request/response protocol plus omb state clear           | Signal-based termination               |
+| **Agent lifecycle**     | Tracked by named Agent/Task spawns and omb state                  | Manual tracking via heartbeat table    |
 | **Progress visibility** | Task list/TodoWrite state with named worker ownership             | SQL queries on tasks table             |
 | **Conflict prevention** | Owner labels (lead-assigned)                                      | Lease-based claiming with timeout      |
 | **Crash recovery**      | Lead detects via missing messages, reassigns                      | Auto-release after 5-min lease timeout |
-| **State cleanup**       | Clear OMC team state after teammate shutdown                      | Manual `rm` of SQLite database         |
+| **State cleanup**       | Clear omb team state after teammate shutdown                      | Manual `rm` of SQLite database         |
 
 **When to use Team over Swarm:** Always prefer `/team` for new native Claude Code work. It uses Claude Code's implicit agent team, requires no external dependencies, supports inter-agent coordination, and has task dependency management.
 
@@ -848,7 +848,7 @@ When team is linked to ralph, cancellation follows dependency order:
 - **Cancel triggered from Team context:** Clear Team state, then mark Ralph as cancelled. Ralph's stop hook will detect the missing team and stop iterating.
 - **Force cancel (`--force`):** Clears both `team` and `ralph` state unconditionally via `state_clear`.
 
-If teammates are unresponsive, record the timeout, avoid spawning more work, and clear OMC state only after the shutdown wait completes or the user force-cancels.
+If teammates are unresponsive, record the timeout, avoid spawning more work, and clear omb state only after the shutdown wait completes or the user force-cancels.
 
 ## Runtime V2 (Event-Driven)
 
@@ -893,11 +893,11 @@ Optional settings live in `.claude/omc.jsonc` (project) or `~/.config/claude-omc
 - **ops.monitorIntervalMs** - How often to review TodoWrite or the active task-list surface (default: 30s)
 - **ops.shutdownTimeoutMs** - How long to wait for shutdown responses (default: 15s)
 
-> **Note:** Native Claude Code teammates do not have a hardcoded model default; each teammate inherits the lead session's configured model unless overridden per role. OMC's legacy CLI workers are separate processes: their provider and model come from OMC's team routing, not native teammate inheritance.
+> **Note:** Native Claude Code teammates do not have a hardcoded model default; each teammate inherits the lead session's configured model unless overridden per role. omb's legacy CLI workers are separate processes: their provider and model come from omb's team routing, not native teammate inheritance.
 >
-> **Nesting (Claude Code 2.1.217+):** Claude teammates are full, independent Claude Code sessions in the session's implicit team (see Phase 5). Do not assume a teammate can or cannot spawn nested subagents: Claude Code 2.1.217–2.1.218 defaulted `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 1, while 2.1.219+ defaults to 3, and the current setting controls subagent layers below the main conversation. Plan each teammate as the unit that does the work unless nested delegation is deliberate and supported by the active runtime. OMC CLI workers (`claude`, `codex`, `gemini`, `grok`, `cursor`, and `antigravity` via `ops.defaultAgentType`) are separate processes, not Claude Code subagents, and are unaffected by Claude's subagent depth setting.
+> **Nesting (Claude Code 2.1.217+):** Claude teammates are full, independent Claude Code sessions in the session's implicit team (see Phase 5). Do not assume a teammate can or cannot spawn nested subagents: Claude Code 2.1.217–2.1.218 defaulted `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 1, while 2.1.219+ defaults to 3, and the current setting controls subagent layers below the main conversation. Plan each teammate as the unit that does the work unless nested delegation is deliberate and supported by the active runtime. omb CLI workers (`claude`, `codex`, `gemini`, `grok`, `cursor`, and `antigravity` via `ops.defaultAgentType`) are separate processes, not Claude Code subagents, and are unaffected by Claude's subagent depth setting.
 >
-> **Concurrency:** The current OMC team CLI caps worker fan-out at 20 (`MAX_WORKER_COUNT`); although `ops.maxAgents` exists in the config schema, the current launcher does not consult it. Claude Code's `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` also defaults to 20, but that limit applies to Agent-spawned subagents; Claude Code documents agent-team teammates as following their own limits. Do not treat the two values as a shared cap or assume a full-size OMC team leaves exactly zero headroom for ordinary subagents; size OMC teams conservatively when the lead also needs Agent-spawned work.
+> **Concurrency:** The current omb team CLI caps worker fan-out at 20 (`MAX_WORKER_COUNT`); although `ops.maxAgents` exists in the config schema, the current launcher does not consult it. Claude Code's `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` also defaults to 20, but that limit applies to Agent-spawned subagents; Claude Code documents agent-team teammates as following their own limits. Do not treat the two values as a shared cap or assume a full-size omb team leaves exactly zero headroom for ordinary subagents; size omb teams conservatively when the lead also needs Agent-spawned work.
 
 ## Per-Role Provider & Model Routing
 
@@ -962,7 +962,7 @@ Precedence: `OMC_TEAM_ROLE_OVERRIDES` > `.claude/omc.jsonc` (project) > `~/.conf
 
 ### Missing CLI preflight
 
-Team startup strictly preflights only providers that are effective for its initial workers, including idle-worker assignments and explicit role routes. Role routing selects each worker's initial startup provider; later tasks delivered to an existing pane keep that worker's provider and are not re-routed by task role. A missing, relative, or untrusted binary for a selected provider fails before team state or multiplexer side effects are created. Providers that are merely present in the routing snapshot or declared agent list, including providers for roles never selected for a launch, are not probed. Routing is authoritative: the runtime never silently changes a selected role to Claude when its provider is unavailable. Scale-up and worker recovery independently preflight the provider they are about to launch and fail closed if it is unavailable. Probe provider availability with `omc doctor --team-routing`.
+Team startup strictly preflights only providers that are effective for its initial workers, including idle-worker assignments and explicit role routes. Role routing selects each worker's initial startup provider; later tasks delivered to an existing pane keep that worker's provider and are not re-routed by task role. A missing, relative, or untrusted binary for a selected provider fails before team state or multiplexer side effects are created. Providers that are merely present in the routing snapshot or declared agent list, including providers for roles never selected for a launch, are not probed. Routing is authoritative: the runtime never silently changes a selected role to Claude when its provider is unavailable. Scale-up and worker recovery independently preflight the provider they are about to launch and fail closed if it is unavailable. Probe provider availability with `omb doctor --team-routing`.
 
 ### Stickiness — resolved once, reused everywhere
 
@@ -976,7 +976,7 @@ An empty `team.roleRouting` preserves pre-patch behavior: every worker is Claude
 
 On successful completion:
 
-1. Native Claude Code 2.1.178+ has no per-team `TeamDelete` cleanup. After shutdown is confirmed or timed out, clear OMC state via MCP tools:
+1. Native Claude Code 2.1.178+ has no per-team `TeamDelete` cleanup. After shutdown is confirmed or timed out, clear omb state via MCP tools:
    ```
    state_clear(mode="team")
    ```
@@ -984,10 +984,10 @@ On successful completion:
    ```
    state_clear(mode="ralph")
    ```
-2. For legacy OMC tmux/CLI workers, run the documented `omc team shutdown` / cleanup path.
-3. Or run `/oh-my-claudecode:cancel` which handles OMC state cleanup automatically.
+2. For legacy omb tmux/CLI workers, run the documented `omb team shutdown` / cleanup path.
+3. Or run `/oh-my-claudecode:cancel` which handles omb state cleanup automatically.
 
-**IMPORTANT:** Clear OMC team state only AFTER all teammates have been shut down or timed out.
+**IMPORTANT:** Clear omb team state only AFTER all teammates have been shut down or timed out.
 
 ## Git Worktree Integration
 
@@ -995,7 +995,7 @@ MCP workers can operate in isolated git worktrees to prevent file conflicts betw
 
 ### How It Works
 
-1. **Worktree creation**: Before spawning a worker, call `createWorkerWorktree(teamName, workerName, repoRoot)` to create an isolated worktree at `.omc/worktrees/{team}/{worker}` with branch `omc-team/{teamName}/{workerName}`.
+1. **Worktree creation**: Before spawning a worker, call `createWorkerWorktree(teamName, workerName, repoRoot)` to create an isolated worktree at `.omc/worktrees/{team}/{worker}` with branch `omb-team/{teamName}/{workerName}`.
 
 2. **Worker isolation**: Pass the worktree path as the `workingDirectory` in the worker's `BridgeConfig`. The worker operates exclusively in its own worktree.
 
@@ -1030,13 +1030,13 @@ MCP workers can operate in isolated git worktrees to prevent file conflicts betw
 
 3. **Task IDs are strings when exposed by task-list tools** -- IDs may be auto-incrementing strings ("1", "2", "3"), not integers. Always pass string values to `taskId` fields when using task-list tools.
 
-4. **No TeamDelete cleanup** -- Claude Code 2.1.178+ removed `TeamDelete`; use shutdown messages plus OMC state cleanup.
+4. **No TeamDelete cleanup** -- Claude Code 2.1.178+ removed `TeamDelete`; use shutdown messages plus omb state cleanup.
 
 5. **Messages are auto-delivered** -- Teammate messages arrive to the lead as new conversation turns. No polling or inbox-checking is needed for inbound messages. However, if the lead is mid-turn (processing), messages queue and deliver when the turn ends.
 
 6. **Do not put secrets in teammate prompts** -- Prompts can be retained in logs, state, or conversation history. Keep credentials and sensitive data out of teammate prompts.
 
-7. **Shutdown acknowledgements are state/reporting events** -- After a teammate approves shutdown and terminates, track that acknowledgement in OMC state/reporting. Do not expect a Claude Code team membership config to update.
+7. **Shutdown acknowledgements are state/reporting events** -- After a teammate approves shutdown and terminates, track that acknowledgement in omb state/reporting. Do not expect a Claude Code team membership config to update.
 
 8. **shutdown_response needs request_id** -- The teammate must extract the `request_id` from the incoming shutdown request JSON and pass it back. The format is `shutdown-{timestamp}@{worker-name}`. Fabricating this ID will cause the shutdown to fail silently.
 

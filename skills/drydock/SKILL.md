@@ -13,7 +13,7 @@ The four pillars and where they physically live:
 
 | Pillar | Surfaces |
 |---|---|
-| Context (shared background) | `CONTEXT.md` (glossary) + `docs/business/` + `docs/adr/` + OMC wiki |
+| Context (shared background) | `CONTEXT.md` (glossary) + `docs/business/` + `docs/adr/` + omb wiki |
 | Rules (boundaries) | `CLAUDE.md` (thin entry: conventions, principles, index) + `docs/standards/` |
 | Tools (composable capability) | `.omc/skills/` + `.mcp.json` + `scripts/` |
 | Standards (the classification society) | `design-system/` (tokens, components, patterns) + `docs/standards/` |
@@ -39,7 +39,7 @@ Inventory what exists before writing anything:
 
 - `CLAUDE.md` present? `AGENTS.md` present? (rule: if either exists, extend it in place; create the missing one as a one-line pointer to the other; **never create both fresh**)
 - `CONTEXT.md`, `docs/adr/`, `docs/standards/`, `docs/business/`, `design-system/`, `.omc/skills/`, `.mcp.json`, `scripts/`, `.gitattributes` — which exist, which are missing?
-- OMC installed? — only worth checking when running inside an OMC session; outside one, skip this check silently (the harness works with or without OMC)
+- omb installed? — only worth checking when running inside an omb session; outside one, skip this check silently (the harness works with or without omb)
 
 Report the map first, then act.
 
@@ -323,7 +323,7 @@ Tell the user, and rely on these flows to fill the skeleton:
 - **launch** writes CONTEXT.md vocabulary, ADRs, and docs/business/ as decisions settle (paper trail)
 - **launch C5 sediment / code-review** sediment recurring corrections into docs/standards/ and CLAUDE.md principles
 - **anyone** can add a project skill to .omc/skills/ — the barrier is the skillify quality gate, not permission
-- **wiki** (OMC) compounds session knowledge; promote anything referenced twice into docs/business/
+- **wiki** (omb) compounds session knowledge; promote anything referenced twice into docs/business/
 
 The rule that keeps 先动手 aligned: **starting needs no permission; landing goes into a shipyard slot.** A change that cannot say which slot it lands in (or explicitly none) is the smell.
 
