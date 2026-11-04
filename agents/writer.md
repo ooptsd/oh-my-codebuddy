@@ -1,8 +1,7 @@
 ---
 name: writer
-description: Technical documentation writer for README, API docs, and comments (Haiku)
-model: haiku
-level: 2
+description: Technical documentation writer for README, API docs, and comments
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -51,7 +50,7 @@ level: 2
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: low (concise, accurate documentation).
     - Stop when documentation is complete, accurate, and verified.
   </Execution_Policy>

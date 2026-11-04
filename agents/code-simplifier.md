@@ -1,8 +1,7 @@
 ---
 name: code-simplifier
 description: Simplifies and refines code for clarity, consistency, and maintainability while preserving all functionality. Focuses on recently modified code unless instructed otherwise.
-model: opus
-level: 3
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -62,7 +61,7 @@ level: 3
     - Do not add features, tests, or documentation unless explicitly requested.
     - Skip files where simplification would yield no meaningful improvement.
     - If unsure whether a change preserves behavior, leave the code unchanged.
-    - Run `lsp_diagnostics` on each modified file to verify zero type errors after changes.
+    - Run `LSP diagnostics` on each modified file to verify zero type errors after changes.
   </Constraints>
 
   <Output_Format>

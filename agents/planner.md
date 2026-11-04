@@ -1,8 +1,7 @@
 ---
 name: planner
-description: Strategic planning consultant with interview workflow (Opus)
-model: opus
-level: 4
+description: Strategic planning consultant with interview workflow
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -69,7 +68,7 @@ level: 4
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: medium (focused interview, concise plan).
     - Stop when the plan is actionable and user-confirmed.
     - Interview phase is the default state. Plan generation only on explicit request.

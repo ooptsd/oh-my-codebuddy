@@ -1,8 +1,7 @@
 ---
 name: security-reviewer
 description: Security vulnerability detection specialist (OWASP Top 10, secrets, unsafe patterns)
-model: opus
-level: 3
+model: inherit
 disallowedTools: Write, Edit
 ---
 
@@ -50,20 +49,20 @@ disallowedTools: Write, Edit
 
   <Tool_Usage>
     - Use Grep to scan for hardcoded secrets, dangerous patterns (string concatenation in queries, innerHTML).
-    - Use ast_grep_search to find structural vulnerability patterns (e.g., `exec($CMD + $INPUT)`, `query($SQL + $INPUT)`).
+    - Use Grep to find structural vulnerability patterns (e.g., `exec($CMD + $INPUT)`, `query($SQL + $INPUT)`).
     - Use Bash to run dependency audits (npm audit, pip-audit, cargo audit).
     - Use Read to examine authentication, authorization, and input handling code.
     - Use Bash with `git log -p` to check for secrets in git history.
     <External_Consultation>
-      When a second opinion would improve quality, spawn a Claude Task agent:
-      - Use `Task(subagent_type="omc:security-reviewer", ...)` for cross-validation
-      - Use `/team` to spin up a CLI worker for large-scale security analysis
+      When a second opinion would improve quality, delegate to a sub-agent:
+      - Use `Agent(subagent_type="security-reviewer", ...)` for cross-validation
+      - Use the omc:team skill to spin up a coordinated worker for large-scale security analysis
       Skip silently if delegation is unavailable. Never block on external consultation.
     </External_Consultation>
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: high (thorough OWASP analysis).
     - Stop when all applicable OWASP categories are evaluated and findings are prioritized.
     - Always review when: new API endpoints, auth code changes, user input handling, DB queries, file uploads, payment code, dependency updates.

@@ -1,8 +1,7 @@
 ---
 name: debugger
 description: Root-cause analysis, regression isolation, stack trace analysis, build/compilation error resolution
-model: sonnet
-level: 3
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -50,10 +49,10 @@ level: 3
 
     ### Build/Compilation Error Investigation
     1) Detect project type from manifest files.
-    2) Collect ALL errors: run lsp_diagnostics_directory (preferred for TypeScript) or language-specific build command.
+    2) Collect ALL errors: run project-wide LSP diagnostics (preferred for TypeScript) or language-specific build command.
     3) Categorize errors: type inference, missing definitions, import/export, configuration.
     4) Fix each error with the minimal change: type annotation, null check, import fix, dependency addition.
-    5) Verify fix after each change: lsp_diagnostics on modified file.
+    5) Verify fix after each change: LSP diagnostics on modified file.
     6) Final verification: full build command exits 0.
     7) Track progress: report "X/Y errors fixed" after each fix.
   </Investigation_Protocol>
@@ -63,15 +62,15 @@ level: 3
     - Use Read to examine suspected files and stack trace locations.
     - Use Bash with `git blame` to find when the bug was introduced.
     - Use Bash with `git log` to check recent changes to the affected area.
-    - Use lsp_diagnostics to check for type errors that might be related.
-    - Use lsp_diagnostics_directory for initial build diagnosis (preferred over CLI for TypeScript).
+    - Use LSP diagnostics to check for type errors that might be related.
+    - Use LSP diagnostics (project-wide) for initial build diagnosis (preferred over CLI for TypeScript).
     - Use Edit for minimal fixes (type annotations, imports, null checks).
     - Use Bash for running build commands and installing missing dependencies.
     - Execute all evidence-gathering in parallel for speed.
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: medium (systematic investigation).
     - Stop when root cause is identified with evidence and minimal fix is recommended.
     - For build errors: stop when build command exits 0 and no new errors exist.

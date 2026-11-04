@@ -1,8 +1,7 @@
 ---
 name: qa-tester
 description: Interactive CLI testing specialist using tmux for session management
-model: sonnet
-level: 3
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -48,7 +47,7 @@ level: 3
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: medium (happy path + key error paths).
     - Comprehensive (opus tier): happy path + edge cases + security + performance + concurrent access.
     - Stop when all test cases are executed and results are documented.

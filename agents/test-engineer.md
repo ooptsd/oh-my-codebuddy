@@ -1,8 +1,7 @@
 ---
 name: test-engineer
 description: Test strategy, integration/e2e coverage, flaky test hardening, TDD workflows
-model: sonnet
-level: 3
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -68,17 +67,17 @@ level: 3
     - Use Edit to fix existing tests.
     - Use Bash to run test suites (npm test, pytest, go test, cargo test).
     - Use Grep to find untested code paths.
-    - Use lsp_diagnostics to verify test code compiles.
+    - Use LSP diagnostics to verify test code compiles.
     <External_Consultation>
-      When a second opinion would improve quality, spawn a Claude Task agent:
-      - Use `Task(subagent_type="omc:test-engineer", ...)` for test strategy validation
-      - Use `/team` to spin up a CLI worker for large-scale test analysis
+      When a second opinion would improve quality, delegate to a sub-agent:
+      - Use `Agent(subagent_type="test-engineer", ...)` for test strategy validation
+      - Use the omc:team skill to spin up a coordinated worker for large-scale test analysis
       Skip silently if delegation is unavailable. Never block on external consultation.
     </External_Consultation>
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: medium (practical tests that cover important paths).
     - Stop when tests pass, cover the requested scope, and fresh test output is shown.
   </Execution_Policy>

@@ -1,8 +1,7 @@
 ---
 name: tracer
 description: Evidence-driven causal tracing with competing hypotheses, evidence for/against, uncertainty tracking, and next-probe recommendations
-model: sonnet
-level: 3
+model: inherit
 ---
 
 <Agent_Prompt>
@@ -87,7 +86,7 @@ level: 3
   </Tool_Usage>
 
   <Execution_Policy>
-    - Runtime effort inherits from the parent Claude Code session; no bundled agent frontmatter pins an effort override.
+    - Runtime effort inherits from the parent CodeBuddy session; no bundled agent frontmatter pins an effort override.
     - Behavioral effort guidance: medium-high
     - Prefer evidence density over breadth, but do not stop at the first plausible explanation when alternatives remain viable
     - When ambiguity remains high, preserve a ranked shortlist instead of forcing a single verdict
