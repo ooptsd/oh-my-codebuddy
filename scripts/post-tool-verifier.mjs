@@ -489,10 +489,10 @@ function shouldSuppressPreemptiveWarning(directory, sessionId, severity, now) {
 
 function buildPreemptiveContextMessage(percentUsed, severity) {
   if (severity === 'critical') {
-    return `[OMB CRITICAL] Context at ${percentUsed}% (critical threshold: ${getPreemptiveCriticalThreshold()}%). Run /compact now before continuing with more tools or agent fan-out.`;
+    return `[OMC CRITICAL] Context at ${percentUsed}% (critical threshold: ${getPreemptiveCriticalThreshold()}%). Run /compact now before continuing with more tools or agent fan-out.`;
   }
 
-  return `[OMB WARNING] Context at ${percentUsed}% (warning threshold: ${getPreemptiveWarningThreshold()}%). Plan a /compact soon to preserve room for the next large tool output.`;
+  return `[OMC WARNING] Context at ${percentUsed}% (warning threshold: ${getPreemptiveWarningThreshold()}%). Plan a /compact soon to preserve room for the next large tool output.`;
 }
 
 async function maybeBuildPreemptiveCompactionMessage(toolName, data, directory) {

@@ -542,11 +542,11 @@ function formatUpdateNoticeForUser(updateInfo, options = {}) {
   const latestVersion = updateInfo?.latestVersion || 'latest';
   const currentVersion = updateInfo?.currentVersion || 'unknown';
   const action = updateInfo?.source === 'marketplace'
-    ? 'To update the plugin channel, run: /plugin marketplace update omb-plugins && /omc:omc-setup'
+    ? 'To update the plugin channel, run: /plugin marketplace update omc-plugins && /omc:omc-setup'
     : (options.autoUpgradePrompt === false
       ? 'To update later, run: omc update'
-      : 'Run /update to upgrade now, or use /plugin install omc@omb-plugins');
-  return `[OMB UPDATE AVAILABLE] oh-my-claudecode v${latestVersion} is available (current: v${currentVersion}). ${action}`;
+      : 'Run /update to upgrade now, or use /plugin install omc@omc-plugins');
+  return `[OMC UPDATE AVAILABLE] oh-my-claudecode v${latestVersion} is available (current: v${currentVersion}). ${action}`;
 }
 
 function buildSessionStartAdditionalContext(messages) {
@@ -600,8 +600,15 @@ function extractOmcVersion(content) {
   return match ? match[1] : null;
 }
 
+// Marketplace was renamed omb-plugins -> omc-plugins; existing installs may
+// still hold cache clones under the legacy marketplace segment.
+const MARKETPLACE_NAME = 'omc-plugins';
+const LEGACY_MARKETPLACE_NAME = 'omb-plugins';
+
 function getPluginCacheBase() {
-  return join(configDir, 'plugins', 'cache', 'omb-plugins', 'omc');
+  const canonical = join(configDir, 'plugins', 'cache', MARKETPLACE_NAME, 'omc');
+  if (existsSync(canonical)) return canonical;
+  return join(configDir, 'plugins', 'cache', LEGACY_MARKETPLACE_NAME, 'omc');
 }
 
 function isPathInsideOrEqual(parent, child) {
@@ -617,7 +624,7 @@ function isManagedPluginCacheRoot(pluginRoot) {
   // A stale root can come from an older config-dir location; the canonical
   // cache path shape still proves it is an OMC managed cache version.
   const unixRoot = normalizedRoot.replace(/\\/g, '/');
-  return /\/plugins\/cache\/omb-plugins\/omc\/\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(unixRoot);
+  return /\/plugins\/cache\/(omb-plugins|omc-plugins)\/omc\/\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(unixRoot);
 }
 
 function getLatestPluginCacheVersion() {
@@ -635,7 +642,10 @@ function getLatestPluginCacheVersion() {
 
 function getMarketplaceCloneVersion() {
   try {
-    const marketplaceRoot = join(configDir, 'plugins', 'marketplaces', 'omb-plugins');
+    let marketplaceRoot = join(configDir, 'plugins', 'marketplaces', MARKETPLACE_NAME);
+    if (!existsSync(marketplaceRoot)) {
+      marketplaceRoot = join(configDir, 'plugins', 'marketplaces', LEGACY_MARKETPLACE_NAME);
+    }
     if (!existsSync(marketplaceRoot)) return null;
 
     const marketplaceManifest = readJsonFile(join(marketplaceRoot, '.codebuddy-plugin', 'marketplace.json'));
@@ -1000,7 +1010,7 @@ async function checkHudInstallation(retryCount = 0) {
 
       // If OMC HUD wrapper is configured, ensure at least one plugin cache version is built.
       if (statusLineCommand?.includes('omc-hud')) {
-        const pluginCacheBase = join(configDir, 'plugins', 'cache', 'omb-plugins', 'omc');
+        const pluginCacheBase = getPluginCacheBase();
         if (existsSync(pluginCacheBase)) {
           const versions = readdirSync(pluginCacheBase)
             .filter(version => !version.startsWith('.'))
@@ -1114,12 +1124,12 @@ async function main() {
     // Check for version drift between components
     const driftInfo = detectVersionDrift();
     if (driftInfo && shouldNotifyDrift(driftInfo)) {
-      let driftMsg = `[OMB VERSION DRIFT DETECTED]\n\nPlugin version: ${driftInfo.pluginVersion}\n`;
+      let driftMsg = `[OMC VERSION DRIFT DETECTED]\n\nPlugin version: ${driftInfo.pluginVersion}\n`;
       for (const d of driftInfo.drift) {
         driftMsg += `${d.component}: ${d.current} (expected ${d.expected})\n`;
       }
       driftMsg += driftInfo.source === 'marketplace'
-        ? `\nRun '/plugin marketplace update omb-plugins && /omc:omc-setup' to sync plugin-managed components.`
+        ? `\nRun '/plugin marketplace update omc-plugins && /omc:omc-setup' to sync plugin-managed components.`
         : `\nRun 'omc update' to sync all components.`;
 
       messages.push(`<session-restore>\n\n${driftMsg}\n\n</session-restore>\n\n---\n`);
@@ -1135,7 +1145,7 @@ async function main() {
         const omcConfigPath = join(configDir, '.omc-config.json');
         const omcConfig = readJsonFile(omcConfigPath);
         if (omcConfig?.silentAutoUpdate) {
-          messages.push(`<session-restore>\n\n[OMC] silentAutoUpdate is enabled in .omc-config.json but has no effect in plugin mode.\nTo update, use: /plugin marketplace update omb-plugins && /omc:omc-setup\nOr run manually: omc update\n\n</session-restore>\n\n---\n`);
+          messages.push(`<session-restore>\n\n[OMC] silentAutoUpdate is enabled in .omc-config.json but has no effect in plugin mode.\nTo update, use: /plugin marketplace update omc-plugins && /omc:omc-setup\nOr run manually: omc update\n\n</session-restore>\n\n---\n`);
         }
       } catch {}
     }
@@ -1268,7 +1278,7 @@ ${cleanContent}
     // This prevents "Cannot find module" errors for sessions started before a
     // plugin update whose CLAUDE_PLUGIN_ROOT still points to the old version.
     try {
-      const cacheBase = join(configDir, 'plugins', 'cache', 'omb-plugins', 'omc');
+      const cacheBase = getPluginCacheBase();
       // Issue #3995: reuse the occupancy resolution hoisted above the owner
       // publish (same-process identities map, no second win32 host). The GC
       // still re-scans the registry files for records published after that

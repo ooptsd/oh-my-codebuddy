@@ -2,7 +2,7 @@
 
 > 为 AI 编程代理提供多代理编排能力。本插件是 [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) 的 CodeBuddy 适配发行版。
 >
-> **版本：** 5.4.1 · **插件名：** `omc` · **市场源：** `omb-plugins`（调用命名空间：`omc:`）
+> **版本：** 5.4.1 · **插件名：** `omc` · **市场源：** `omc-plugins`（调用命名空间：`omc:`）
 
 本插件把 omc 的 skills、commands、subagents、hooks 打包成 CodeBuddy 可直接加载的格式。**不包含 omc 的 MCP 服务器** —— 其含义与替代方案见 [限制与迁移指南](#限制与迁移指南)。
 
@@ -146,28 +146,30 @@ omc 在 `SessionStart` 里定义了一个调用 `setup-maintenance.mjs` 的 `mai
 从 marketplace 安装（方式 B）后，CodeBuddy 把插件快照克隆到本地缓存路径：
 
 ```text
-~/.codebuddy/plugins/cache/omb-plugins/omc/5.4.1/
+~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.1/
 ```
 
 - 缓存根：`~/.codebuddy/plugins/cache/`
-- marketplace 目录：`omb-plugins/`（对应 `marketplace.json` 里的 owner）
+- marketplace 目录：`omc-plugins/`（对应 `marketplace.json` 里的 name）
 - 插件目录：`omc/5.4.1/`（`omc` 是插件名，也是调用命名空间前缀，`5.4.1` 是当前版本）
 
 **读取 cache 中的文件来定位插件根目录**：
 
 ```bash
 # 列缓存里的 hooks 文件
-ls ~/.codebuddy/plugins/cache/omb-plugins/omc/5.4.1/hooks/hooks.json
+ls ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.1/hooks/hooks.json
 
 # 读取插件清单（验证安装版本）
-cat ~/.codebuddy/plugins/cache/omb-plugins/omc/5.4.1/.codebuddy-plugin/plugin.json
+cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.1/.codebuddy-plugin/plugin.json
 ```
 
 **手动清理缓存**：删除上述目录后执行 `/reload-plugins` 即可让 CodeBuddy 在下次加载时重新克隆。
 
 **版本升级**：CodeBuddy 不会原地覆盖旧版本；新版本会以 `5.5.0/` 这样的新子目录并列存在。`/reload-plugins` 后两个版本都会加载，建议卸载旧版本以避免重复命令。
 
-**从旧插件名 `omb` 升级到 `omc`**：两者会被 CodeBuddy 视为不同插件，旧缓存 `~/.codebuddy/plugins/cache/omb-plugins/omb/` 不会自动清理。请先执行 `/plugin uninstall omb`（或手动删除该缓存目录及 plugins 索引中的 `omb` 条目），再安装 `omc@omb-plugins`，否则旧 hooks 会重复加载。
+**从旧插件名 `omb` 升级到 `omc`**：两者会被 CodeBuddy 视为不同插件，旧缓存 `~/.codebuddy/plugins/cache/omb-plugins/omb/` 不会自动清理。请先执行 `/plugin uninstall omb`（或手动删除该缓存目录及 plugins 索引中的 `omb` 条目），再安装 `omc@omc-plugins`，否则旧 hooks 会重复加载。
+
+**从旧市场名 `omb-plugins` 迁移到 `omc-plugins`**：marketplace 改名后，旧市场注册与缓存不会被自动迁移。请先执行 `/plugin uninstall omc` 与移除旧市场（或手动删除 `~/.codebuddy/plugins/marketplaces/omb-plugins/` 与 `~/.codebuddy/plugins/cache/omb-plugins/`），再重新 `/plugin marketplace add ooptsd/oh-my-codebuddy` 并安装 `omc@omc-plugins`。
 
 **从源码运行（方式 A）时不走该缓存**：`codebuddy --plugin-dir ./oh-my-codebuddy` 直接读取工作区，零缓存命中，方便调试。
 
@@ -224,14 +226,14 @@ codebuddy --plugin-dir ./oh-my-codebuddy
    /plugin marketplace add https://github.com/ooptsd/oh-my-codebuddy.git
    ```
 
-   CodeBuddy 会自动克隆该仓库，从仓库根目录读取 `.codebuddy-plugin/marketplace.json`。在 **Personal** marketplace 下面应该能看到 `omb-plugins`。
+   CodeBuddy 会自动克隆该仓库，从仓库根目录读取 `.codebuddy-plugin/marketplace.json`。在 **Personal** marketplace 下面应该能看到 `omc-plugins`。
 
    > 仓库当前为 public，clone 不需要凭证。
 
 2. **安装插件**
 
    ```text
-   /plugin install omc@omb-plugins
+   /plugin install omc@omc-plugins
    ```
 
 3. **重载插件列表**

@@ -186,7 +186,7 @@ function incrementBlockCount(sessionId) {
 
 function buildStopRecoveryAdvice(contextPercent, blockCount) {
   const severity = contextPercent >= 90 ? 'CRITICAL' : 'HIGH';
-  return `[OMB ${severity}] Context at ${contextPercent}% (threshold: ${THRESHOLD}%). ` +
+  return `[OMC ${severity}] Context at ${contextPercent}% (threshold: ${THRESHOLD}%). ` +
     `Run /compact immediately before continuing. If /compact cannot complete, ` +
     `stop spawning new agents and recover in a fresh session using existing checkpoints ` +
     `(.omc/state, .omc/notepad.md). (Block ${blockCount}/${MAX_BLOCKS})`;
