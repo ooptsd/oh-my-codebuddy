@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verification script for the CodeBuddy omb plugin distribution.
+# Verification script for the CodeBuddy omc plugin distribution.
 # Resolves PLUGIN from the script's own location so it works regardless of
 # where the plugin is cloned or what the user/host is named.
 # Exit 0 = all checks pass; non-zero = first failing check.

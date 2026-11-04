@@ -24,10 +24,10 @@ fi
 
 ## Step 2.0: Check Ralph Runtime Prerequisites
 
-Ralph is an agent-driven persistence loop with no external language dependency. Its only hard prerequisites are the Node runtime that already runs omb's hooks and a writable config directory for `.omc/state/` state files. Verify both without blocking the rest of setup:
+Ralph is an agent-driven persistence loop with no external language dependency. Its only hard prerequisites are the Node runtime that already runs omc's hooks and a writable config directory for `.omc/state/` state files. Verify both without blocking the rest of setup:
 
 ```bash
-node --version || echo "ERROR: Node is required for omb hooks and Ralph state persistence."
+node --version || echo "ERROR: Node is required for omc hooks and Ralph state persistence."
 mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" 2>/dev/null
 touch "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.omc-write-probe" 2>/dev/null && rm -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.omc-write-probe" \
   || echo "WARNING: Config dir is not writable; Ralph state persistence will fail until it is."
@@ -44,7 +44,7 @@ Use the Skill tool to invoke: `hud` with args: `setup`
 Do not generate, normalize, or patch `statusLine` paths inline in this phase. This is especially important on Windows, where backslash path handling must stay inside the `hud` skill.
 
 This will:
-1. Install the HUD wrapper script to `~/.claude/hud/omb-hud.mjs`
+1. Install the HUD wrapper script to `~/.claude/hud/omc-hud.mjs`
 2. Configure `statusLine` in `~/.claude/settings.json`
 3. Report status and prompt to restart if needed
 
@@ -56,7 +56,7 @@ bash "${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/setup-progress.sh"
 
 ## Step 2.2: Repair Stale Plugin Cache References
 
-After a marketplace update, Claude Code may still have old omb cache paths in the running session or plugin registry. Repair those references before any cache cleanup so setup does not repeatedly emit stale plugin directory errors.
+After a marketplace update, Claude Code may still have old omc cache paths in the running session or plugin registry. Repair those references before any cache cleanup so setup does not repeatedly emit stale plugin directory errors.
 
 ```bash
 node "${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/repair-plugin-cache.mjs"
@@ -74,7 +74,7 @@ const raw=process.env.CLAUDE_CONFIG_DIR?.trim();
 const d=raw==null||raw===''? p.join(h,'.claude'):raw==='~'?h:raw.startsWith('~/')||raw.startsWith('~\\\\')?p.join(h,raw.slice(2)):raw;
 let v='';
 // Try cache directory first
-const b=p.join(d,'plugins','cache','omb','oh-my-claudecode');
+const b=p.join(d,'plugins','cache','omc','oh-my-claudecode');
 try{const vs=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));if(vs.length)v=vs[vs.length-1]}catch{}
 // Try .omc-version.json second
 if(v==='')try{const j=JSON.parse(f.readFileSync('.omc-version.json','utf-8'));v=j.version||''}catch{}
@@ -134,20 +134,20 @@ if [ -f "$CONFIG_FILE" ] && grep -q '"defaultExecutionMode"' "$CONFIG_FILE" 2>/d
 fi
 ```
 
-**Note:** Never write a new `defaultExecutionMode` value. Generic keywords no longer route through a configured execution mode; invoke `/oh-my-claudecode:execute` or `/oh-my-claudecode:team` directly instead.
+**Note:** Never write a new `defaultExecutionMode` value. Generic keywords no longer route through a configured execution mode; invoke `/omc:execute` or `/omc:team` directly instead.
 
 **Resume-only boundary:** If `RESUMED_PHASE_TWO_BOUNDARY` is `true`, stop Phase 2 after this cleanup. Do not execute Steps 2.5 or 2.6, do not prompt for task-tool or team settings again, and do not save a new progress value. Return to the setup orchestrator with the original `RESUME_LAST_COMPLETED_STEP` unchanged.
 
-## Step 2.5: Install omb CLI Tool
+## Step 2.5: Install omc CLI Tool
 
-The omb CLI (`omb` command) provides standalone helper commands such as `omb hud`, `omb teleport`, and `omb team ...`.
+The omc CLI (`omc` command) provides standalone helper commands such as `omc hud`, `omc teleport`, and `omc team ...`.
 
 First, check if the CLI is already installed:
 
 ```bash
-if command -v omb &>/dev/null; then
-  OMC_CLI_VERSION=$(omb --version 2>/dev/null | head -1 || echo "installed")
-  echo "omb CLI already installed: $OMC_CLI_VERSION"
+if command -v omc &>/dev/null; then
+  OMC_CLI_VERSION=$(omc --version 2>/dev/null | head -1 || echo "installed")
+  echo "omc CLI already installed: $OMC_CLI_VERSION"
   OMC_CLI_INSTALLED="true"
 else
   OMC_CLI_INSTALLED="false"
@@ -158,7 +158,7 @@ If `OMC_CLI_INSTALLED` is `"true"`, skip the rest of this step.
 
 If `OMC_CLI_INSTALLED` is `"false"`, use AskUserQuestion:
 
-**Question:** "Would you like to install the omb CLI globally for standalone helper commands? (`omb`, `omb hud`, `omb teleport`)"
+**Question:** "Would you like to install the omc CLI globally for standalone helper commands? (`omc`, `omc hud`, `omc teleport`)"
 
 **Options:**
 1. **Yes (Recommended)** - Install `oh-my-claude-sisyphus` via `npm install -g`
@@ -168,19 +168,19 @@ If user chooses **Yes**:
 
 ```bash
 if ! command -v npm &>/dev/null; then
-  echo "WARNING: npm not found. Cannot install omb CLI automatically."
+  echo "WARNING: npm not found. Cannot install omc CLI automatically."
   echo "Install Node.js/npm first, then run: npm install -g oh-my-claude-sisyphus"
 else
   if npm install -g oh-my-claude-sisyphus 2>&1; then
-    echo "omb CLI installed successfully."
-    if command -v omb &>/dev/null; then
-      OMC_CLI_VERSION=$(omb --version 2>/dev/null | head -1 || echo "installed")
-      echo "Verified: omb $OMC_CLI_VERSION"
+    echo "omc CLI installed successfully."
+    if command -v omc &>/dev/null; then
+      OMC_CLI_VERSION=$(omc --version 2>/dev/null | head -1 || echo "installed")
+      echo "Verified: omc $OMC_CLI_VERSION"
     else
-      echo "Installed but 'omb' not on PATH. You may need to restart your shell."
+      echo "Installed but 'omc' not on PATH. You may need to restart your shell."
     fi
   else
-    echo "WARNING: Failed to install omb CLI (permission issue or network error)."
+    echo "WARNING: Failed to install omc CLI (permission issue or network error)."
     echo "You can install manually later: npm install -g oh-my-claude-sisyphus"
     echo "Or with sudo: sudo npm install -g oh-my-claude-sisyphus"
   fi

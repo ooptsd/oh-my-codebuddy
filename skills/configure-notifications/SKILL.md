@@ -18,7 +18,7 @@ level: 2
 
 # Configure Notifications
 
-Set up omb notification integrations so you're alerted when sessions end, need input, or complete background tasks.
+Set up omc notification integrations so you're alerted when sessions end, need input, or complete background tasks.
 
 ## Routing
 
@@ -39,7 +39,7 @@ Detect which provider the user wants based on their request or argument:
 
 ## Telegram Setup
 
-Set up Telegram notifications so omb can message you when sessions end, need input, or complete background tasks.
+Set up Telegram notifications so omc can message you when sessions end, need input, or complete background tasks.
 
 ### How This Skill Works
 
@@ -79,7 +79,7 @@ To set up Telegram notifications, you need a Telegram bot token and your chat ID
 CREATE A BOT (if you don't have one):
 1. Open Telegram and search for @BotFather
 2. Send /newbot
-3. Choose a name (e.g., "My omb Notifier")
+3. Choose a name (e.g., "My omc Notifier")
 4. Choose a username (e.g., "my_omc_bot")
 5. BotFather will give you a token like: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 
@@ -209,7 +209,7 @@ RESPONSE=$(curl -s -w "\n%{http_code}" \
   "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
   -d "chat_id=${CHAT_ID}" \
   -d "parse_mode=${PARSE_MODE}" \
-  -d "text=omb test notification - Telegram is configured!")
+  -d "text=omc test notification - Telegram is configured!")
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
 BODY=$(echo "$RESPONSE" | head -1)
@@ -245,9 +245,9 @@ You can also set these via environment variables:
   OMC_TELEGRAM_BOT_TOKEN=123456789:ABCdefGHI...
   OMC_TELEGRAM_CHAT_ID=123456789
 
-To reconfigure: /oh-my-claudecode:configure-notifications telegram
-To configure Discord: /oh-my-claudecode:configure-notifications discord
-To configure Slack: /oh-my-claudecode:configure-notifications slack
+To reconfigure: /omc:configure-notifications telegram
+To configure Discord: /omc:configure-notifications discord
+To configure Slack: /omc:configure-notifications slack
 ```
 
 ### Environment Variable Alternative
@@ -265,7 +265,7 @@ Env vars are auto-detected by the notification system without needing `.omc-conf
 
 ## Discord Setup
 
-Set up Discord notifications so omb can ping you when sessions end, need input, or complete background tasks.
+Set up Discord notifications so omc can ping you when sessions end, need input, or complete background tasks.
 
 ### How This Skill Works
 
@@ -376,7 +376,7 @@ Use AskUserQuestion:
 **Question:** "Custom bot display name? (Shows as the webhook sender name in Discord)"
 
 **Options:**
-1. **omb (default)** - Display as "omb"
+1. **omc (default)** - Display as "omc"
 2. **Claude Code** - Display as "Claude Code"
 3. **Custom** - Enter a custom name
 
@@ -463,7 +463,7 @@ Use AskUserQuestion:
 # For webhook:
 curl -s -o /dev/null -w "%{http_code}" \
   -H "Content-Type: application/json" \
-  -d "{\"content\": \"${MENTION:+$MENTION\\n}omb test notification - Discord is configured!\"}" \
+  -d "{\"content\": \"${MENTION:+$MENTION\\n}omc test notification - Discord is configured!\"}" \
   "$WEBHOOK_URL"
 ```
 
@@ -479,7 +479,7 @@ Discord Notifications Configured!
   Method:   Webhook / Bot API
   Mention:  <@1465264645320474637> (or "none")
   Events:   session-end, ask-user-question
-  Username: omb
+  Username: omc
 
 Config saved to: ~/.claude/.omc-config.json
 
@@ -487,9 +487,9 @@ You can also set these via environment variables:
   OMC_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
   OMC_DISCORD_MENTION=<@1465264645320474637>
 
-To reconfigure: /oh-my-claudecode:configure-notifications discord
-To configure Telegram: /oh-my-claudecode:configure-notifications telegram
-To configure Slack: /oh-my-claudecode:configure-notifications slack
+To reconfigure: /omc:configure-notifications discord
+To configure Telegram: /omc:configure-notifications telegram
+To configure Slack: /omc:configure-notifications slack
 ```
 
 ### Environment Variable Alternative
@@ -515,7 +515,7 @@ Env vars are auto-detected by the notification system without needing `.omc-conf
 
 ## Slack Setup
 
-Set up Slack notifications so omb can message you when sessions end, need input, or complete background tasks.
+Set up Slack notifications so omc can message you when sessions end, need input, or complete background tasks.
 
 ### How This Skill Works
 
@@ -557,7 +557,7 @@ To set up Slack notifications, you need a Slack incoming webhook URL.
 CREATE A WEBHOOK:
 1. Go to https://api.slack.com/apps
 2. Click "Create New App" > "From scratch"
-3. Name your app (e.g., "omb Notifier") and select your workspace
+3. Name your app (e.g., "omc Notifier") and select your workspace
 4. Go to "Incoming Webhooks" in the left sidebar
 5. Toggle "Activate Incoming Webhooks" to ON
 6. Click "Add New Webhook to Workspace"
@@ -636,7 +636,7 @@ Use AskUserQuestion:
 **Question:** "Custom bot display name? (Shows as the webhook sender name in Slack)"
 
 **Options:**
-1. **omb (default)** - Display as "omb"
+1. **omc (default)** - Display as "omc"
 2. **Claude Code** - Display as "Claude Code"
 3. **Custom** - Enter a custom name
 
@@ -705,7 +705,7 @@ fi
 
 curl -s -o /dev/null -w "%{http_code}" \
   -H "Content-Type: application/json" \
-  -d "{\"text\": \"${MENTION_PREFIX}omb test notification - Slack is configured!\"}" \
+  -d "{\"text\": \"${MENTION_PREFIX}omc test notification - Slack is configured!\"}" \
   "$WEBHOOK_URL"
 ```
 
@@ -726,7 +726,7 @@ Slack Notifications Configured!
   Mention:  <@U1234567890> (or "none")
   Channel:  #alerts (or "webhook default")
   Events:   session-end, ask-user-question
-  Username: omb
+  Username: omc
 
 Config saved to: ~/.claude/.omc-config.json
 
@@ -734,9 +734,9 @@ You can also set these via environment variables:
   OMC_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
   OMC_SLACK_MENTION=<@U1234567890>
 
-To reconfigure: /oh-my-claudecode:configure-notifications slack
-To configure Discord: /oh-my-claudecode:configure-notifications discord
-To configure Telegram: /oh-my-claudecode:configure-notifications telegram
+To reconfigure: /omc:configure-notifications slack
+To configure Discord: /omc:configure-notifications discord
+To configure Telegram: /omc:configure-notifications telegram
 ```
 
 ### Environment Variable Alternative
@@ -766,19 +766,19 @@ Env vars are auto-detected by the notification system without needing `.omc-conf
 
 All notification platforms require activation via CLI flags per session:
 
-- `omb --telegram` — Activates Telegram notifications (sets `OMC_TELEGRAM=1`)
-- `omb --discord` — Activates Discord notifications (sets `OMC_DISCORD=1`)
-- `omb --slack` — Activates Slack notifications (sets `OMC_SLACK=1`)
-- `omb --webhook` — Activates webhook notifications (sets `OMC_WEBHOOK=1`)
-- `omb --openclaw` — Activates OpenClaw gateway integration (sets `OMC_OPENCLAW=1`)
+- `omc --telegram` — Activates Telegram notifications (sets `OMC_TELEGRAM=1`)
+- `omc --discord` — Activates Discord notifications (sets `OMC_DISCORD=1`)
+- `omc --slack` — Activates Slack notifications (sets `OMC_SLACK=1`)
+- `omc --webhook` — Activates webhook notifications (sets `OMC_WEBHOOK=1`)
+- `omc --openclaw` — Activates OpenClaw gateway integration (sets `OMC_OPENCLAW=1`)
 
 Without these flags, configured platforms remain dormant. This prevents unwanted notifications during development while keeping configuration persistent.
 
 **Examples:**
-- `omb --telegram --discord` — Telegram + Discord active
-- `omb --telegram --slack --webhook` — Telegram + Slack + Webhook active
-- `omb --telegram --openclaw` — Telegram + OpenClaw active
-- `omb` — No notifications sent (all platforms require explicit activation)
+- `omc --telegram --discord` — Telegram + Discord active
+- `omc --telegram --slack --webhook` — Telegram + Slack + Webhook active
+- `omc --telegram --openclaw` — Telegram + OpenClaw active
+- `omc` — No notifications sent (all platforms require explicit activation)
 
 ---
 
@@ -828,7 +828,7 @@ RAW FIELDS:
   {{projectPath}}    - Full project directory path
   {{projectName}}    - Project directory basename
   {{reason}}         - Stop/end reason
-  {{activeMode}}     - Active omb mode name
+  {{activeMode}}     - Active omc mode name
   {{question}}       - Question text (ask-user-question only)
   {{agentName}}      - Agent name (agent-call only)
   {{agentType}}      - Agent type (agent-call only)
@@ -935,7 +935,7 @@ Offer to send a test notification with the new template.
 
 ## Related
 
-- `/oh-my-claudecode:configure-openclaw` — Configure OpenClaw gateway integration
+- `/omc:configure-openclaw` — Configure OpenClaw gateway integration
 
 ---
 
@@ -1049,7 +1049,7 @@ If test:
 curl -X POST \
   -H "Content-Type: application/json" \
   ${AUTH_HEADER:+"-H \"$AUTH_HEADER\""} \
-  -d '{"event":"test","instruction":"omb test notification","timestamp":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' \
+  -d '{"event":"test","instruction":"omc test notification","timestamp":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' \
   "$WEBHOOK_URL"
 ```
 

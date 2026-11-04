@@ -1,16 +1,16 @@
 ---
 name: cancel
 aliases: [cancel-ralph]
-description: Cancel any active omb mode (autopilot, ralph, ultragoal, swarm, ultrapilot, pipeline, team) and clean up retired legacy state
+description: Cancel any active omc mode (autopilot, ralph, ultragoal, swarm, ultrapilot, pipeline, team) and clean up retired legacy state
 argument-hint: "[--force|--all]"
 level: 2
 ---
 
 # Cancel Skill
 
-Intelligent cancellation that detects and cancels the active omb mode.
+Intelligent cancellation that detects and cancels the active omc mode.
 
-**The cancel skill is the standard way to complete and exit any omb mode.**
+**The cancel skill is the standard way to complete and exit any omc mode.**
 When the stop hook detects work is complete, it instructs the LLM to invoke
 this skill for proper state cleanup. If cancel fails or is interrupted,
 retry with `--force` flag, or wait for the 2-hour staleness timeout as
@@ -27,13 +27,13 @@ Automatically detects which mode is active and cancels it:
 - **Swarm**: Stops coordinated agent swarm, releases claimed tasks
 - **Ultrapilot**: Stops parallel autopilot workers
 - **Pipeline**: Stops sequential agent pipeline
-- **Team**: Requests shutdown from all teammates through the active team/conversation surface, waits for responses/timeouts, clears omb team state, clears linked ralph if present. Claude Code 2.1.178+ has no TeamDelete.
+- **Team**: Requests shutdown from all teammates through the active team/conversation surface, waits for responses/timeouts, clears omc team state, clears linked ralph if present. Claude Code 2.1.178+ has no TeamDelete.
 - **Team+Ralph (linked)**: Cancels team first (graceful shutdown), then clears ralph state. Cancelling ralph when linked also cancels team first.
 
 ## Usage
 
 ```
-/oh-my-claudecode:cancel
+/omc:cancel
 ```
 
 Or say: "cancelomc", "stopomc"
@@ -103,7 +103,7 @@ fi
 
 ## Auto-Detection
 
-`/oh-my-claudecode:cancel` follows the session-aware state contract:
+`/omc:cancel` follows the session-aware state contract:
 - By default the command inspects the current session via `state_list_active` and `state_get_status`, navigating `.omc/state/sessions/{sessionId}/…` to discover which mode is active.
 - When a session id is provided or already known, that session-scoped path is authoritative. Legacy files in `.omc/state/*.json` are consulted only as a compatibility fallback if the session id is missing or empty.
 - Swarm is a shared SQLite/marker mode (`.omc/state/swarm.db` / `.omc/state/swarm-active.marker`) and is not session-scoped.
@@ -118,7 +118,7 @@ Active modes are still cancelled in dependency order:
 6. Ultrapilot (standalone)
 7. Pipeline (standalone)
 8. Team (Claude Code native)
-9. omb Teams (tmux CLI workers)
+9. omc Teams (tmux CLI workers)
 10. Plan Consensus (standalone)
 11. Self-Improve (standalone — clear state, clean orphaned worktrees, preserve iteration_state for resume, set status: "user_stopped" in the resolved `<self-improve-root>/state/agent-settings.json`; new runs use `.omc/self-improve/topics/<topic-slug>/`, with flat `.omc/self-improve/` retained only for legacy single-track resumes)
 
@@ -127,11 +127,11 @@ Active modes are still cancelled in dependency order:
 Use `--force` or `--all` when you need to erase every session plus legacy artifacts, e.g., to reset the workspace entirely.
 
 ```
-/oh-my-claudecode:cancel --force
+/omc:cancel --force
 ```
 
 ```
-/oh-my-claudecode:cancel --all
+/omc:cancel --all
 ```
 
 Steps under the hood:
@@ -189,7 +189,7 @@ fi
 The skill now relies on the session-aware state contract rather than hard-coded file paths:
 1. Call `state_list_active` to enumerate `.omc/state/sessions/{sessionId}/…` and discover every active session.
 2. For each session id, call `state_get_status` to learn which active mode is running and whether dependent modes exist; treat any Ultrawork record as retired cleanup input only.
-3. If a `session_id` was supplied to `/oh-my-claudecode:cancel`, skip legacy fallback entirely and operate solely within that session path; otherwise, consult legacy files in `.omc/state/*.json` only if the state tools report no active session. Swarm remains a shared SQLite/marker mode outside session scoping.
+3. If a `session_id` was supplied to `/omc:cancel`, skip legacy fallback entirely and operate solely within that session path; otherwise, consult legacy files in `.omc/state/*.json` only if the state tools report no active session. Swarm remains a shared SQLite/marker mode outside session scoping.
 4. Any cancellation logic in this doc mirrors the dependency order discovered via state tools (autopilot → ralph → …).
 
 ### 3A. Force Mode (if --force or --all)
@@ -200,10 +200,10 @@ Use force mode to clear every session plus legacy artifacts via `state_clear`. D
 
 #### If Team Active (Claude Code implicit team)
 
-Teams are detected through omb team state, not removed Claude Code `~/.claude/teams` config directories:
+Teams are detected through omc team state, not removed Claude Code `~/.claude/teams` config directories:
 
 ```bash
-# Check for active omb team state
+# Check for active omc team state
 state_read(mode="team")
 ```
 
@@ -211,8 +211,8 @@ state_read(mode="team")
 
 **Pass 1: Graceful Shutdown**
 ```
-For the active omb team state:
-  1. Read team_name and worker labels from omb state/handoffs/task bookkeeping
+For the active omc team state:
+  1. Read team_name and worker labels from omc state/handoffs/task bookkeeping
   2. For each active teammate:
      a. Ask or notify the named teammate through the active conversation/team messaging surface
      b. Wait up to 15 seconds for shutdown_response
@@ -229,24 +229,24 @@ After graceful pass:
   3. Do not call TeamDelete; Claude Code 2.1.178+ removed per-team native cleanup
 ```
 
-**omb State Cleanup:**
+**omc State Cleanup:**
 ```
   1. Clear team state: state_clear(mode="team")
   2. Check for linked ralph: state_read(mode="ralph") — if linked_team is true:
      a. Clear ralph state: state_clear(mode="ralph")
-  3. Run omb tmux/CLI orphan scan only for legacy `omb team` / `/omc-teams` workers (see below)
+  3. Run omc tmux/CLI orphan scan only for legacy `omc team` / `/omc-teams` workers (see below)
   4. Emit structured cancel report
 ```
 
 **Orphan Detection (Post-Cleanup):**
 
-For legacy omb tmux/CLI worker runs, verify no worker processes remain:
+For legacy omc tmux/CLI worker runs, verify no worker processes remain:
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/cleanup-orphans.mjs" --team-name "{team_name}"
 ```
 
 The orphan scanner:
-1. Checks `ps aux` (Unix) or `tasklist` (Windows) for omb worker processes with `--team-name` matching the cleaned-up team
+1. Checks `ps aux` (Unix) or `tasklist` (Windows) for omc worker processes with `--team-name` matching the cleaned-up team
 2. Sends SIGTERM, waits 5s, sends SIGKILL if still alive
 3. Reports cleanup results as JSON
 
@@ -258,13 +258,13 @@ Team "{team_name}" cancelled:
   - Members signaled: N
   - Responses received: M
   - Unresponsive: K (list names if any)
-  - omb state cleared: yes/no
+  - omc state cleared: yes/no
   - Manual cleanup needed: yes/no
-    Path: omb team state / tmux worker processes, if any
+    Path: omc team state / tmux worker processes, if any
 ```
 
 **Implementation note:** The cancel skill is executed by the LLM, not as a bash script. When you detect an active team:
-1. Read `state_read(mode="team")` to find the active omb team
+1. Read `state_read(mode="team")` to find the active omc team
 2. Identify active named teammates from state, handoffs, or task bookkeeping
 3. For each teammate, ask or notify the named teammate through the active conversation/team messaging surface
 4. Wait briefly for shutdown responses (15s per member timeout)
@@ -309,7 +309,7 @@ Durable `.omc/ultragoal/{brief.md,goals.json,ledger.jsonl}` artifacts are preser
 
 #### No Active Modes
 
-Report: "No active omb modes detected. Use --force to clear all state files anyway."
+Report: "No active omc modes detected. Use --force to clear all state files anyway."
 
 ## Implementation Notes
 
@@ -342,17 +342,17 @@ Mode-specific subsections below describe what extra cleanup each handler perform
 | Pipeline | "Pipeline cancelled. Sequential agent chain stopped." |
 | Team | "Team cancelled. Teammates shut down and cleaned up." |
 | Plan Consensus | "Plan Consensus cancelled. Planning session ended." |
-| Force | "All omb modes cleared. You are free to start fresh." |
-| None | "No active omb modes detected." |
+| Force | "All omc modes cleared. You are free to start fresh." |
+| None | "No active omc modes detected." |
 
 ## What Gets Preserved
 
 | Mode | State Preserved | Resume Command |
 |------|-----------------|----------------|
-| Autopilot | Yes (phase, files, spec, plan, verdicts) | `/oh-my-claudecode:autopilot` |
+| Autopilot | Yes (phase, files, spec, plan, verdicts) | `/omc:autopilot` |
 | Ralph | No | N/A |
 | Ultrawork | No | N/A |
-| Ultragoal | Yes (durable plan/ledger under `.omc/ultragoal/`) | Resume via `/ultragoal` / `omb ultragoal complete-goals` |
+| Ultragoal | Yes (durable plan/ledger under `.omc/ultragoal/`) | Resume via `/ultragoal` / `omc ultragoal complete-goals` |
 | Swarm | No | N/A |
 | Ultrapilot | No | N/A |
 | Pipeline | No | N/A |
@@ -371,7 +371,7 @@ When cancelling modes that may have spawned MCP workers (team bridge daemons), t
 
 1. **Check for active MCP workers**: Look for heartbeat files at `.omc/state/team-bridge/{team}/*.heartbeat.json`
 2. **Send shutdown signals**: Write shutdown signal files for each active worker
-3. **Kill tmux sessions**: Run `tmux kill-session -t omb-team-{team}-{worker}` for each worker
+3. **Kill tmux sessions**: Run `tmux kill-session -t omc-team-{team}-{worker}` for each worker
 4. **Clean up heartbeat files**: Remove all heartbeat files for the team
 5. **Clean up shadow registry**: Remove `.omc/state/team-mcp-workers.json`
 
@@ -381,6 +381,6 @@ When `--force` is used, also clean up:
 ```bash
 rm -rf .omc/state/team-bridge/       # Heartbeat files
 rm -f .omc/state/team-mcp-workers.json  # Shadow registry
-# Kill all omb-team-* tmux sessions
-tmux list-sessions -F '#{session_name}' 2>/dev/null | grep '^omb-team-' | while read s; do tmux kill-session -t "$s" 2>/dev/null; done
+# Kill all omc-team-* tmux sessions
+tmux list-sessions -F '#{session_name}' 2>/dev/null | grep '^omc-team-' | while read s; do tmux kill-session -t "$s" 2>/dev/null; done
 ```

@@ -15,13 +15,13 @@ Otherwise (initial setup wizard), use AskUserQuestion to prompt:
 
 Set `CONFIG_TARGET` to `local` or `global` based on user's choice.
 
-If `CONFIG_TARGET=global` and `~/.claude/CLAUDE.md` already exists without omb markers, ask a second explicit question before running setup:
+If `CONFIG_TARGET=global` and `~/.claude/CLAUDE.md` already exists without omc markers, ask a second explicit question before running setup:
 
 **Question:** "Global setup will change your base Claude config. Which behavior do you want?"
 
 **Options (default first):**
-1. **Overwrite base CLAUDE.md (Recommended)** - plain `claude` and `omb` both use omb globally.
-2. **Keep base CLAUDE.md; use omb only through `omb`** - preserve the user's base file, install omb into `CLAUDE-omc.md`, and let `omb` force-load that companion config at launch.
+1. **Overwrite base CLAUDE.md (Recommended)** - plain `claude` and `omc` both use omc globally.
+2. **Keep base CLAUDE.md; use omc only through `omc`** - preserve the user's base file, install omc into `CLAUDE-omc.md`, and let `omc` force-load that companion config at launch.
 
 Set `GLOBAL_INSTALL_STYLE=overwrite` or `preserve` based on the user's choice. If you did not ask this question, default `GLOBAL_INSTALL_STYLE=overwrite`.
 
@@ -39,17 +39,17 @@ The coordinator exclusively performs all `CLAUDE.md`, `CLAUDE-omc.md`, managed-i
 
 After a successful local or global-overwrite install, verify the target file contains both markers. In global preserve mode, verify `CLAUDE-omc.md` contains both markers and the base `CLAUDE.md` contains exactly one managed import block. Stop and report a coordinator failure; never attempt a shell, downloaded-source, or fallback mutation.
 
-For `local` installs inside a git repository, the script also seeds `.git/info/exclude` with an omb block that re-includes `.omc/`, ignores local `.omc/*` artifacts by default, and preserves `.omc/skills/` for project skills you intend to commit.
+For `local` installs inside a git repository, the script also seeds `.git/info/exclude` with an omc block that re-includes `.omc/`, ignores local `.omc/*` artifacts by default, and preserves `.omc/skills/` for project skills you intend to commit.
 
 **Note**: Setup never downloads or merges CLAUDE.md in the shell. It uses only the handshake-verified canonical source bundled with the complete active plugin root.
 
-**Note**: Preserve mode installs omb into a companion `CLAUDE-omc.md` with a small managed import block, and `omb` launch force-loads that companion config without changing plain `claude`.
+**Note**: Preserve mode installs omc into a companion `CLAUDE-omc.md` with a small managed import block, and `omc` launch force-loads that companion config without changing plain `claude`.
 
 ## Report Success
 
 If `CONFIG_TARGET` is `local`:
 ```
-omb Project Configuration Complete
+omc Project Configuration Complete
 - CLAUDE.md: Updated by the active plugin's coordinator at ./.claude/CLAUDE.md
 - Git excludes: Added local `.omc/*` ignore rules to `.git/info/exclude` (keeps `.omc/skills/` trackable for committed project skills)
 - Backup: Coordinator reported a byte-identical backup only when the previous target required mutation
@@ -63,7 +63,7 @@ Note: This configuration is project-specific and won't affect other projects or 
 
 If `CONFIG_TARGET` is `global`:
 ```
-omb Global Configuration Complete
+omc Global Configuration Complete
 - CLAUDE.md: Updated at ~/.claude/CLAUDE.md, or preserved with explicit preserve mode
 - Companion: May install ~/.claude/CLAUDE-omc.md when preserve mode is chosen
 - Backup: Coordinator reported byte-identical backups only for global files that required mutation

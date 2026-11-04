@@ -14,19 +14,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-// Mirrors src/utils/paths.ts:getConfigDir
+// omc adaptation: user config lives in the CodeBuddy home dir (~/.codebuddy)
+// instead of OMC's ~/.config/claude-omc.
 function getConfigDir() {
-  if (process.platform === 'win32') {
-    return process.env.APPDATA || join(homedir(), 'AppData', 'Roaming');
-  }
-  return process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
+  return join(homedir(), '.codebuddy');
 }
 
-// Mirrors src/config/loader.ts:getConfigPaths
 function getConfigPaths(cwd) {
   return {
-    user: join(getConfigDir(), 'claude-omc', 'config.jsonc'),
-    project: join(cwd || process.cwd(), '.claude', 'omc.jsonc'),
+    user: join(getConfigDir(), 'config.jsonc'),
+    project: join(cwd || process.cwd(), '.codebuddy', 'omc.jsonc'),
   };
 }
 
@@ -128,7 +125,7 @@ const DEPRECATED_ROLE_ALIASES = {
  * precedence over user config, matching loadConfig()'s merge order.
  */
 export function resolveConfiguredAgentModel(subagentType, cwd) {
-  const raw = (typeof subagentType === 'string' ? subagentType : '').replace(/^oh-my-claudecode:/, '');
+  const raw = (typeof subagentType === 'string' ? subagentType : '').replace(/^omc:/, '');
   if (!raw || !/^[a-zA-Z0-9_-]+$/.test(raw)) return null;
   const canonical = DEPRECATED_ROLE_ALIASES[raw] ?? raw;
   const key = AGENT_CONFIG_KEY_MAP[canonical];

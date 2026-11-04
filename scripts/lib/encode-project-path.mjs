@@ -5,8 +5,8 @@
  * helper is the source of truth; this `.mjs` copy exists because the hook
  * runtime loads raw scripts and cannot import the compiled `dist/` util.
  *
- * Claude Code stores a project's transcripts under
- * `~/.claude/projects/<encoded>`. For normal-length project paths, this helper
+ * CodeBuddy stores a project's transcripts under
+ * `~/.codebuddy/projects/<encoded>` (same convention as Claude Code). For normal-length project paths, this helper
  * mirrors Claude Code's character replacement step: every character that is not
  * an ASCII letter or digit is replaced by `-` (path separators, dots, the
  * Windows drive colon, and also underscores, spaces, and non-ASCII characters).

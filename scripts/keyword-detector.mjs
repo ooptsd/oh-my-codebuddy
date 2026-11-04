@@ -201,15 +201,15 @@ function extractPrompt(input) {
 }
 
 function isExplicitRalplanSlashInvocation(prompt) {
-  return /^\s*\/(?:oh-my-claudecode:)?ralplan(?:\s|$)/i.test(prompt);
+  return /^\s*\/(?:omc:)?ralplan(?:\s|$)/i.test(prompt);
 }
 
 function isExplicitAskSlashInvocation(prompt) {
-  return /^\s*\/(?:oh-my-claudecode:)?ask\s+(?:claude|codex|gemini|antigravity|agy|grok|cursor)\b/i.test(prompt);
+  return /^\s*\/(?:omc:)?ask\s+(?:claude|codex|gemini|antigravity|agy|grok|cursor)\b/i.test(prompt);
 }
 
 function isRetiredSlashInvocation(prompt) {
-  return /^\s*\/(?:omc:|oh-my-claudecode:)?(?:ultrawork|ulw|uw|울트라워크|ウルトラワーク|ccg|claude-codex-gemini|씨씨지|シーシージー)(?=\s|$|[?!.,;:])/i.test(prompt);
+  return /^\s*\/(?:omc:)?(?:ultrawork|ulw|uw|울트라워크|ウルトラワーク|ccg|claude-codex-gemini|씨씨지|シーシージー)(?=\s|$|[?!.,;:])/i.test(prompt);
 }
 
 // Sanitize text to prevent false positives from code blocks, XML tags, URLs, and file paths
@@ -434,7 +434,7 @@ const QUESTION_FOLLOWUP_PATTERNS = [
 // recognized block header. They must be stripped only in that context —
 // never standalone — because a user might legitimately start a prompt with
 // "Task: …" or similar (Codex automated review P1/P2 on #2795).
-const ECHO_CONTINUATION = '(?:\\r?\\n[ \\t]*(?:Task:\\s|When FULLY complete \\(after Architect verification\\)|run\\s+\\/oh-my-claudecode:cancel).*)*';
+const ECHO_CONTINUATION = '(?:\\r?\\n[ \\t]*(?:Task:\\s|When FULLY complete \\(after Architect verification\\)|run\\s+\\/omc:cancel).*)*';
 
 // NOTE: each pattern is a SINGLE LOGICAL BLOCK: the block header line +
 // zero-or-more continuation lines that hooks emit right after it. The whole
@@ -471,7 +471,7 @@ const SYSTEM_ECHO_BLOCK_PATTERNS = [
 // All patterns use `i` because hasActionableKeyword sees a lowercased prompt.
 const SYSTEM_ECHO_SIGNATURES = [
   /\bWhen FULLY complete \(after Architect verification\)\b/i,
-  /\brun\s+\/oh-my-claudecode:cancel\b/i,
+  /\brun\s+\/omc:cancel\b/i,
   /\[RALPH LOOP\s*-\s*ITERATION\b/i,
 ];
 
@@ -1249,7 +1249,7 @@ function linkRalphTeam(directory, sessionId, omcRoot) {
 
 /**
  * Check if the team feature is enabled in Claude Code settings.
- * Reads settings.json from [$CLAUDE_CONFIG_DIR|~/.claude] and checks for
+ * Reads settings.json from [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy] and checks for
  * CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS env var.
  * @returns {boolean} true if team feature is enabled
  */
@@ -1284,7 +1284,7 @@ function isTeamEnabled() {
  * (`hasEnabledOmcPlugin` in src/installer/index.ts):
  *
  * 1. INSTALLED: the machine-readable plugin registry
- *    `[$CLAUDE_CONFIG_DIR|~/.claude]/plugins/installed_plugins.json` contains
+ *    `[CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/plugins/installed_plugins.json` contains
  *    the official id `ralph-loop@claude-plugins-official` with a real
  *    `commands/ralph-loop.md` payload under its installPath. The registry's
  *    own `enabled` flag is deliberately NOT consulted: it does not
@@ -1293,7 +1293,7 @@ function isTeamEnabled() {
  * 2. ENABLED: the official id is enabled by the effective Claude Code settings
  *    for the active project, resolved highest-precedence-first across
  *    `<project>/.claude/settings.local.json`, `<project>/.claude/settings.json`
- *    and `[$CLAUDE_CONFIG_DIR|~/.claude]/settings.json`. Within a file the
+ *    and `[CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`. Within a file the
  *    canonical `enabledPlugins` field decides (legacy `plugins` field accepted
  *    for backward compatibility), as an array of plugin ids or a map whose
  *    value is not `false`. Missing or malformed settings are treated as not
@@ -1430,10 +1430,8 @@ function findOfficialRalphLoopNotice(directory) {
 // Read the OMC JSONC config the way src/config/loader.ts does, inlined so the
 // standalone hook stays build-independent (mirrors scripts/lib/agent-model-config.mjs).
 function getOmcUserConfigDir() {
-  if (process.platform === 'win32') {
-    return process.env.APPDATA || join(homedir(), 'AppData', 'Roaming');
-  }
-  return process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
+  // omc adaptation: user config lives in ~/.codebuddy (CodeBuddy home dir)
+  return join(homedir(), '.codebuddy');
 }
 
 // Mirrors src/utils/jsonc.ts:stripJsoncComments (strips comments AND trailing commas)
@@ -1515,8 +1513,8 @@ function loadJsoncConfig(path) {
 
 /**
  * Skills the user opted out of via `keywordDetector.disabled` in the OMC
- * config: project `.claude/omc.jsonc` first, then user
- * `~/.config/claude-omc/config.jsonc`, the same JSONC surface
+ * config: project `.codebuddy/omc.jsonc` first, then user
+ * `~/.codebuddy/config.jsonc`, the same JSONC surface
  * src/config/loader.ts reads. Empty when unset, so default behavior is
  * unchanged. `cancel` is never disableable: it is the emergency stop.
  * @param {string} directory project working directory
@@ -1524,8 +1522,8 @@ function loadJsoncConfig(path) {
  */
 function loadDisabledKeywords(directory) {
   const configPaths = [
-    join(directory || process.cwd(), '.claude', 'omc.jsonc'),
-    join(getOmcUserConfigDir(), 'claude-omc', 'config.jsonc'),
+    join(directory || process.cwd(), '.codebuddy', 'omc.jsonc'),
+    join(getOmcUserConfigDir(), 'config.jsonc'),
   ];
   for (const configPath of configPaths) {
     const config = loadJsoncConfig(configPath);
@@ -1553,7 +1551,7 @@ Arguments: ${args}` : '';
   return `[MAGIC KEYWORD: ${skillName.toUpperCase()}]
 
 Skill routing detected: ${skillName}
-Preferred invocation: /oh-my-claudecode:${skillName}${args ? ` ${args}` : ''}
+Preferred invocation: /omc:${skillName}${args ? ` ${args}` : ''}
 ${pathStatus}${argsSection}${ralphLoopNotice ? `
 
 ${ralphLoopNotice}` : ''}
@@ -1580,7 +1578,7 @@ function createMultiSkillInvocation(skills, originalPrompt, directory = '') {
       ? `Read fallback: ${skillPath}`
       : `Read fallback: locate skills/${s.name}/SKILL.md in the active oh-my-claudecode plugin/install`;
     return `### Skill ${i + 1}: ${s.name.toUpperCase()}
-Preferred invocation: /oh-my-claudecode:${s.name}${argsText}
+Preferred invocation: /omc:${s.name}${argsText}
 ${pathStatus}`;
   }).join('\n\n');
   // Multi-skill routing (e.g. `/ralph deep-interview`) must carry the same

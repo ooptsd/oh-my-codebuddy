@@ -134,7 +134,7 @@ function normalizeToCcAlias(model) {
 function readAgentDefinitionModel(subagentType) {
   // Guard: subagent_type must be a string — non-string payloads would throw on .replace()
   // and the catch block would silently return {continue:true}, bypassing enforcement.
-  const agentType = (typeof subagentType === 'string' ? subagentType : '').replace(/^oh-my-claudecode:/, '');
+  const agentType = (typeof subagentType === 'string' ? subagentType : '').replace(/^omc:/, '');
   if (!agentType) return null;
   // Reject path traversal: agent names are simple identifiers; no path separators allowed.
   if (!/^[a-zA-Z0-9_-]+$/.test(agentType)) return null;
@@ -169,7 +169,7 @@ function readAgentDefinitionModel(subagentType) {
 // Skill vs agent namespace guard (issue #3667)
 //
 // Task/Agent subagent_type identifiers and bundled skills share the same
-// `oh-my-claudecode:` namespace, so a caller can hand a skill name to
+// `omc:` namespace, so a caller can hand a skill name to
 // Task(subagent_type=...) and receive only Claude Code's generic native
 // "Agent type not found". OMC owns both registries (agents/*.md and
 // skills/*/SKILL.md), so the PreToolUse hook denies the call BEFORE the
@@ -177,7 +177,7 @@ function readAgentDefinitionModel(subagentType) {
 // identifier, and forbids closest-match substitution.
 // ---------------------------------------------------------------------------
 
-const SKILL_AGENT_NAMESPACE_PREFIXES = ['oh-my-claudecode:', 'omc:'];
+const SKILL_AGENT_NAMESPACE_PREFIXES = ['omc:'];
 const SKILL_IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
 function splitAgentNamespace(subagentType) {
@@ -204,7 +204,7 @@ function getPluginSkillsDirs() {
 
 /**
  * Whether an agent definition resolves for the given identifier.
- * Namespaced identifiers (oh-my-claudecode:X / omc:X) resolve only against
+ * Namespaced identifiers (omc:X / omc:X) resolve only against
  * plugin agents; bare identifiers resolve through the full native chain
  * (plugin, project .claude/agents, user config agents). A real agent always
  * wins over a bundled skill with the same name (collision rule).
@@ -342,8 +342,8 @@ function buildCanonicalSkillRegistry() {
  * agents are not visible to file-based plugin/project/user agent discovery,
  * yet `skills/plan` exists (registering `omc-plan`). Bare names therefore
  * never consult the directory shortcut; explicitly namespaced identifiers
- * (`oh-my-claudecode:` / `omc:`) are pinned to the OMC plugin namespace and
- * keep the full canonical + shortcut resolution (e.g. `oh-my-claudecode:plan`
+ * (`omc:` / `omc:`) are pinned to the OMC plugin namespace and
+ * keep the full canonical + shortcut resolution (e.g. `omc:plan`
  * -> `omc-plan`).
  */
 function resolveBundledSkill(subagentType, directory) {
@@ -402,10 +402,10 @@ function evaluateSkillAsAgentCall(toolName, toolInput, directory) {
   const { name } = splitAgentNamespace(subagentType);
   // Always suggest the canonical plugin-namespaced identifier. A bare skill
   // name can resolve to a different project/user skill or fail: bundled
-  // skills are exposed under the `oh-my-claudecode:` namespace (issue #3667
+  // skills are exposed under the `omc:` namespace (issue #3667
   // review), so the recovery must be unambiguous regardless of the caller's
   // input namespace form.
-  const skillIdentifier = `oh-my-claudecode:${skill.primary}`;
+  const skillIdentifier = `omc:${skill.primary}`;
   const isPrimaryMatch = name.toLowerCase() === skill.primary.toLowerCase();
   const queriedName = isPrimaryMatch
     ? `"${subagentType}"`
@@ -712,7 +712,7 @@ function resolveOmcRoot(startDir) {
   // 1) OMC_STATE_DIR: full project-id derivation is TS-only; warn and fall through.
   if (process.env.OMC_STATE_DIR) {
     process.stderr.write(
-      '[omb] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
+      '[omc] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
       'resolution. Use resolveOmcStateRoot() for full OMC_STATE_DIR support.\n'
     );
   }
@@ -915,7 +915,7 @@ async function getTodoStatus(directory) {
   }
 
   // NOTE: We intentionally do NOT scan the global
-  // [$CLAUDE_CONFIG_DIR|~/.claude]/todos/ directory.
+  // [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/todos/ directory.
   // That directory accumulates todo files from ALL past sessions across all
   // projects, causing phantom task counts in fresh sessions (see issue #354).
 
@@ -1504,10 +1504,10 @@ function getSkillProtectionLevel(skillName, rawSkillName) {
   // Non-prefixed skills are project custom skills or other plugins — no protection.
   // See: https://github.com/Yeachan-Heo/oh-my-claudecode/issues/1581
   if (rawSkillName != null && typeof rawSkillName === 'string' &&
-      !rawSkillName.toLowerCase().startsWith('oh-my-claudecode:')) {
+      !rawSkillName.toLowerCase().startsWith('omc:')) {
     return 'none';
   }
-  const normalized = (skillName || '').toLowerCase().replace(/^oh-my-claudecode:/, '');
+  const normalized = (skillName || '').toLowerCase().replace(/^omc:/, '');
   return SKILL_PROTECTION_MAP[normalized] || 'none';
 }
 
@@ -1548,7 +1548,7 @@ function writeSkillActiveState(stateDir, skillName, sessionId, rawSkillName) {
 
   const config = SKILL_PROTECTION_CONFIGS[protection];
   const now = new Date().toISOString();
-  const normalized = (skillName || '').toLowerCase().replace(/^oh-my-claudecode:/, '');
+  const normalized = (skillName || '').toLowerCase().replace(/^omc:/, '');
 
   const safeSessionId = sessionId && SESSION_ID_PATTERN.test(sessionId) ? sessionId : '';
   const targetDir = safeSessionId
@@ -1823,7 +1823,7 @@ async function main() {
           if (agentDefModel && !isSubagentSafeModelId(agentDefModel) && !isTierAlias(agentDefModel)
               && hasSafeRouting) {
             const guidance = `Add model="${defTierAlias}" to this ${toolName} call — tier aliases resolve to configured provider models (${resolvedModel}).`;
-            const agentType = (toolInput.subagent_type).replace(/^oh-my-claudecode:/, '');
+            const agentType = (toolInput.subagent_type).replace(/^omc:/, '');
             console.log(JSON.stringify({
               continue: true,
               hookSpecificOutput: {

@@ -19,7 +19,7 @@ Autoresearch is a stateful skill for bounded, evaluator-driven iterative improve
 <Do_Not_Use_When>
 - You need evaluator generation at runtime — use `/deep-interview --autoresearch` first
 - You need multiple missions orchestrated together — v1 forbids that
-- You want the deprecated `omb autoresearch` CLI flow — it is no longer authoritative
+- You want the deprecated `omc autoresearch` CLI flow — it is no longer authoritative
 </Do_Not_Use_When>
 
 <Contract>
@@ -83,7 +83,7 @@ If cron is used:
 </Cron_Integration>
 
 <Execution_Policy>
-- Do not hand execution back to `omb autoresearch`
+- Do not hand execution back to `omc autoresearch`
 - Do not create multi-mission orchestration
 - Prefer reusing `src/autoresearch/*` runtime/schema helpers where they already match the stricter contract
 - Keep logs useful to humans, not only machines

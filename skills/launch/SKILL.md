@@ -15,7 +15,7 @@ The verifiability test, applied to every step: *if this is done wrong, can the s
 Launch assumes the shipyard exists — and refuses to run if it does not. The yard gate is the first action of every invocation, before document-language resolution and before reading any supplied spec:
 
 - **Run the full drydock `--check` audit** — missing surfaces, a missing or invalid `CONTEXT.md` frontmatter `documentLanguage`, dead paths, glossary terms unused in code, standards never referenced. This is the single criterion: Launch performs no separate facility inventory of its own.
-- **Actionable / high-confidence findings hard-block the run:** list every such finding verbatim, point at `/oh-my-claudecode:drydock`, state that the run never started and no artifacts were produced, and stop. Without an explicit override, treat any finding as blocking.
+- **Actionable / high-confidence findings hard-block the run:** list every such finding verbatim, point at `/omc:drydock`, state that the run never started and no artifacts were produced, and stop. Without an explicit override, treat any finding as blocking.
 - **Narrow override (explicit intent only):** low-confidence findings, findings explicitly classified as false positives in the drydock report, or a scratch/throwaway repository explicitly declared by the user may be overridden only with deliberate, per-invocation user intent — the override must name the finding(s) or the throwaway scope and must never silently swallow a high-confidence actionable finding. No general bypass flag.
 - **Current audit limitation:** today `--check` is a skill-instruction checklist without a machine-readable finding/severity contract or executable — severity classification relies on the drydock report's wording until a structured contract exists. A machine-readable finding/severity exit contract is the intended follow-up; the gate wording stays honest about what it can and cannot rely on mechanically.
 - **A clean audit (or an explicitly overridden low-confidence/false-positive/scratch scope) admits the run.** Every paper-trail slot (`CONTEXT.md`, `docs/adr/`, `docs/business/`) and facility surface already exists at that point; Launch fills the paper trail as decisions settle but never creates the slots.
@@ -35,12 +35,12 @@ Between checkpoints the pipeline never idles: agents keep working every frontier
 
 ## Lifecycle posture
 
-Launch is a **stateless composition over omb's existing lifecycle** — it owns no runtime state machine:
+Launch is a **stateless composition over omc's existing lifecycle** — it owns no runtime state machine:
 
 - Team owns task statuses, transitions, cancellation, and runtime cleanup; Launch never mutates them outside Team's contract.
 - The canonical `plan` → `execute` → `review` → `verify` surfaces own their existing lifecycle behavior. Launch-authored artifacts are limited to `.omc/specs/<feature-slug>/`, `CONTEXT.md`, `docs/adr/`, and `docs/business/` — plus, only after C5 approval, the sediment slots named in the Phase 5 table.
 - Launch has no automatic resume. After interruption, re-read the artifacts and current Team status, but continue only through a new explicit Launch invocation after the owning Team lifecycle has reached a supported terminal/cleanup boundary. Never infer a human approval or replay an `in_progress` task.
-- Foggy efforts are the navigator's jurisdiction: when the fog gate routes to `/oh-my-claudecode:ask-navigator`, the run never started — no artifacts, no partial state. The navigator's map is the only carrier across sessions; launch resumes only from the mission brief it hands back.
+- Foggy efforts are the navigator's jurisdiction: when the fog gate routes to `/omc:ask-navigator`, the run never started — no artifacts, no partial state. The navigator's map is the only carrier across sessions; launch resumes only from the mission brief it hands back.
 - Launch adds no approval receipt, revision counter, replay log, cancellation path, rollback mechanism, or cleanup lifecycle of its own.
 
 Any durability claim in this skill is a claim about the files on disk, not about a hidden runtime.
@@ -52,8 +52,8 @@ A run reaches this phase only through a clean yard gate. Before reading a suppli
 Localize prose and human-facing labels/localizable scalar values only. Paths, slash commands, flags, code fences, placeholders, frontmatter keys and machine-semantic values, YAML/JSON keys, lifecycle tokens (`plan`, `execute`, `review`, `verify`), status enums (`pending`, `in_progress`, `completed`, `failed`, `ready-for-agent`), IDs, ticket `blockedBy`, public Team `blocked_by`, and all parser/control tokens remain byte-for-byte stable. Reference language companions are mutually exclusive: emit exactly one selected rendering, never bilingual duplicate headings or labels.
 
 - Brief self-check before anything else: does the brief name an objective, a scope boundary, and non-goals? If two or more are missing, say so and ask for one sharpening pass — running the pipeline on a soft brief converts ambiguity into confident-looking output.
-- **Fog gate**: after the sharpening pass, apply the navigator's fog test — **Q1**: can the destination be stated in one sentence (the spec, decision, or change this effort is finding its way to)? **Q2**: can the first three decisions be stated precisely right now, even though none can be answered yet? Either answer no → the run never starts: state that plainly, note that no artifacts were produced, recommend `/oh-my-claudecode:ask-navigator` (the shipyard's navigator charts fog as a map of decision tickets and hands back a mission brief), and stop. Hand over the residual questions and any vocabulary already settled, so the navigator's W1 does not re-ask them.
-- **Map check**: before reading a supplied spec or entering Phase 1, look for an open `navigator:map` (tracker label, or under `.omc/wayfinder/`). One exists and this invocation supplies no new brief → recommend `/oh-my-claudecode:ask-navigator` to work the next decision on that map, and stop. One exists and a new brief is supplied → ask one question — continue the open map, or start a new effort — before proceeding.
+- **Fog gate**: after the sharpening pass, apply the navigator's fog test — **Q1**: can the destination be stated in one sentence (the spec, decision, or change this effort is finding its way to)? **Q2**: can the first three decisions be stated precisely right now, even though none can be answered yet? Either answer no → the run never starts: state that plainly, note that no artifacts were produced, recommend `/omc:ask-navigator` (the shipyard's navigator charts fog as a map of decision tickets and hands back a mission brief), and stop. Hand over the residual questions and any vocabulary already settled, so the navigator's W1 does not re-ask them.
+- **Map check**: before reading a supplied spec or entering Phase 1, look for an open `navigator:map` (tracker label, or under `.omc/wayfinder/`). One exists and this invocation supplies no new brief → recommend `/omc:ask-navigator` to work the next decision on that map, and stop. One exists and a new brief is supplied → ask one question — continue the open map, or start a new effort — before proceeding.
 - Spec path supplied → read it, jump to Phase 2.
 - Mission brief → Phase 1.
 - Single-point fix → hand off to execute, exit.
@@ -67,11 +67,11 @@ Paper trail, written the moment each item settles:
 - decisions passing the ADR test (hard to reverse, surprising without context, real tradeoff) → `docs/adr/NNNN-<slug>.md`
 - business rules and background discovered during convergence → `docs/business/` (one article per business question, opening paragraph states why it matters)
 
-Non-convergence here is normal work, not a failure: if the frontier will not empty, present the residual questions ranked — this is C2's input, not an error. If the residual questions themselves cannot be stated precisely (fog test Q2 fails), the destination itself is unsettled and that is beyond C2's authority: stop, note what already settled (vocabulary in `CONTEXT.md`, answered questions), recommend `/oh-my-claudecode:ask-navigator`, and exit — the pipeline never invents a destination.
+Non-convergence here is normal work, not a failure: if the frontier will not empty, present the residual questions ranked — this is C2's input, not an error. If the residual questions themselves cannot be stated precisely (fog test Q2 fails), the destination itself is unsettled and that is beyond C2's authority: stop, note what already settled (vocabulary in `CONTEXT.md`, answered questions), recommend `/omc:ask-navigator`, and exit — the pipeline never invents a destination.
 
 **Loft detour.** A residual question that is precise but cannot settle in prose — it needs to be seen or clicked, not described (how the UI should look, whether a state model feels right) — is answered with an artifact, not more questions: call the Skill tool with "loft", let the captain react, and fold that reaction back into the interview. The lofted artifact is C2's input; the captain signs what they saw, not what they were told.
 
-**Harbor briefs.** A mission brief handed over by `/oh-my-claudecode:harbor` carries signed decisions with links and applicable conditions: consume them as already-made — do not re-ask unchanged business goals. If the code has moved since the evidence was gathered (new head, changed base), re-verify the affected technical evidence; new implementation scope beyond the signed brief still gets its own approval.
+**Harbor briefs.** A mission brief handed over by `/omc:harbor` carries signed decisions with links and applicable conditions: consume them as already-made — do not re-ask unchanged business goals. If the code has moved since the evidence was gathered (new head, changed base), re-verify the affected technical evidence; new implementation scope beyond the signed brief still gets its own approval.
 
 ## Phase 2 — Spec synthesis (agent drafts → C2 approves)
 
@@ -107,7 +107,7 @@ Integration-wiring rule: every vertical slice includes its own wiring and a smok
 
 The frontier is every ticket whose blockers are all complete.
 
-**Parallel (default, 2+ tickets).** Hand tickets to team: each ticket becomes a team task, `blockedBy` edges carry over — team's claim mechanics pick only frontier tasks. Spawn N workers. Each worker implements with the tdd discipline at the seams approved in C2, applying `/oh-my-claudecode:minimal-code-discipline` as the writing-time discipline (it stays opt-in); a ticket closes only after code-review passes on the diff, declared by the reviewer — the implementer never self-approves.
+**Parallel (default, 2+ tickets).** Hand tickets to team: each ticket becomes a team task, `blockedBy` edges carry over — team's claim mechanics pick only frontier tasks. Spawn N workers. Each worker implements with the tdd discipline at the seams approved in C2, applying `/omc:minimal-code-discipline` as the writing-time discipline (it stays opt-in); a ticket closes only after code-review passes on the diff, declared by the reviewer — the implementer never self-approves.
 
 **Serial (single ticket, or `--serial`).** Delegate one ticket at a time to an executor subagent; same review gate.
 
@@ -128,7 +128,7 @@ On a later explicit Launch invocation, first require the owning Team lifecycle t
 
 - all tickets terminal with evidence → run verify across the whole change
 - reconcile the paper trail: CONTEXT.md accurate, ADRs complete, spec updated where implementation taught it something
-- yard re-check: re-run the drydock `--check` audit; any new findings since entry are reported as **yard drift**, with a pointer to `/oh-my-claudecode:drydock`
+- yard re-check: re-run the drydock `--check` audit; any new findings since entry are reported as **yard drift**, with a pointer to `/omc:drydock`
 - **sediment pass — answer: what did this ship teach the yard?** Sweep the source checklist first (three-strike failure root causes, C4 answers, review rejections, verify findings, and any map resolutions or deferred-sediment lines from a source map this run followed), then answer. Propose every lesson as `lesson → slot → intended change` against the slot table below, or decline it explicitly with a reason; a ship with nothing to teach must say so verbatim as "no new lessons". This requirement blocks non-answers, never empty answers — inventing lessons to have one is the same violation as skipping the question. The lesson list rides in the completion report next to the Open Assumptions, each line individually vetoable; approved lessons are written to their slots only after acceptance, and the report records each landing's file location. Before writing any lesson into a slot, call the Skill tool with `agent-doc-discipline` and apply its rules; the sediment pass is complete only after the skill's verification checklist passes.
 
   | Lesson kind | Slot |

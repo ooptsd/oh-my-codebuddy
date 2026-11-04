@@ -21,7 +21,7 @@ If found, this is an upgrade from 2.x. Set `IS_UPGRADE=true`.
 ### For New Users (IS_UPGRADE is not true):
 
 ```
-omb Setup Complete!
+omc Setup Complete!
 
 You don't need to learn any commands. I now have intelligent behaviors that activate automatically.
 
@@ -42,29 +42,29 @@ Just include these words naturally in your request:
 | tdd | TDD mode | "tdd the parser" |
 | deepsearch | Codebase search | "deepsearch where config is loaded" |
 | ultrathink | Deep reasoning | "ultrathink this design" |
-| cancelomc | Stop active omb modes | "cancelomc" |
+| cancelomc | Stop active omc modes | "cancelomc" |
 
 CANONICAL WORKFLOWS (Tier-0):
-omb-plan -> execute -> omb-review -> verify, invoked as /oh-my-claudecode:omc-plan and /oh-my-claudecode:omc-review.
+omc-plan -> execute -> omc-review -> verify, invoked as /omc:omc-plan and /omc:omc-review.
 /deep-interview and /ralplan are independent planning workflows.
 /research and /team are internal lanes; /autopilot, /autoresearch, /ralph, /ultragoal stay directly invocable.
 
 TEAMS:
 Spawn coordinated agents with shared task lists and real-time messaging:
-- /oh-my-claudecode:team 3:executor "fix all TypeScript errors"
-- /oh-my-claudecode:team 5:debugger "fix build errors in src/"
+- /omc:team 3:executor "fix all TypeScript errors"
+- /omc:team 5:debugger "fix build errors in src/"
 Teams use Claude Code's implicit agent team (spawn teammates directly with distinct `name` values; no TeamCreate/TeamDelete in Claude Code 2.1.178+). Team orchestration is explicit via /team — there is no bare "team" keyword.
 
 MCP SERVERS:
-Register extra MCP servers (web search, GitHub, etc.) through Claude Code's native MCP config (`claude mcp add ...` or the path selected by `CLAUDE_MCP_CONFIG_PATH`; by default, the sibling `.claude.json` next to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`). omb's bundled MCP server is already registered via the plugin's .mcp.json.
+Register extra MCP servers (web search, GitHub, etc.) through Claude Code's native MCP config (`claude mcp add ...` or the path selected by `CLAUDE_MCP_CONFIG_PATH`; by default, the sibling `.claude.json` next to `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`). omc's bundled MCP server is already registered via the plugin's .mcp.json.
 
 HUD STATUSLINE:
-The status bar now shows omb state. Restart Claude Code to see it.
+The status bar now shows omc state. Restart Claude Code to see it.
 
-omb CLI HELPERS (if installed):
-- omb hud         - Render the current HUD statusline
-- omb teleport    - Create an isolated git worktree
-- omb team status - Inspect a running team job
+omc CLI HELPERS (if installed):
+- omc hud         - Render the current HUD statusline
+- omc teleport    - Create an isolated git worktree
+- omc team status - Inspect a running team job
 - Session summaries are written to `.omc/sessions/*.json`
 
 That's it! Just use Claude Code normally.
@@ -78,13 +78,13 @@ The following commands and keywords were removed in 5.0.0 and are not aliased:
 /learner, /writer-memory, /local-build-reminder.
 Use the replacement instead — see the migration table in docs/MIGRATION.md
 (commonly /execute for ultrawork, /verify for ultraqa, /team for omc-teams,
-/omb-setup for setup, and Claude Code's native MCP config for mcp-setup;
+/omc-setup for setup, and Claude Code's native MCP config for mcp-setup;
 /wiki for omc-reference).
 
 ### For Users Upgrading from 2.x (IS_UPGRADE is true):
 
 ```
-omb Setup Complete! (Upgraded from 2.x)
+omc Setup Complete! (Upgraded from 2.x)
 
 IMPORTANT: Some legacy 2.x and 3.x commands were retired in 5.0.0 and are
 not aliased. Use the replacement workflows listed in the migration table.
@@ -106,16 +106,16 @@ MAGIC KEYWORDS (power-user shortcuts):
 
 TEAMS (NEW!):
 Spawn coordinated agents with shared task lists and real-time messaging:
-- /oh-my-claudecode:team 3:executor "fix all TypeScript errors"
+- /omc:team 3:executor "fix all TypeScript errors"
 - Uses Claude Code's implicit agent team (spawn teammates directly with distinct `name` values; no TeamCreate/TeamDelete in Claude Code 2.1.178+)
 
 HUD STATUSLINE:
-The status bar now shows omb state. Restart Claude Code to see it.
+The status bar now shows omc state. Restart Claude Code to see it.
 
-omb CLI HELPERS (if installed):
-- omb hud         - Render the current HUD statusline
-- omb teleport    - Create an isolated git worktree
-- omb team status - Inspect a running team job
+omc CLI HELPERS (if installed):
+- omc hud         - Render the current HUD statusline
+- omc teleport    - Create an isolated git worktree
+- omc team status - Inspect a running team job
 - Session summaries are written to `.omc/sessions/*.json`
 
 Your configuration is preserved; retired commands are not recreated.
@@ -123,7 +123,7 @@ Your configuration is preserved; retired commands are not recreated.
 
 ## Optional Rule Templates
 
-omb includes rule templates you can copy to your project's `.claude/rules/` directory for automatic context injection:
+omc includes rule templates you can copy to your project's `.claude/rules/` directory for automatic context injection:
 
 | Template | Purpose |
 |----------|---------|
@@ -192,10 +192,10 @@ echo ""
 
 ## Mark Completion
 
-Get the current omb version and mark setup complete:
+Get the current omc version and mark setup complete:
 
 ```bash
-# Get current omb version from CLAUDE.md
+# Get current omc version from CLAUDE.md
 OMC_VERSION=""
 CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 case "$CONFIG_DIR" in
@@ -209,7 +209,7 @@ elif [ -f "$CONFIG_DIR/CLAUDE.md" ]; then
   OMC_VERSION=$(grep -m1 'OMC:VERSION:' "$CONFIG_DIR/CLAUDE.md" 2>/dev/null | sed -E 's/.*OMC:VERSION:([^ ]+).*/\1/' || true)
 fi
 if [ -z "$OMC_VERSION" ]; then
-  OMC_VERSION=$(omb --version 2>/dev/null | head -1 || true)
+  OMC_VERSION=$(omc --version 2>/dev/null | head -1 || true)
 fi
 if [ -z "$OMC_VERSION" ]; then
   OMC_VERSION="unknown"

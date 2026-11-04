@@ -13,7 +13,7 @@ The four pillars and where they physically live:
 
 | Pillar | Surfaces |
 |---|---|
-| Context (shared background) | `CONTEXT.md` (glossary) + `docs/business/` + `docs/adr/` + omb wiki |
+| Context (shared background) | `CONTEXT.md` (glossary) + `docs/business/` + `docs/adr/` + omc wiki |
 | Rules (boundaries) | `CLAUDE.md` (thin entry: conventions, principles, index) + `docs/standards/` |
 | Tools (composable capability) | `.omc/skills/` + `.mcp.json` + `scripts/` |
 | Standards (the classification society) | `design-system/` (tokens, components, patterns) + `docs/standards/` |
@@ -39,7 +39,7 @@ Inventory what exists before writing anything:
 
 - `CLAUDE.md` present? `AGENTS.md` present? (rule: if either exists, extend it in place; create the missing one as a one-line pointer to the other; **never create both fresh**)
 - `CONTEXT.md`, `docs/adr/`, `docs/standards/`, `docs/business/`, `design-system/`, `.omc/skills/`, `.mcp.json`, `scripts/`, `.gitattributes` — which exist, which are missing?
-- omb installed? — only worth checking when running inside an omb session; outside one, skip this check silently (the harness works with or without omb)
+- omc installed? — only worth checking when running inside an omc session; outside one, skip this check silently (the harness works with or without omc)
 
 Report the map first, then act.
 
@@ -58,7 +58,7 @@ The document language for the generated harness files is a file-backed decision,
   "scriptVariants": ["zh-Hans", "zh-Hant"],
   "seedCompanionPrefixes": { "en": "en", "zh-Hans": "zh-Hans", "zh-Hant": "zh-Hant" },
   "stableTokens": [
-    "CONTEXT.md", "documentLanguage", "/oh-my-claudecode:launch", "--serial",
+    "CONTEXT.md", "documentLanguage", "/omc:launch", "--serial",
     "plan", "execute", "review", "verify", "blockedBy", "blocked_by",
     "pending", "in_progress", "completed", "failed", "ready-for-agent",
     "id", "name", "description", "triggers", "mcpServers", "```",
@@ -131,7 +131,7 @@ Seed A — CLAUDE.md, en (thin entry; extend in place if the file exists):
 - Glossary: CONTEXT.md ｜ Business knowledge: docs/business/ ｜ Decision context: docs/adr/
 
 ## Agent guide
-- Delivery follows the canonical workflow plan → execute → review → verify; `/oh-my-claudecode:launch` is an optional governed delivery pipeline (opt-in, invoke explicitly)
+- Delivery follows the canonical workflow plan → execute → review → verify; `/omc:launch` is an optional governed delivery pipeline (opt-in, invoke explicitly)
 - On term conflicts CONTEXT.md wins; new terms are recorded the moment they settle
 - Reusable capability goes to .omc/skills/; UI patterns go to design-system/
 ```
@@ -161,7 +161,7 @@ Seed A — zh-Hans companion (结构一致，二选一按文档语言渲染):
 - 术语: CONTEXT.md ｜ 业务知识: docs/business/ ｜ 决策背景: docs/adr/
 
 ## Agent 指南
-- 交付遵循 canonical 工作流 plan → execute → review → verify；`/oh-my-claudecode:launch` 是可选的受治理交付管道（opt-in，需要时显式调用）
+- 交付遵循 canonical 工作流 plan → execute → review → verify；`/omc:launch` 是可选的受治理交付管道（opt-in，需要时显式调用）
 - 术语冲突以 CONTEXT.md 为准；新术语当场补录
 - 可复用能力沉淀到 .omc/skills/；UI 模式沉淀到 design-system/
 ```
@@ -191,7 +191,7 @@ Seed A — zh-Hant companion（結構一致，只渲染此版本）:
 - 詞彙: CONTEXT.md ｜ 業務知識: docs/business/ ｜ 決策背景: docs/adr/
 
 ## Agent 指南
-- 交付遵循 canonical 工作流 plan → execute → review → verify；`/oh-my-claudecode:launch` 是可選的治理交付管道（opt-in，必須明確呼叫）
+- 交付遵循 canonical 工作流 plan → execute → review → verify；`/omc:launch` 是可選的治理交付管道（opt-in，必須明確呼叫）
 - 術語衝突以 CONTEXT.md 為準；新術語確定時立即補錄
 - 可重用能力沉澱到 .omc/skills/；UI 模式沉澱到 design-system/
 ```
@@ -323,7 +323,7 @@ Tell the user, and rely on these flows to fill the skeleton:
 - **launch** writes CONTEXT.md vocabulary, ADRs, and docs/business/ as decisions settle (paper trail)
 - **launch C5 sediment / code-review** sediment recurring corrections into docs/standards/ and CLAUDE.md principles
 - **anyone** can add a project skill to .omc/skills/ — the barrier is the skillify quality gate, not permission
-- **wiki** (omb) compounds session knowledge; promote anything referenced twice into docs/business/
+- **wiki** (omc) compounds session knowledge; promote anything referenced twice into docs/business/
 
 The rule that keeps 先动手 aligned: **starting needs no permission; landing goes into a shipyard slot.** A change that cannot say which slot it lands in (or explicitly none) is the smell.
 
@@ -336,4 +336,4 @@ The rule that keeps 先动手 aligned: **starting needs no permission; landing g
 
 ## `--check` mode
 
-Diff actual repo state against the shipyard map; report: missing surfaces, a missing or invalid `CONTEXT.md` frontmatter `documentLanguage` tag, CLAUDE.md sections that point at dead paths, CONTEXT.md terms unused in code, and standards never referenced. For each finding, state the confidence (`high` when mechanically checkable, `low` when heuristic) and whether it is actionable after excluding throwaway/scratch repositories explicitly declared by the user. Launch's yard gate treats high-confidence actionable findings as blocking; low-confidence or explicitly-classified false-positive findings, and findings in a user-declared scratch/throwaway scope, may be overridden only with deliberate per-invocation intent (see `/oh-my-claudecode:launch`). `/oh-my-claudecode:ask-navigator` may also run this audit in report-only mode while charting a foggy effort: findings are recorded verbatim in the map's Notes (never swallowed) and remain live findings for the launch yard gate. Today `--check` has no executable or machine-readable exit contract — the report's wording is the classification source until a structured finding/severity contract ships (planned follow-up). Read-only.
+Diff actual repo state against the shipyard map; report: missing surfaces, a missing or invalid `CONTEXT.md` frontmatter `documentLanguage` tag, CLAUDE.md sections that point at dead paths, CONTEXT.md terms unused in code, and standards never referenced. For each finding, state the confidence (`high` when mechanically checkable, `low` when heuristic) and whether it is actionable after excluding throwaway/scratch repositories explicitly declared by the user. Launch's yard gate treats high-confidence actionable findings as blocking; low-confidence or explicitly-classified false-positive findings, and findings in a user-declared scratch/throwaway scope, may be overridden only with deliberate per-invocation intent (see `/omc:launch`). `/omc:ask-navigator` may also run this audit in report-only mode while charting a foggy effort: findings are recorded verbatim in the map's Notes (never swallowed) and remain live findings for the launch yard gate. Today `--check` has no executable or machine-readable exit contract — the report's wording is the classification source until a structured finding/severity contract ships (planned follow-up). Read-only.

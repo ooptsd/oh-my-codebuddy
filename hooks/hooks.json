@@ -1,5 +1,5 @@
 {
-  "description": "omb orchestration hooks (CodeBuddy full event set)",
+  "description": "omc orchestration hooks (CodeBuddy full event set)",
   "hooks": {
     "UserPromptSubmit": [
       {

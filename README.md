@@ -1,10 +1,10 @@
-# omb (Oh My Buddy) — CodeBuddy 插件版
+# omc (Oh My Buddy) — CodeBuddy 插件版
 
 > 为 AI 编程代理提供多代理编排能力。本插件是 [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) 的 CodeBuddy 适配发行版。
 >
-> **版本：** 5.4.0 · **插件名：** `omb` · **市场源：** `omb-plugins`
+> **版本：** 5.4.1 · **插件名：** `omc` · **市场源：** `omb-plugins`（调用命名空间：`omc:`）
 
-本插件把 omb 的 skills、commands、subagents、hooks 打包成 CodeBuddy 可直接加载的格式。**不包含 omb 的 MCP 服务器** —— 其含义与替代方案见 [限制与迁移指南](#限制与迁移指南)。
+本插件把 omc 的 skills、commands、subagents、hooks 打包成 CodeBuddy 可直接加载的格式。**不包含 omc 的 MCP 服务器** —— 其含义与替代方案见 [限制与迁移指南](#限制与迁移指南)。
 
 ---
 
@@ -36,19 +36,19 @@
 | `Stop` | `*` | `context-guard-stop`、`workflow-drift-guard`、`persistent-mode`、`code-simplifier` |
 | `SessionEnd` | `*` | `session-end`（异步）、`wiki-session-end`（异步） |
 
-> ¹ `maintenance` 匹配规则是 **死代码**（参见 spec §4.3）：`maintenance` 既不在 CodeBuddy 也不在 Claude Code 的标准 `SessionStart` source 列表（标准是 `startup`、`resume`、`clear`、`compact`）中，因此这条匹配规则在两个运行时里都从未触发过。保留它只是为了与上游 omb 的 hook 契约保持一致。
+> ¹ `maintenance` 匹配规则是 **死代码**（参见 spec §4.3）：`maintenance` 既不在 CodeBuddy 也不在 Claude Code 的标准 `SessionStart` source 列表（标准是 `startup`、`resume`、`clear`、`compact`）中，因此这条匹配规则在两个运行时里都从未触发过。保留它只是为了与上游 omc 的 hook 契约保持一致。
 
 合计 **11 个事件 / 25 条命令**，与上游 oh-my-claudecode 完全一致。
 
 ---
 
-## 功能对照表：CodeBuddy omb vs Claude Code OMC
+## 功能对照表：CodeBuddy omc vs Claude Code OMC
 
 用本表判断 CodeBuddy 版是否满足需求。
 
 ### 主要功能对齐
 
-| 维度 | Claude Code OMC | CodeBuddy omb（本发行版） | 说明 |
+| 维度 | Claude Code OMC | CodeBuddy omc（本发行版） | 说明 |
 |------|---------------:|--------------------------:|------|
 | 通过 `$name` 加载的 Skills | 39 / 39 | 39 / 39 | 内容完全一致；frontmatter schema 相同 |
 | 通过 `/name` 加载的 Commands | 21 / 21 | 21 / 21 | 内容完全一致 |
@@ -62,7 +62,7 @@
 
 ### Hook 事件
 
-| 事件 | Claude Code OMC | CodeBuddy omb | ZCode omz（裁剪版） | 功能差异 |
+| 事件 | Claude Code OMC | CodeBuddy omc | ZCode omz（裁剪版） | 功能差异 |
 |------|:--------------:|:-------------:|:-------------------:|---------|
 | `UserPromptSubmit` | ✅ 触发 | ✅ 触发 | ✅ 触发 | 无 |
 | `SessionStart`（`startup` / `resume` / `clear` / `compact`） | ✅ 触发 | ✅ 触发 | ✅ 触发 | 无 |
@@ -73,14 +73,14 @@
 | `PostToolUse` | ✅ 触发 | ✅ 触发 | ✅ 触发 | 无 |
 | `PostToolUseFailure` | ✅ 触发 | ✅ 触发 | ✅ 触发 | 无 |
 | `Stop` | ✅ 触发 | ✅ 触发 | ✅ 触发 | 无 |
-| `SubagentStart` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omb 完整保留 `subagent-tracker.mjs` 启动日志 |
-| `SubagentStop` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omb 完整保留 `verify-deliverables.mjs`（交付物校验） |
-| `PreCompact` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omb 完整保留压缩前快照（3 个脚本） |
-| `SessionEnd` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omb 完整保留会话结束异步清理（2 个脚本） |
+| `SubagentStart` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omc 完整保留 `subagent-tracker.mjs` 启动日志 |
+| `SubagentStop` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omc 完整保留 `verify-deliverables.mjs`（交付物校验） |
+| `PreCompact` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omc 完整保留压缩前快照（3 个脚本） |
+| `SessionEnd` | ✅ 触发 | ✅ 触发 | ❌ 已移除 | CodeBuddy omc 完整保留会话结束异步清理（2 个脚本） |
 
 > ¹ `maintenance` 匹配规则按 spec §4.3 在 README 中标注为 **dead code documented in README**。两个运行时都不识别 `maintenance`，所以这条规则 **从未触发**；保留它是为了让本插件的 `hooks/hooks.json` 与上游 oh-my-claudecode 完全一致。
 >
-> **CodeBuddy omb 的关键优势**：11 个 hook 事件 **全部保留**，无需任何手动补偿。ZCode omz 因为裁剪掉了 4 个事件，需要为 `verify-deliverables.mjs`、压缩快照、会话清理添加手动替代路径（参见 oh-my-zcode README）。
+> **CodeBuddy omc 的关键优势**：11 个 hook 事件 **全部保留**，无需任何手动补偿。ZCode omz 因为裁剪掉了 4 个事件，需要为 `verify-deliverables.mjs`、压缩快照、会话清理添加手动替代路径（参见 oh-my-zcode README）。
 
 ---
 
@@ -128,44 +128,46 @@ MCP 服务器按用途分组暴露以下工具，全部在本插件中不可用�
 | **Deepinit manifest** | `deepinit_manifest` | 生成项目初始化清单 | 调用 **`deepinit`** skill（`$deepinit`），效果相同 |
 | **Merge readiness** | `merge_readiness_start`、`merge_readiness_report`、`merge_readiness_set_content`、`merge_readiness_record_answer`、`merge_readiness_cancel` | 多方合并 Q&A 工作流 | 使用 **`review`** skill，它以手动编排方式覆盖相同工作流 |
 
-#### ZCode omz 与 CodeBuddy omb 的实现差异
+#### ZCode omz 与 CodeBuddy omc 的实现差异
 
 - **ZCode omz**：由于裁剪掉 `SubagentStart` / `SubagentStop` / `PreCompact` / `SessionEnd`，丢失了 `verify-deliverables.mjs`、3 个压缩快照脚本、2 个会话结束脚本。需要在用户配置里手动加 `PostToolUse` 钩子来补齐 `verify-deliverables`；用 `$remember` skill 替代 `SessionEnd` 持久化。
-- **CodeBuddy omb**：**保留全部 11 个事件**。`verify-deliverables.mjs` 在每次 `SubagentStop` 时自动校验交付物；`pre-compact.mjs` / `project-memory-precompact.mjs` / `wiki-pre-compact.mjs` 在压缩前自动快照；`session-end.mjs` / `wiki-session-end.mjs` 在会话结束时异步清理。**不需要任何手动补偿**。
+- **CodeBuddy omc**：**保留全部 11 个事件**。`verify-deliverables.mjs` 在每次 `SubagentStop` 时自动校验交付物；`pre-compact.mjs` / `project-memory-precompact.mjs` / `wiki-pre-compact.mjs` 在压缩前自动快照；`session-end.mjs` / `wiki-session-end.mjs` 在会话结束时异步清理。**不需要任何手动补偿**。
 
 **经验法则**：如果某个 Claude Code 调用本来会调用 oh-my-claudecode MCP 工具，在 CodeBuddy 中改为调用对应的 `skills/<name>/SKILL.md` 或直接读写底层文件。Skills（39 个）才是主要入口；MCP 服务器只是一层便利封装。
 
 ### 2. `maintenance` 匹配规则 —— 死代码（spec §4.3）
 
-omb 在 `SessionStart` 里定义了一个调用 `setup-maintenance.mjs` 的 `maintenance` 匹配规则。CodeBuddy 与 Claude Code 都没有把 `maintenance` 列为标准会话 source（标准是 `startup`、`resume`、`clear`、`compact`），所以这条匹配规则 **在两个运行时里都从未触发**。它被刻意保留以保持与上游 omb 的 hook 契约一致。
+omc 在 `SessionStart` 里定义了一个调用 `setup-maintenance.mjs` 的 `maintenance` 匹配规则。CodeBuddy 与 Claude Code 都没有把 `maintenance` 列为标准会话 source（标准是 `startup`、`resume`、`clear`、`compact`），所以这条匹配规则 **在两个运行时里都从未触发**。它被刻意保留以保持与上游 omc 的 hook 契约一致。
 
-**迁移：** 如果你以前用过 omb 的 `/omb-setup maintenance` 工作流，改用 `$omb-setup` skill 配以相应子命令手动调用。
+**迁移：** 如果你以前用过 omc 的 `/omc-setup maintenance` 工作流，改用 `$omc-setup` skill 配以相应子命令手动调用。
 
 ### 3. CodeBuddy 插件缓存布局（spec §6.7 item 3）
 
 从 marketplace 安装（方式 B）后，CodeBuddy 把插件快照克隆到本地缓存路径：
 
 ```text
-~/.codebuddy/plugins/cache/omb-plugins/omb/5.4.0/
+~/.codebuddy/plugins/cache/omb-plugins/omc/5.4.1/
 ```
 
 - 缓存根：`~/.codebuddy/plugins/cache/`
 - marketplace 目录：`omb-plugins/`（对应 `marketplace.json` 里的 owner）
-- 插件目录：`omb/5.4.0/`（`omb` 是插件名，`5.4.0` 是当前版本）
+- 插件目录：`omc/5.4.1/`（`omc` 是插件名，也是调用命名空间前缀，`5.4.1` 是当前版本）
 
 **读取 cache 中的文件来定位插件根目录**：
 
 ```bash
 # 列缓存里的 hooks 文件
-ls ~/.codebuddy/plugins/cache/omb-plugins/omb/5.4.0/hooks/hooks.json
+ls ~/.codebuddy/plugins/cache/omb-plugins/omc/5.4.1/hooks/hooks.json
 
 # 读取插件清单（验证安装版本）
-cat ~/.codebuddy/plugins/cache/omb-plugins/omb/5.4.0/.codebuddy-plugin/plugin.json
+cat ~/.codebuddy/plugins/cache/omb-plugins/omc/5.4.1/.codebuddy-plugin/plugin.json
 ```
 
 **手动清理缓存**：删除上述目录后执行 `/reload-plugins` 即可让 CodeBuddy 在下次加载时重新克隆。
 
 **版本升级**：CodeBuddy 不会原地覆盖旧版本；新版本会以 `5.5.0/` 这样的新子目录并列存在。`/reload-plugins` 后两个版本都会加载，建议卸载旧版本以避免重复命令。
+
+**从旧插件名 `omb` 升级到 `omc`**：两者会被 CodeBuddy 视为不同插件，旧缓存 `~/.codebuddy/plugins/cache/omb-plugins/omb/` 不会自动清理。请先执行 `/plugin uninstall omb`（或手动删除该缓存目录及 plugins 索引中的 `omb` 条目），再安装 `omc@omb-plugins`，否则旧 hooks 会重复加载。
 
 **从源码运行（方式 A）时不走该缓存**：`codebuddy --plugin-dir ./oh-my-codebuddy` 直接读取工作区，零缓存命中，方便调试。
 
@@ -173,9 +175,9 @@ cat ~/.codebuddy/plugins/cache/omb-plugins/omb/5.4.0/.codebuddy-plugin/plugin.js
 
 ## 持久化文件（`.omc/` 目录）
 
-两个发行版（Claude Code oh-my-claudecode 和 CodeBuddy omb）写入相同的磁盘位置。区别在于**写入方式**：在 Claude Code oh-my-claudecode 中，hook 与 MCP 工具完成写入；在 CodeBuddy omb 中，hook 完成全部写入（因为保留了全部 11 个事件），MCP 触发的写入需要替换为 skill 调用或直接文件编辑。
+两个发行版（Claude Code oh-my-claudecode 和 CodeBuddy omc）写入相同的磁盘位置。区别在于**写入方式**：在 Claude Code oh-my-claudecode 中，hook 与 MCP 工具完成写入；在 CodeBuddy omc 中，hook 完成全部写入（因为保留了全部 11 个事件），MCP 触发的写入需要替换为 skill 调用或直接文件编辑。
 
-| 路径 | 用途 | CodeBuddy omb 下的读写方式 |
+| 路径 | 用途 | CodeBuddy omc 下的读写方式 |
 |------|------|--------------------------|
 | `.omc/state/*.json` | 每个项目的工作流状态 | `Read` / `Edit` / `Write` 工具，或由 hook 驱动 |
 | `.omc/project-memory.json` | 持久化的项目上下文 | 同上；`project-memory-session.mjs` / `project-memory-posttool.mjs` 自动写入 |
@@ -212,7 +214,7 @@ npm install -g better-sqlite3
 codebuddy --plugin-dir ./oh-my-codebuddy
 ```
 
-启动后 CodeBuddy 会直接从 `./oh-my-codebuddy` 加载 `omb` 插件及其 hooks，无需 marketplace 注册。适合修改、调试、贡献代码时使用。
+启动后 CodeBuddy 会直接从 `./oh-my-codebuddy` 加载 `omc` 插件及其 hooks，无需 marketplace 注册。适合修改、调试、贡献代码时使用。
 
 #### 方式 B：从 GitHub 远程安装（推荐发布后使用）
 
@@ -229,7 +231,7 @@ codebuddy --plugin-dir ./oh-my-codebuddy
 2. **安装插件**
 
    ```text
-   /plugin install omb@omb-plugins
+   /plugin install omc@omb-plugins
    ```
 
 3. **重载插件列表**
@@ -239,17 +241,17 @@ codebuddy --plugin-dir ./oh-my-codebuddy
    ```
 
 4. **验证**
-   - 在 CodeBuddy 设置中，**Settings → Plugins** 应显示 `omb` 处于已安装状态。
+   - 在 CodeBuddy 设置中，**Settings → Plugins** 应显示 `omc` 处于已安装状态。
    - **Settings → Hooks** 应显示该插件的 hooks（只读）。
-   - **Settings → MCP servers** **不应** 列出任何 `plugin:omb:*` 服务（本发行版没有）。
-   - 在聊天会话中输入 `/`，能看到 omb 的命令（`/omb-setup`、`/plan`、`/ask` 等）；输入 `$`，能看到 skills（`$plan`、`$execute`、`$review` 等）。
+   - **Settings → MCP servers** **不应** 列出任何 `plugin:omc:*` 服务（本发行版没有）。
+   - 在聊天会话中输入 `/`，能看到 omc 的命令（`/omc:omc-setup`、`/omc:plan`、`/omc:ask` 等）；输入 `$`，能看到 skills（`$omc:plan`、`$omc:execute`、`$omc:review` 等）。
    - 开启新会话，`SessionStart` hook 应触发（可在本地 CodeBuddy 日志中查找 `hook.run` 记录）。
 
 ---
 
 ## 与 Claude Code OMC 行为一致的部分
 
-在受支持的事件集合（全部 11 个）上，行为与 omb 的 Claude Code 版完全相同：
+在受支持的事件集合（全部 11 个）上，行为与 omc 的 Claude Code 版完全相同：
 
 - 每个 prompt 上的关键词检测与 skill 注入（`UserPromptSubmit`）。
 - 跨工具调用持久化的项目记忆（`PostToolUse` → `project-memory-posttool`）。
@@ -273,7 +275,7 @@ codebuddy --plugin-dir ./oh-my-codebuddy
 - ❌ MCP 服务器（`bridge/mcp-server.cjs`）及其约 55 个工具
 - ❌ `maintenance` 匹配规则（死代码，但保留以对齐 hook 契约）
 
-**净效果：** omb 的 *skills、commands、subagents*（真正的工作流入口）行为完全一致；hook 事件 **全部 11 个保留**，与 Claude Code 版一致；omz 的 *运行时簿记*（MCP 状态）在 CodeBuddy omb 中完全缺失，需要手动或基于 git 的补偿。
+**净效果：** omc 的 *skills、commands、subagents*（真正的工作流入口）行为完全一致；hook 事件 **全部 11 个保留**，与 Claude Code 版一致；omz 的 *运行时簿记*（MCP 状态）在 CodeBuddy omc 中完全缺失，需要手动或基于 git 的补偿。
 
 如果你需要完整的 MCP 功能集（`lsp_rename`、`ast_grep_search` 等），请通过其原生安装器（`.claude-plugin/marketplace.json`）安装 oh-my-claudecode。
 
@@ -307,7 +309,7 @@ rsync -av --delete \
   "$DST/scripts/"
 ```
 
-同步后还需要执行品牌重命名（`omc-*` → `omb-*`）和重新生成 `.codebuddy-plugin/{plugin,marketplace}.json`。品牌重命名规则见上游迁移指南；本目录无脚本化等价物，需人工执行。
+同步后还需要执行品牌重命名（`omc-*` → `omc-*`）和重新生成 `.codebuddy-plugin/{plugin,marketplace}.json`。品牌重命名规则见上游迁移指南；本目录无脚本化等价物，需人工执行。
 
 ### 文件数量（安装后）
 

@@ -59,7 +59,7 @@ All hold → cite and proceed. Thin evidence → gather evidence first. Substant
 
 Verify the remote tracker responds (`gh repo view` on the recorded/implicit remote) **and that it is the expected repository**. If it does, the remote tracker is the ONLY medium for dispositions: every sheet, label, and docket lives there. A local `issues/` directory (or any untracked markdown collection) is **content to inspect, never a tracker to write to** — chaotic repos are full of lookalike directories, and writing dispositions into local files strands them where reporters and maintainers will never see them. If the remote is unreachable, stop and report the blocker — do not fall back to local files.
 
-**V1 scope**: remote GitHub only. Other backends are explicitly unsupported — report and stop; no silent migration, no local fallback. The tracker and label vocabulary should have been recorded by `/oh-my-claudecode:drydock`; if not, ask once and record the answer in `CLAUDE.md` under the shipyard conventions.
+**V1 scope**: remote GitHub only. Other backends are explicitly unsupported — report and stop; no silent migration, no local fallback. The tracker and label vocabulary should have been recorded by `/omc:drydock`; if not, ask once and record the answer in `CLAUDE.md` under the shipyard conventions.
 
 ## The labels
 

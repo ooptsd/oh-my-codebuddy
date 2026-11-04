@@ -9,25 +9,25 @@ level: 2
 
 `psm` is the compatibility alias for this canonical skill entrypoint.
 
-> **Quick Start (worktree-first):** Start with `omb teleport` when you want an isolated issue/PR/feature worktree before adding any tmux/session orchestration:
+> **Quick Start (worktree-first):** Start with `omc teleport` when you want an isolated issue/PR/feature worktree before adding any tmux/session orchestration:
 > ```bash
-> omb teleport #123          # Create worktree for issue/PR
-> omb teleport my-feature    # Create worktree for feature
-> omb teleport list          # List worktrees
+> omc teleport #123          # Create worktree for issue/PR
+> omc teleport my-feature    # Create worktree for feature
+> omc teleport list          # List worktrees
 > ```
 > See [Teleport Command](#teleport-command) below for details.
 
 Automate isolated development environments using git worktrees and tmux sessions with Claude Code. Enables parallel work across multiple tasks, projects, and repositories.
 
-Canonical slash command: `/oh-my-claudecode:project-session-manager` (alias: `/oh-my-claudecode:psm`).
+Canonical slash command: `/omc:project-session-manager` (alias: `/omc:psm`).
 
 ## Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `review <ref>` | PR review session | `/psm review omb#123` |
-| `fix <ref>` | Issue fix session | `/psm fix omb#42` |
-| `feature <proj> <name>` | Feature development | `/psm feature omb add-webhooks` |
+| `review <ref>` | PR review session | `/psm review omc#123` |
+| `fix <ref>` | Issue fix session | `/psm fix omc#42` |
+| `feature <proj> <name>` | Feature development | `/psm feature omc add-webhooks` |
 | `list [project]` | List active sessions | `/psm list` |
 | `attach <session>` | Attach to session | `/psm attach omc:pr-123` |
 | `kill <session>` | Kill session | `/psm kill omc:pr-123` |
@@ -37,7 +37,7 @@ Canonical slash command: `/oh-my-claudecode:project-session-manager` (alias: `/o
 ## Project References
 
 Supported formats:
-- **Alias**: `omb#123` (requires `~/.psm/projects.json`)
+- **Alias**: `omc#123` (requires `~/.psm/projects.json`)
 - **Full**: `owner/repo#123`
 - **URL**: `https://github.com/owner/repo/pull/123`
 - **Current**: `#123` (uses current directory's repo)
@@ -49,7 +49,7 @@ Supported formats:
 ```json
 {
   "aliases": {
-    "omb": {
+    "omc": {
       "repo": "Yeachan-Heo/oh-my-claudecode",
       "local": "~/Workspace/oh-my-claudecode",
       "default_base": "main"
@@ -163,9 +163,9 @@ tmux-safe name at every tmux boundary; attach directly with the tmux-safe name.
 
 | Type | Public ID (`psm attach`/`kill`) | Tmux Session (`tmux attach -t`) | Worktree Dir |
 |------|---------------------------------|---------------------------------|--------------|
-| PR Review | `omc:pr-123` | `psm_omc_pr-123` | `~/.psm/worktrees/omb/pr-123` |
-| Issue Fix | `omc:issue-42` | `psm_omc_issue-42` | `~/.psm/worktrees/omb/issue-42` |
-| Feature | `omc:feat-auth` | `psm_omc_feat-auth` | `~/.psm/worktrees/omb/feat-auth` |
+| PR Review | `omc:pr-123` | `psm_omc_pr-123` | `~/.psm/worktrees/omc/pr-123` |
+| Issue Fix | `omc:issue-42` | `psm_omc_issue-42` | `~/.psm/worktrees/omc/issue-42` |
+| Feature | `omc:feat-auth` | `psm_omc_feat-auth` | `~/.psm/worktrees/omc/feat-auth` |
 
 ---
 
@@ -273,7 +273,7 @@ Parse `{{ARGUMENTS}}` to determine:
    Session ready!
 
      ID: omc:pr-123
-     Worktree: ~/.psm/worktrees/omb/pr-123
+     Worktree: ~/.psm/worktrees/omc/pr-123
      Tmux: psm_omc_pr-123
 
    To attach: tmux attach -t psm_omc_pr-123   (or: psm attach omc:pr-123)
@@ -373,8 +373,8 @@ Parse `{{ARGUMENTS}}` to determine:
 
    ID                 | Type    | Status   | Worktree
    -------------------|---------|----------|---------------------------
-   omc:pr-123        | review  | active   | ~/.psm/worktrees/omb/pr-123
-   omc:issue-42      | fix     | detached | ~/.psm/worktrees/omb/issue-42
+   omc:pr-123        | review  | active   | ~/.psm/worktrees/omc/pr-123
+   omc:issue-42      | fix     | detached | ~/.psm/worktrees/omc/issue-42
    ```
 
 ### Subcommand: `attach <session>`
@@ -490,25 +490,25 @@ Parse `{{ARGUMENTS}}` to determine:
 
 ## Teleport Command
 
-The `omb teleport` command provides a lightweight alternative to full PSM sessions. It creates git worktrees without tmux session management — ideal for quick, isolated development.
+The `omc teleport` command provides a lightweight alternative to full PSM sessions. It creates git worktrees without tmux session management — ideal for quick, isolated development.
 
 ### Usage
 
 ```bash
 # Create worktree for an issue or PR
-omb teleport #123
-omb teleport owner/repo#123
-omb teleport https://github.com/owner/repo/issues/42
+omc teleport #123
+omc teleport owner/repo#123
+omc teleport https://github.com/owner/repo/issues/42
 
 # Create worktree for a feature
-omb teleport my-feature
+omc teleport my-feature
 
 # List existing worktrees
-omb teleport list
+omc teleport list
 
 # Remove a worktree
-omb teleport remove issue/my-repo-123
-omb teleport remove --force feat/my-repo-my-feature
+omc teleport remove issue/my-repo-123
+omc teleport remove --force feat/my-repo-my-feature
 ```
 
 ### Options
@@ -516,14 +516,14 @@ omb teleport remove --force feat/my-repo-my-feature
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--worktree` | Create worktree (default, kept for compatibility) | `true` |
-| `--path <path>` | Custom worktree root directory | `~/Workspace/omb-worktrees/` |
+| `--path <path>` | Custom worktree root directory | `~/Workspace/omc-worktrees/` |
 | `--base <branch>` | Base branch to create from | `main` |
 | `--json` | Output as JSON | `false` |
 
 ### Worktree Layout
 
 ```
-~/Workspace/omb-worktrees/
+~/Workspace/omc-worktrees/
 ├── issue/
 │   └── my-repo-123/        # Issue worktrees
 ├── pr/
@@ -570,7 +570,7 @@ if [[ ! -f ~/.psm/projects.json ]]; then
   cat > ~/.psm/projects.json << 'EOF'
 {
   "aliases": {
-    "omb": {
+    "omc": {
       "repo": "Yeachan-Heo/oh-my-claudecode",
       "local": "~/Workspace/oh-my-claudecode",
       "default_base": "main"

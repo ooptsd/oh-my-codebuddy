@@ -193,7 +193,7 @@ function withFileLockSync(lockPath, fn) {
 // ============================================================================
 
 /**
- * Resolve state file paths for a given omb root and optional session id.
+ * Resolve state file paths for a given omc root and optional session id.
  * Session-scoped: <omcRoot>/state/sessions/<sid>/last-tool-error-state.json
  * Legacy:         <omcRoot>/state/last-tool-error.json
  *
@@ -295,7 +295,7 @@ function isPathContained(targetPath, basePath) {
   return normalizedTarget.startsWith(normalizedBase + sep) || normalizedTarget === normalizedBase;
 }
 
-// Initialize .omc directory if needed; returns the omb root (not state subdir)
+// Initialize .omc directory if needed; returns the omc root (not state subdir)
 async function initOmcDir(directory) {
   const cwd = process.cwd();
   // Validate directory is contained within cwd

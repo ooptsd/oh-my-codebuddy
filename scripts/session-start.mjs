@@ -22,7 +22,7 @@ const REFRESH_UPDATE_CACHE_DEADLINE_MS = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-/** Claude config directory (respects CLAUDE_CONFIG_DIR env var) */
+/** Host config directory (CODEBUDDY_CONFIG_DIR > CLAUDE_CONFIG_DIR > ~/.codebuddy) */
 const configDir = getClaudeConfigDir();
 
 // Import timeout-protected stdin reader (prevents hangs on Linux/Windows, see issue #240, #524)
@@ -542,10 +542,10 @@ function formatUpdateNoticeForUser(updateInfo, options = {}) {
   const latestVersion = updateInfo?.latestVersion || 'latest';
   const currentVersion = updateInfo?.currentVersion || 'unknown';
   const action = updateInfo?.source === 'marketplace'
-    ? 'To update the plugin channel, run: /plugin marketplace update omc && /omc-setup'
+    ? 'To update the plugin channel, run: /plugin marketplace update omb-plugins && /omc:omc-setup'
     : (options.autoUpgradePrompt === false
       ? 'To update later, run: omc update'
-      : 'Run /update to upgrade now, or use /plugin install oh-my-claudecode');
+      : 'Run /update to upgrade now, or use /plugin install omc@omb-plugins');
   return `[OMB UPDATE AVAILABLE] oh-my-claudecode v${latestVersion} is available (current: v${currentVersion}). ${action}`;
 }
 
@@ -601,7 +601,7 @@ function extractOmcVersion(content) {
 }
 
 function getPluginCacheBase() {
-  return join(configDir, 'plugins', 'cache', 'omc', 'oh-my-claudecode');
+  return join(configDir, 'plugins', 'cache', 'omb-plugins', 'omc');
 }
 
 function isPathInsideOrEqual(parent, child) {
@@ -617,7 +617,7 @@ function isManagedPluginCacheRoot(pluginRoot) {
   // A stale root can come from an older config-dir location; the canonical
   // cache path shape still proves it is an OMC managed cache version.
   const unixRoot = normalizedRoot.replace(/\\/g, '/');
-  return /\/plugins\/cache\/omc\/oh-my-claudecode\/\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(unixRoot);
+  return /\/plugins\/cache\/omb-plugins\/omc\/\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(unixRoot);
 }
 
 function getLatestPluginCacheVersion() {
@@ -626,7 +626,7 @@ function getLatestPluginCacheVersion() {
     if (!existsSync(cacheBase)) return null;
     const versions = readdirSync(cacheBase)
       .filter(v => /^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$/.test(v))
-      .filter(v => readJsonFile(join(cacheBase, v, 'package.json'))?.version === v)
+      .filter(v => readJsonFile(join(cacheBase, v, '.codebuddy-plugin', 'plugin.json'))?.version === v)
       .sort(semverCompare)
       .reverse();
     return versions[0] || null;
@@ -635,12 +635,12 @@ function getLatestPluginCacheVersion() {
 
 function getMarketplaceCloneVersion() {
   try {
-    const marketplaceRoot = join(configDir, 'plugins', 'marketplaces', 'omc');
+    const marketplaceRoot = join(configDir, 'plugins', 'marketplaces', 'omb-plugins');
     if (!existsSync(marketplaceRoot)) return null;
 
-    const marketplaceManifest = readJsonFile(join(marketplaceRoot, '.claude-plugin', 'marketplace.json'));
+    const marketplaceManifest = readJsonFile(join(marketplaceRoot, '.codebuddy-plugin', 'marketplace.json'));
     const pluginEntry = Array.isArray(marketplaceManifest?.plugins)
-      ? marketplaceManifest.plugins.find(plugin => plugin?.name === 'oh-my-claudecode')
+      ? marketplaceManifest.plugins.find(plugin => plugin?.name === 'omc')
       : null;
     const version = typeof pluginEntry?.version === 'string' ? pluginEntry.version.trim() : '';
     return parseSemver(version) ? version : null;
@@ -1000,7 +1000,7 @@ async function checkHudInstallation(retryCount = 0) {
 
       // If OMC HUD wrapper is configured, ensure at least one plugin cache version is built.
       if (statusLineCommand?.includes('omc-hud')) {
-        const pluginCacheBase = join(configDir, 'plugins', 'cache', 'omc', 'oh-my-claudecode');
+        const pluginCacheBase = join(configDir, 'plugins', 'cache', 'omb-plugins', 'omc');
         if (existsSync(pluginCacheBase)) {
           const versions = readdirSync(pluginCacheBase)
             .filter(version => !version.startsWith('.'))
@@ -1119,7 +1119,7 @@ async function main() {
         driftMsg += `${d.component}: ${d.current} (expected ${d.expected})\n`;
       }
       driftMsg += driftInfo.source === 'marketplace'
-        ? `\nRun '/plugin marketplace update omc && /omc-setup' to sync plugin-managed components.`
+        ? `\nRun '/plugin marketplace update omb-plugins && /omc:omc-setup' to sync plugin-managed components.`
         : `\nRun 'omc update' to sync all components.`;
 
       messages.push(`<session-restore>\n\n${driftMsg}\n\n</session-restore>\n\n---\n`);
@@ -1135,7 +1135,7 @@ async function main() {
         const omcConfigPath = join(configDir, '.omc-config.json');
         const omcConfig = readJsonFile(omcConfigPath);
         if (omcConfig?.silentAutoUpdate) {
-          messages.push(`<session-restore>\n\n[OMC] silentAutoUpdate is enabled in .omc-config.json but has no effect in plugin mode.\nTo update, use: /plugin marketplace update omc && /omc-setup\nOr run manually: omc update\n\n</session-restore>\n\n---\n`);
+          messages.push(`<session-restore>\n\n[OMC] silentAutoUpdate is enabled in .omc-config.json but has no effect in plugin mode.\nTo update, use: /plugin marketplace update omb-plugins && /omc:omc-setup\nOr run manually: omc update\n\n</session-restore>\n\n---\n`);
         }
       } catch {}
     }
@@ -1187,9 +1187,9 @@ Treat this as prior-session context only. Prioritize the user's newest request, 
     }
 
     // Check for incomplete todos (project-local only, not global
-    // [$CLAUDE_CONFIG_DIR|~/.claude]/todos/)
+    // [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/todos/)
     // NOTE: We intentionally do NOT scan the global
-    // [$CLAUDE_CONFIG_DIR|~/.claude]/todos/ directory.
+    // [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/todos/ directory.
     // That directory accumulates todo files from ALL past sessions across all
     // projects, causing phantom task counts in fresh sessions (see issue #354).
     const localTodoPaths = [
@@ -1268,7 +1268,7 @@ ${cleanContent}
     // This prevents "Cannot find module" errors for sessions started before a
     // plugin update whose CLAUDE_PLUGIN_ROOT still points to the old version.
     try {
-      const cacheBase = join(configDir, 'plugins', 'cache', 'omc', 'oh-my-claudecode');
+      const cacheBase = join(configDir, 'plugins', 'cache', 'omb-plugins', 'omc');
       // Issue #3995: reuse the occupancy resolution hoisted above the owner
       // publish (same-process identities map, no second win32 host). The GC
       // still re-scans the registry files for records published after that

@@ -243,9 +243,9 @@ async function main() {
       console.log(`[OMC HUD] Plugin HUD load failed${detail}. Run: cd "${pluginCacheDir}" && npm install && npm run build`);
     }
   } else if (existsSync(pluginCacheBase)) {
-    console.log(`[OMC HUD] Plugin cache found but no versions installed. Run: /oh-my-claudecode:omc-setup`);
+    console.log(`[OMC HUD] Plugin cache found but no versions installed. Run: /omc:omc-setup`);
   } else {
-    console.log("[OMC HUD] Plugin not installed. Run: /oh-my-claudecode:omc-setup");
+    console.log("[OMC HUD] Plugin not installed. Run: /omc:omc-setup");
   }
 }
 

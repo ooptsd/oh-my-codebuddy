@@ -61,7 +61,7 @@ function resolveOmcRoot(startDir) {
   // 1) OMC_STATE_DIR: full project-id derivation is TS-only; warn and fall through.
   if (process.env.OMC_STATE_DIR) {
     process.stderr.write(
-      '[omb] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
+      '[omc] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
       'resolution. Use resolveOmcStateRoot() for full OMC_STATE_DIR support.\n'
     );
   }
@@ -909,7 +909,7 @@ function getAgentCompletionSummary(directory, quietLevel = QUIET_LEVEL, sessionI
 
       const parts = [];
       if (quietLevel < 2 && running.length > 0) {
-        parts.push(`Running: ${running.length} [${running.map(a => a.agent_type.replace('oh-my-claudecode:', '')).join(', ')}]`);
+        parts.push(`Running: ${running.length} [${running.map(a => a.agent_type.replace('omc:', '')).join(', ')}]`);
       }
       if (quietLevel < 2 && completed > 0) parts.push(`Completed: ${completed}`);
       if (failed > 0) parts.push(`Failed: ${failed}`);
@@ -1079,7 +1079,7 @@ async function main() {
       const currentState = readSkillActiveState(directory, sessionId);
       const completingSkill = (skillName ?? '')
         .toLowerCase()
-        .replace(/^oh-my-claudecode:/, '');
+        .replace(/^omc:/, '');
       if (!currentState || !currentState.active || currentState.skill_name === completingSkill) {
         clearSkillActiveState(directory, sessionId);
       }
