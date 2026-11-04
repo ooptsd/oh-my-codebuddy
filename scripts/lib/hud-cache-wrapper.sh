@@ -13,7 +13,7 @@ case "$0" in
   *) SCRIPT_DIR=. ;;
 esac
 SCRIPT_DIR=$(cd "$SCRIPT_DIR" 2>/dev/null && pwd -P) || SCRIPT_DIR=.
-CONFIG_DIR=${CLAUDE_CONFIG_DIR:-$(cd "$SCRIPT_DIR/.." 2>/dev/null && pwd -P)}
+CONFIG_DIR=${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$(cd "$SCRIPT_DIR/.." 2>/dev/null && pwd -P)}}
 CACHE_DIR=${OMC_HUD_CACHE_DIR:-"$CONFIG_DIR/hud/cache"}
 HUD_SCRIPT=${1:-"$SCRIPT_DIR/omc-hud.mjs"}
 INPUT_TMP="$CACHE_DIR/stdin.$$.tmp"
@@ -187,6 +187,9 @@ extract_json_string() {
 }
 
 SESSION_KEY=$(extract_json_string session_id)
+if [ -z "$SESSION_KEY" ] && [ -n "${CODEBUDDY_SESSION_ID:-}" ]; then
+  SESSION_KEY=$CODEBUDDY_SESSION_ID
+fi
 if [ -z "$SESSION_KEY" ] && [ -n "${CLAUDE_SESSION_ID:-}" ]; then
   SESSION_KEY=$CLAUDE_SESSION_ID
 fi

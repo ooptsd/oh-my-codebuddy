@@ -2,10 +2,11 @@
 /**
  * OMC Workflow Drift Guard Stop hook.
  *
- * Boundary source: https://code.claude.com/docs/en/hooks documents Stop
+ * Boundary source: CodeBuddy Code hook semantics mirror the legacy Claude Code
+ * docs (https://code.claude.com/docs/en/hooks) which document Stop
  * hooks with last_assistant_message and decision:"block";
- * https://code.claude.com/docs/en/plugins-reference documents plugin
- * hooks/hooks.json loading and the shared lifecycle events.
+ * plugin hooks/hooks.json loading and the shared lifecycle events follow the
+ * same shape.
  * This guard uses only deterministic Stop-hook signals and intentionally
  * fails open for ambiguous/free-form cases.
  */

@@ -90,8 +90,10 @@ function runGitRevParse(args, cwd) {
 
 /**
  * Resolve a transcript path that may be mismatched in worktree sessions (issue #1094).
- * When Claude Code runs inside .claude/worktrees/X, the encoded project directory
- * contains `--claude-worktrees-X` which doesn't exist. Strip it to find the real path.
+ * When the host CLI runs inside .codebuddy/worktrees/X (legacy: .claude/worktrees/X),
+ * the encoded project directory
+ * contains `--codebuddy-worktrees-X` (or `--claude-worktrees-X`) which doesn't
+ * exist. Strip it to find the real path.
  */
 function resolveTranscriptPath(transcriptPath, cwd) {
   if (!transcriptPath) return transcriptPath;
@@ -99,8 +101,9 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (existsSync(transcriptPath)) return transcriptPath;
   } catch { /* fallthrough */ }
 
-  // Strategy 1: Strip Claude worktree segment from encoded project directory
-  const worktreePattern = /--claude-worktrees-[^/\\]+/;
+  // Strategy 1: Strip worktree segment from encoded project directory.
+  // CodeBuddy: --codebuddy-worktrees-X; legacy Claude Code: --claude-worktrees-X.
+  const worktreePattern = /--(?:codebuddy|claude)-worktrees-[^/\\]+/;
   if (worktreePattern.test(transcriptPath)) {
     const resolved = transcriptPath.replace(worktreePattern, '');
     try {

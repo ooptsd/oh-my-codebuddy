@@ -33,14 +33,19 @@ function canonicalPluginRoot(pluginRoot) {
 }
 
 /**
- * Resolve the hook script target path, handling stale CLAUDE_PLUGIN_ROOT.
+ * Resolve the hook script target path, handling stale plugin-root env vars.
+ * CODEBUDDY_PLUGIN_ROOT is authoritative; CLAUDE_PLUGIN_ROOT is the legacy alias.
  *
  * A direct target remains valid for the generic child path even without a
  * trusted plugin root. Worker eligibility receives only independently proven
  * configured-root or selected-cache-version provenance.
  */
+function getPluginRootEnv() {
+  return process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+}
+
 function resolveTarget(targetPath) {
-  const configuredRoot = canonicalPluginRoot(process.env.CLAUDE_PLUGIN_ROOT);
+  const configuredRoot = canonicalPluginRoot(getPluginRootEnv());
 
   try {
     if (existsSync(targetPath)) {
@@ -54,7 +59,7 @@ function resolveTarget(targetPath) {
   }
 
   try {
-    const configuredPath = process.env.CLAUDE_PLUGIN_ROOT;
+    const configuredPath = getPluginRootEnv();
     if (!configuredPath) return null;
 
     const cacheBase = dirname(configuredPath);

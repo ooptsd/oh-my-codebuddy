@@ -148,4 +148,55 @@ node -e "
   console.log('ok: ' + scanned + ' script files have no banned imports');
 " || fail "banned-imports check failed"
 
+# 7. Claude-config residue audit (CodeBuddy-native conventions)
+# Flag active .claude paths / CLAUDE.md targets; legacy-compat pairings with
+# CODEBUDDY equivalents and provider model-id regexes are allowed.
+AUDIT_TMP="$(mktemp)"
+cat > "$AUDIT_TMP" <<'AUDIT_EOF'
+const fs = require('fs');
+const path = require('path');
+const PLUGIN = process.argv[2];
+const roots = ['scripts', 'hooks', 'skills', 'commands', 'agents', 'docs'].map(d => path.join(PLUGIN, d));
+function walk(dir, out) {
+  let entries = [];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return out; }
+  for (const e of entries) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p, out);
+    else if (/\.(mjs|cjs|sh|md|json)$/.test(e.name)) out.push(p);
+  }
+  return out;
+}
+const files = roots.flatMap(r => walk(r, []));
+const violations = [];
+for (const file of files) {
+  const rel = file.replace(PLUGIN + '/', '');
+  const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+    const isLegacyCompat = /legacy/.test(line) || /CODEBUDDY/.test(line) || /anthropic\.claude/.test(line);
+    // .claude path segments used as active paths. A '.claude' literal on the
+    // same line as '.codebuddy' is an intentional co-exclusion/co-existence
+    // (e.g. traversal exclusion lists, dual-fallback chains) — allowed.
+    if ((/['" ]\.claude(\/|['" ])/.test(line) || /~\/\.claude/.test(line))
+        && !/\.codebuddy/.test(line) && !/worktrees\/X/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': .claude path: ' + trimmed.slice(0, 90));
+    }
+    // CLAUDE.md as active target (allowed when paired with CODEBUDDY.md or marked legacy)
+    if (/CLAUDE\.md/.test(line) && !isLegacyCompat) {
+      violations.push(rel + ':' + (i + 1) + ': CLAUDE.md ref: ' + trimmed.slice(0, 90));
+    }
+  });
+}
+if (violations.length > 0) {
+  console.error('FAIL: Claude-config residue audit found ' + violations.length + ' issue(s):');
+  for (const v of violations.slice(0, 40)) console.error('  ' + v);
+  if (violations.length > 40) console.error('  ... and ' + (violations.length - 40) + ' more');
+  process.exit(1);
+}
+console.log('ok: no Claude-config residue across ' + files.length + ' files');
+AUDIT_EOF
+node "$AUDIT_TMP" "$PLUGIN" || { rm -f "$AUDIT_TMP"; fail "Claude-config residue audit failed"; }
+rm -f "$AUDIT_TMP"
+
 echo "PASS: all verification checks"

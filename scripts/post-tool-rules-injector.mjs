@@ -3,8 +3,8 @@
 /**
  * PostToolUse Hook: Rules Injector (issue #2577 bug 2)
  *
- * Injects relevant rule files (.claude/rules, .github/instructions,
- * .cursor/rules, ~/.codebuddy/rules) into context when Claude accesses files.
+ * Injects relevant rule files (.codebuddy/rules, .github/instructions,
+ * .cursor/rules, ~/.codebuddy/rules) into context when the agent accesses files.
  *
  * Uses content-hash + realpath dedup (via rules-injector storage) so the same
  * rule is never injected more than once per session regardless of how many
@@ -23,7 +23,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 function getRuntimeBaseDir() {
-  return process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..');
+  return process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..');
 }
 
 // Dynamic import — graceful no-op when dist/ is not built (first run / dev)

@@ -100,7 +100,7 @@ function hasContextWindowObject(data) {
  * for percent calculation; this helper only locates and parses its cache.
  */
 export async function resolveHudCacheContextPercent(data, directory) {
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   if (!pluginRoot) return null;
 
   try {

@@ -32,7 +32,7 @@ import { resolveOmcStateRoot, resolveSessionStatePathsForHook } from './lib/stat
 import { parseWorkflowInvocation, selectWorkflowProfile, createWorkflowState, isValidWorkflowTrackingState, isWorkflowRuntimeSupported, resolveWorkflowStagePrompt, takeWorkflowTranscriptFailure } from './lib/workflow-profile-runtime.mjs';
 
 // Resolve OMC package root: CLAUDE_PLUGIN_ROOT (plugin system) or derive from this script's location
-const _omcRoot = process.env.CLAUDE_PLUGIN_ROOT ||
+const _omcRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT ||
   join(dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL_INVOCATION_USER_REQUEST_MAX = 1200;
 
@@ -96,7 +96,7 @@ function compactHookText(text, maxChars = SKILL_INVOCATION_USER_REQUEST_MAX) {
 
 function getSkillPathCandidates(skillName) {
   const roots = [
-    process.env.CLAUDE_PLUGIN_ROOT,
+    process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT,
     _omcRoot,
     process.cwd(),
   ].filter(Boolean);
@@ -1290,9 +1290,9 @@ function isTeamEnabled() {
  *    own `enabled` flag is deliberately NOT consulted: it does not
  *    authoritatively encode enablement (a plugin disabled through canonical
  *    settings can still carry `enabled: true`, and vice versa).
- * 2. ENABLED: the official id is enabled by the effective Claude Code settings
+ * 2. ENABLED: the official id is enabled by the effective CodeBuddy settings
  *    for the active project, resolved highest-precedence-first across
- *    `<project>/.claude/settings.local.json`, `<project>/.claude/settings.json`
+ *    `<project>/.codebuddy/settings.local.json`, `<project>/.codebuddy/settings.json`
  *    and `[CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`. Within a file the
  *    canonical `enabledPlugins` field decides (legacy `plugins` field accepted
  *    for backward compatibility), as an array of plugin ids or a map whose
@@ -1357,7 +1357,7 @@ function resolveSettingsProjectRoot(directory) {
 }
 
 /**
- * Claude Code resolves `enabledPlugins` across settings scopes, so a project may
+ * CodeBuddy resolves `enabledPlugins` across settings scopes, so a project may
  * enable a plugin the user scope never mentions, or disable one the user scope
  * enables. Highest precedence first; the first scope that mentions the official
  * id decides, scopes that never mention it are transparent, and a malformed
@@ -1366,8 +1366,8 @@ function resolveSettingsProjectRoot(directory) {
 function isOfficialRalphLoopEnabledForProject(directory) {
   const projectRoot = resolveSettingsProjectRoot(directory);
   const settingsPaths = [
-    join(projectRoot, '.claude', 'settings.local.json'),
-    join(projectRoot, '.claude', 'settings.json'),
+    join(projectRoot, '.codebuddy', 'settings.local.json'),
+    join(projectRoot, '.codebuddy', 'settings.json'),
     join(getClaudeConfigDir(), 'settings.json'),
   ];
   for (const settingsPath of settingsPaths) {

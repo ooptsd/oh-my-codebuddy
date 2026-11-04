@@ -69,7 +69,8 @@ function isSafeWorkspaceRoot(workspaceRoot) {
   let cursor = workspaceRoot;
   while (true) {
     const name = basename(cursor).toLowerCase();
-    if (cursor === home || cursor === '/' || cursor === '/tmp' || name.startsWith('.') || ['.ssh', '.gnupg', '.aws', '.config', '.claude', '.codex', '.cache', '.npm', 'desktop', 'documents', 'downloads', 'pictures', 'music'].includes(name)) return false;
+    // '.claude' / '.codex' kept for legacy-host compatibility; '.codebuddy' is the CodeBuddy home
+  if (cursor === home || cursor === '/' || cursor === '/tmp' || name.startsWith('.') || ['.ssh', '.gnupg', '.aws', '.config', '.claude', '.codebuddy', '.codex', '.cache', '.npm', 'desktop', 'documents', 'downloads', 'pictures', 'music'].includes(name)) return false;
     const parent = dirname(cursor);
     if (parent === cursor) break;
     cursor = parent;
@@ -84,7 +85,7 @@ function isSafeWorkspaceRoot(workspaceRoot) {
  * @returns {Promise<string>} Absolute path to the .omc root
  */
 export async function resolveOmcStateRoot(directory) {
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   if (pluginRoot) {
     const distPath = join(pluginRoot, 'dist', 'lib', 'worktree-paths.js');
     if (existsSync(distPath)) {
@@ -125,7 +126,7 @@ export async function resolveOmcStateRoot(directory) {
  * @returns {Promise<{readPath: string, writePath: string}>} Unbranded path pair
  */
 export async function resolveSessionStatePathsForHook(directory, stateName, sessionId) {
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   if (pluginRoot) {
     try {
       const { resolveSessionStatePaths } = await import(

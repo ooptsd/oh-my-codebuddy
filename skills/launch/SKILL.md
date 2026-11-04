@@ -19,7 +19,7 @@ Launch assumes the shipyard exists — and refuses to run if it does not. The ya
 - **Narrow override (explicit intent only):** low-confidence findings, findings explicitly classified as false positives in the drydock report, or a scratch/throwaway repository explicitly declared by the user may be overridden only with deliberate, per-invocation user intent — the override must name the finding(s) or the throwaway scope and must never silently swallow a high-confidence actionable finding. No general bypass flag.
 - **Current audit limitation:** today `--check` is a skill-instruction checklist without a machine-readable finding/severity contract or executable — severity classification relies on the drydock report's wording until a structured contract exists. A machine-readable finding/severity exit contract is the intended follow-up; the gate wording stays honest about what it can and cannot rely on mechanically.
 - **A clean audit (or an explicitly overridden low-confidence/false-positive/scratch scope) admits the run.** Every paper-trail slot (`CONTEXT.md`, `docs/adr/`, `docs/business/`) and facility surface already exists at that point; Launch fills the paper trail as decisions settle but never creates the slots.
-- The rules entry is `CLAUDE.md` — the shipyard map recognizes no substitute.
+- The rules entry is `CODEBUDDY.md` — the shipyard map recognizes no substitute.
 
 ## The boundary
 
@@ -47,7 +47,7 @@ Any durability claim in this skill is a claim about the files on disk, not about
 
 ## Phase 0 — Entry
 
-A run reaches this phase only through a clean yard gate. Before reading a supplied spec or entering Phase 1, resolve the document language. An explicit human choice in the current invocation wins; otherwise read a valid BCP-47-style tag from `CONTEXT.md` frontmatter at the exact stable key `documentLanguage`; otherwise require unanimous high-confidence inference from `CLAUDE.md` then `README.md`. A persisted bare or region-only Chinese tag is script-ambiguous and must be asked once at that authority tier, never bypassed by inference. Missing, mixed, conflicting, low-confidence, invalid-explicit, or script-ambiguous Chinese evidence requires one batched language question; do not guess. Chinese must resolve to an explicit `zh-Hans` or `zh-Hant` script tag. `zh-Hans-*` selects the Simplified companion and `zh-Hant-*` selects the Traditional companion while the full normalized tag is persisted. Persist the resolved normalized tag back to `CONTEXT.md` before any Launch-authored artifact so a fresh explicit invocation can read it without hidden conversation state. The human reads and maintains these artifacts; agents are language-agnostic.
+A run reaches this phase only through a clean yard gate. Before reading a supplied spec or entering Phase 1, resolve the document language. An explicit human choice in the current invocation wins; otherwise read a valid BCP-47-style tag from `CONTEXT.md` frontmatter at the exact stable key `documentLanguage`; otherwise require unanimous high-confidence inference from `CODEBUDDY.md` then `README.md`. A persisted bare or region-only Chinese tag is script-ambiguous and must be asked once at that authority tier, never bypassed by inference. Missing, mixed, conflicting, low-confidence, invalid-explicit, or script-ambiguous Chinese evidence requires one batched language question; do not guess. Chinese must resolve to an explicit `zh-Hans` or `zh-Hant` script tag. `zh-Hans-*` selects the Simplified companion and `zh-Hant-*` selects the Traditional companion while the full normalized tag is persisted. Persist the resolved normalized tag back to `CONTEXT.md` before any Launch-authored artifact so a fresh explicit invocation can read it without hidden conversation state. The human reads and maintains these artifacts; agents are language-agnostic.
 
 Localize prose and human-facing labels/localizable scalar values only. Paths, slash commands, flags, code fences, placeholders, frontmatter keys and machine-semantic values, YAML/JSON keys, lifecycle tokens (`plan`, `execute`, `review`, `verify`), status enums (`pending`, `in_progress`, `completed`, `failed`, `ready-for-agent`), IDs, ticket `blockedBy`, public Team `blocked_by`, and all parser/control tokens remain byte-for-byte stable. Reference language companions are mutually exclusive: emit exactly one selected rendering, never bilingual duplicate headings or labels.
 
@@ -135,7 +135,7 @@ On a later explicit Launch invocation, first require the owning Team lifecycle t
   |---|---|
   | terms and boundaries settled mid-run | `CONTEXT.md` glossary |
   | checkable behavior rules (carry a why) | `docs/standards/` matching volume (architecture / data / process) |
-  | most-violated conventions (thin-entry grade) | `CLAUDE.md` body — propose only |
+  | most-violated conventions (thin-entry grade) | `CODEBUDDY.md` body — propose only |
   | hard-to-reverse decisions | `docs/adr/` (C4 answers already land here) |
   | business rules / background | `docs/business/` |
   | UI patterns / component contracts | `design-system/` |
@@ -143,7 +143,7 @@ On a later explicit Launch invocation, first require the owning Team lifecycle t
   | repeatedly needed automation / integrations | `scripts/` or `.mcp.json` |
   | no slot fits | decline explicitly with the reason |
 
-- **thin-entry budget:** the `CLAUDE.md` body carries at most five hot entries. A lesson is thin-entry grade only when the source checklist evidences the same violation at least twice in this run, or the captain marks it load-bearing. Entries are listed most-recently-promoted first; the coldest entry is deterministically the last one listed, and a promotion over budget must demote exactly that entry in the same proposal, moving its full text back to `docs/standards/` — nothing is deleted, only re-tiered. Bloat is rebalanced ship by ship and is deliberately not a `--check` finding.
+- **thin-entry budget:** the `CODEBUDDY.md` body carries at most five hot entries. A lesson is thin-entry grade only when the source checklist evidences the same violation at least twice in this run, or the captain marks it load-bearing. Entries are listed most-recently-promoted first; the coldest entry is deterministically the last one listed, and a promotion over budget must demote exactly that entry in the same proposal, moving its full text back to `docs/standards/` — nothing is deleted, only re-tiered. Bloat is rebalanced ship by ship and is deliberately not a `--check` finding.
 - emit the **completion report**: shipped scope, verification evidence, paper-trail locations, yard-drift findings (if any), the sediment list (each line vetoable), and Open Assumptions ranked by how much a human would likely want to veto them
 
 ## Context hygiene

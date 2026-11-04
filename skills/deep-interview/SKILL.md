@@ -74,12 +74,12 @@ If this raw bundled skill is loaded by Claude Code's native plugin skill loader 
 Complete this phase before Phase 1, before brownfield exploration, before `state_write`, before Round 0, and before any ambiguity scoring. Do not continue if the resolved threshold and source are unknown.
 
 1. **Read threshold settings in precedence order**:
-   - User settings: `[$CLAUDE_CONFIG_DIR|~/.claude]/settings.json`
-   - Project settings: `./.claude/settings.json` (overrides user settings)
+   - User settings: `[$CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`
+   - Project settings: `./.codebuddy/settings.json` (overrides user settings)
 2. **Resolve threshold and source**:
    - Read `omc.deepInterview.ambiguityThreshold` from both files when present.
    - Use the project value when valid; otherwise use the user value when valid; otherwise use the default `0.2`.
-   - Set these run variables exactly: `<resolvedThreshold>`, `<resolvedThresholdPercent>`, and `<resolvedThresholdSource>` (for example `./.claude/settings.json`, `[$CLAUDE_CONFIG_DIR|~/.claude]/settings.json`, or `default`).
+   - Set these run variables exactly: `<resolvedThreshold>`, `<resolvedThresholdPercent>`, and `<resolvedThresholdSource>` (for example `./.codebuddy/settings.json`, `[$CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`, or `default`).
 3. **Emit the required first line to the user before any other interview announcement**:
 
 ```
@@ -696,7 +696,7 @@ Why bad: 45% ambiguity means nearly half the requirements are unclear. The mathe
 <Advanced>
 ## Configuration
 
-Optional settings in `.claude/settings.json`:
+Optional settings in `.codebuddy/settings.json`:
 
 ```json
 {

@@ -401,7 +401,9 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (existsSync(transcriptPath)) return transcriptPath;
   } catch {}
 
-  const worktreePattern = /--claude-worktrees-[^/\\]+/;
+  // CodeBuddy encodes project-local worktrees as --codebuddy-worktrees-X inside
+  // the projects dir; legacy Claude Code used --claude-worktrees-X. Match both.
+  const worktreePattern = /--(?:codebuddy|claude)-worktrees-[^/\\]+/;
   if (worktreePattern.test(transcriptPath)) {
     const resolvedPath = transcriptPath.replace(worktreePattern, '');
     try {

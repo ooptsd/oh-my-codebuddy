@@ -1,6 +1,6 @@
 ---
 name: drydock
-description: Lay the keel of the shipyard harness in any repo — the 4-pillar shared environment (Context, Rules, Tools, Standards) across 5 surfaces (CLAUDE.md, skills, design-system, mcp/cli, shared context) so that every human and agent inherits the same design language and anyone can ship. Run once per repo; re-run with --check to audit drift.
+description: Lay the keel of the shipyard harness in any repo — the 4-pillar shared environment (Context, Rules, Tools, Standards) across 5 surfaces (CODEBUDDY.md, skills, design-system, mcp/cli, shared context) so that every human and agent inherits the same design language and anyone can ship. Run once per repo; re-run with --check to audit drift.
 argument-hint: "[--check]"
 level: 3
 ---
@@ -14,7 +14,7 @@ The four pillars and where they physically live:
 | Pillar | Surfaces |
 |---|---|
 | Context (shared background) | `CONTEXT.md` (glossary) + `docs/business/` + `docs/adr/` + omc wiki |
-| Rules (boundaries) | `CLAUDE.md` (thin entry: conventions, principles, index) + `docs/standards/` |
+| Rules (boundaries) | `CODEBUDDY.md` (thin entry: conventions, principles, index) + `docs/standards/` |
 | Tools (composable capability) | `.omc/skills/` + `.mcp.json` + `scripts/` |
 | Standards (the classification society) | `design-system/` (tokens, components, patterns) + `docs/standards/` |
 
@@ -37,7 +37,7 @@ Metaphor map: the shipyard is the shared facility; the classification society (`
 
 Inventory what exists before writing anything:
 
-- `CLAUDE.md` present? `AGENTS.md` present? (rule: if either exists, extend it in place; create the missing one as a one-line pointer to the other; **never create both fresh**)
+- `CODEBUDDY.md` present? `AGENTS.md` present? (rule: if either exists, extend it in place; create the missing one as a one-line pointer to the other; **never create both fresh**)
 - `CONTEXT.md`, `docs/adr/`, `docs/standards/`, `docs/business/`, `design-system/`, `.omc/skills/`, `.mcp.json`, `scripts/`, `.gitattributes` — which exist, which are missing?
 - omc installed? — only worth checking when running inside an omc session; outside one, skip this check silently (the harness works with or without omc)
 
@@ -52,7 +52,7 @@ The document language for the generated harness files is a file-backed decision,
 {
   "schemaVersion": 1,
   "authority": { "path": "CONTEXT.md", "frontmatterKey": "documentLanguage" },
-  "canonicalSources": ["CLAUDE.md", "README.md"],
+  "canonicalSources": ["CODEBUDDY.md", "README.md"],
   "askOn": ["missing", "mixed", "conflict", "low-confidence", "invalid-explicit", "script-ambiguous"],
   "tagPattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-(?:[A-Z]{2}|[0-9]{3}))?$",
   "scriptVariants": ["zh-Hans", "zh-Hant"],
@@ -72,7 +72,7 @@ Resolution order:
 
 1. An explicit human choice in the current invocation wins when valid. Normalize it to a stable BCP-47-style tag: lowercase language, Title-Case script, uppercase region. Invalid explicit input must be asked once rather than guessed.
 2. Otherwise, read `documentLanguage` from the YAML frontmatter at the top of `CONTEXT.md`. A valid, script-unambiguous tag is authoritative for fresh Drydock and Launch invocations. If the persisted tag is bare or region-only Chinese, ask once at this authority tier; never bypass it with source inference.
-3. If the marker is absent or invalid, inspect canonical sources in this order: `CLAUDE.md`, then `README.md`. Infer only when every usable source has one unambiguous dominant language and all usable sources agree on the same normalized tag. One unambiguous source is sufficient when the other is missing or empty.
+3. If the marker is absent or invalid, inspect canonical sources in this order: `CODEBUDDY.md`, then `README.md`. Infer only when every usable source has one unambiguous dominant language and all usable sources agree on the same normalized tag. One unambiguous source is sufficient when the other is missing or empty.
 4. Chinese must resolve to an explicit script-qualified tag: `zh-Hans` or `zh-Hant` (optionally followed by a region). Bare `zh` and region-only Chinese tags are script-ambiguous and must be asked once rather than selecting a companion. Companion selection uses the longest language/script prefix: `zh-Hans-*` selects the `zh-Hans` companion and `zh-Hant-*` selects `zh-Hant`; preserve the full normalized tag (for example `zh-Hans-CN`) in `CONTEXT.md`.
 5. Missing usable sources, mixed-language content, conflicting tags, low-confidence inference, invalid explicit input, or script-ambiguous Chinese must trigger one batched language question. Do not guess. If no answer is available, stop before writing localized artifacts.
 6. Before scaffolding, write the resolved tag to the exact stable frontmatter key `documentLanguage` in `CONTEXT.md` (creating or extending its frontmatter without translating the key). This visible file is the init report's language authority; no daemon, hidden ledger, or runtime state is created.
@@ -88,7 +88,7 @@ Ask the remaining questions only after language is resolved:
 ### 3. Scaffold (create missing surfaces — seeds render in the document language)
 
 ```
-CLAUDE.md                      # thin entry — see seed A
+CODEBUDDY.md                      # thin entry — see seed A
 CONTEXT.md                     # glossary — see seed B
 .gitattributes                 # * text=auto eol=lf  (kills CRLF warning noise on Windows)
 docs/adr/0001-adopt-shipyard-harness.md
@@ -107,7 +107,7 @@ Seed exemplars are reference companions, never a combined payload. Select exactl
 
 Before generating seed prose, call the Skill tool with `agent-doc-discipline` and apply its rules; seed prose is ready only when every rule is checkable and carries a why, every surface is self-describing without chat history, and sources are named rather than assumed. A teammate or agent should be able to act on the seed's content by reading alone.
 
-Seed A — CLAUDE.md, en (thin entry; extend in place if the file exists):
+Seed A — CODEBUDDY.md, en (thin entry; extend in place if the file exists):
 
 <!-- shipyard-seed-a:en:start -->
 ```markdown
@@ -321,7 +321,7 @@ write "this project's specific decision discipline", not generic tutorials.
 Tell the user, and rely on these flows to fill the skeleton:
 
 - **launch** writes CONTEXT.md vocabulary, ADRs, and docs/business/ as decisions settle (paper trail)
-- **launch C5 sediment / code-review** sediment recurring corrections into docs/standards/ and CLAUDE.md principles
+- **launch C5 sediment / code-review** sediment recurring corrections into docs/standards/ and CODEBUDDY.md principles
 - **anyone** can add a project skill to .omc/skills/ — the barrier is the skillify quality gate, not permission
 - **wiki** (omc) compounds session knowledge; promote anything referenced twice into docs/business/
 
@@ -331,9 +331,9 @@ The rule that keeps 先动手 aligned: **starting needs no permission; landing g
 
 - created / extended / deliberately skipped (each with why)
 - resolved document language as `CONTEXT.md` frontmatter `documentLanguage: <tag>`, including whether it came from explicit choice, the persisted marker, or unanimous inference
-- the 3 surfaces that most need human content next (usually CLAUDE.md conventions, architecture.md, CONTEXT.md first terms)
+- the 3 surfaces that most need human content next (usually CODEBUDDY.md conventions, architecture.md, CONTEXT.md first terms)
 - reminder: re-run with `--check` any time to see drift between filesystem and harness
 
 ## `--check` mode
 
-Diff actual repo state against the shipyard map; report: missing surfaces, a missing or invalid `CONTEXT.md` frontmatter `documentLanguage` tag, CLAUDE.md sections that point at dead paths, CONTEXT.md terms unused in code, and standards never referenced. For each finding, state the confidence (`high` when mechanically checkable, `low` when heuristic) and whether it is actionable after excluding throwaway/scratch repositories explicitly declared by the user. Launch's yard gate treats high-confidence actionable findings as blocking; low-confidence or explicitly-classified false-positive findings, and findings in a user-declared scratch/throwaway scope, may be overridden only with deliberate per-invocation intent (see `/omc:launch`). `/omc:ask-navigator` may also run this audit in report-only mode while charting a foggy effort: findings are recorded verbatim in the map's Notes (never swallowed) and remain live findings for the launch yard gate. Today `--check` has no executable or machine-readable exit contract — the report's wording is the classification source until a structured finding/severity contract ships (planned follow-up). Read-only.
+Diff actual repo state against the shipyard map; report: missing surfaces, a missing or invalid `CONTEXT.md` frontmatter `documentLanguage` tag, CODEBUDDY.md sections that point at dead paths, CONTEXT.md terms unused in code, and standards never referenced. For each finding, state the confidence (`high` when mechanically checkable, `low` when heuristic) and whether it is actionable after excluding throwaway/scratch repositories explicitly declared by the user. Launch's yard gate treats high-confidence actionable findings as blocking; low-confidence or explicitly-classified false-positive findings, and findings in a user-declared scratch/throwaway scope, may be overridden only with deliberate per-invocation intent (see `/omc:launch`). `/omc:ask-navigator` may also run this audit in report-only mode while charting a foggy effort: findings are recorded verbatim in the map's Notes (never swallowed) and remain live findings for the launch yard gate. Today `--check` has no executable or machine-readable exit contract — the report's wording is the classification source until a structured finding/severity contract ships (planned follow-up). Read-only.

@@ -45,7 +45,7 @@ Prefer skills that encode decision-making heuristics, constraints, pitfalls, and
      ---
      ```
    - Write learned/user/project skills to flat file-backed paths:
-     - `${CLAUDE_CONFIG_DIR:-~/.claude}/skills/omc-learned/<skill-name>.md`
+     - `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/skills/omc-learned/<skill-name>.md`
      - `.omc/skills/<skill-name>.md`
    - Remember that uncommitted skills are still worktree-local until committed or copied to a user-level directory.
 5. Draft the rest of the skill file with clear triggers, steps, success criteria, and pitfalls.

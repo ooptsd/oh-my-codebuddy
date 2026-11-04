@@ -7,7 +7,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -95,9 +95,11 @@ async function main() {
   let lastHudLoadError = null;
   let lastHudLoadTarget = null;
 
-  // 1. OMC_PLUGIN_ROOT — highest priority (set by `omc --plugin-dir <path>`)
+  // 1. OMC_PLUGIN_ROOT / CODEBUDDY_PLUGIN_ROOT — highest priority (set by `omc --plugin-dir <path>` or the CodeBuddy plugin host)
   try {
-    const pluginRootEnv = process.env.OMC_PLUGIN_ROOT;
+    const pluginRootEnv = process.env.OMC_PLUGIN_ROOT
+      || process.env.CODEBUDDY_PLUGIN_ROOT
+      || process.env.CLAUDE_PLUGIN_ROOT;
     if (pluginRootEnv && pluginRootEnv.trim().length > 0) {
       const envHudPath = join(pluginRootEnv, "dist/hud/index.js");
       if (existsSync(envHudPath)) {
@@ -112,10 +114,10 @@ async function main() {
     }
   } catch { /* fall through to next resolution step */ }
 
-  // 2. Plugin cache (for production installs)
-  // Respect CLAUDE_CONFIG_DIR so installs under a custom config dir are found
+  // 2. Plugin cache (for production installs; CodeBuddy layout: plugins/cache/omc-plugins/omc/<version>)
+  // Respect CODEBUDDY_CONFIG_DIR/CLAUDE_CONFIG_DIR so installs under a custom config dir are found
   const configDir = getClaudeConfigDir();
-  const pluginCacheBase = join(configDir, "plugins", "cache", "omc", "oh-my-claudecode");
+  const pluginCacheBase = join(configDir, "plugins", "cache", "omc-plugins", "omc");
   if (existsSync(pluginCacheBase)) {
     try {
       // Filter to strict semver dir names only — guards against accidental
@@ -197,7 +199,7 @@ async function main() {
   }
 
   // 3. Marketplace clone (for marketplace installs without a populated cache)
-  const marketplaceHudPath = join(configDir, "plugins", "marketplaces", "omc", "dist/hud/index.js");
+  const marketplaceHudPath = join(configDir, "plugins", "marketplaces", "omc-plugins", "dist/hud/index.js");
   if (existsSync(marketplaceHudPath)) {
     try {
       await import(pathToFileURL(marketplaceHudPath).href);
@@ -223,7 +225,30 @@ async function main() {
     }
   }
 
-  // 5. Fallback: provide detailed error message with fix instructions
+  // 5. Fallback: minimal self-contained statusline so the bar always renders
+  //    (full dist/ renderer unavailable in dist-less CodeBuddy plugin installs)
+  try {
+    const input = JSON.parse(readFileSync(0, "utf-8"));
+    const cwd = input.cwd || process.cwd();
+    let branch = "";
+    try {
+      branch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+        cwd,
+        encoding: "utf-8",
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: 1000,
+        windowsHide: true,
+      }).trim();
+    } catch { /* not a git repo */ }
+    const model = input.model && (input.model.display_name || input.model.id) ? (input.model.display_name || input.model.id) : "";
+    const parts = ["[omc]"];
+    if (branch) parts.push(`branch:${branch}`);
+    if (model) parts.push(String(model));
+    console.log(parts.join(" | "));
+    return;
+  } catch { /* stdin unavailable — fall through to error reporting */ }
+
+  // 6. Error reporting when even the fallback could not run
   if (lastHudLoadError) {
     const detail = typeof lastHudLoadError?.message === "string"
       ? lastHudLoadError.message

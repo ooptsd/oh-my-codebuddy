@@ -139,10 +139,11 @@ function readAgentDefinitionModel(subagentType) {
   // Reject path traversal: agent names are simple identifiers; no path separators allowed.
   if (!/^[a-zA-Z0-9_-]+$/.test(agentType)) return null;
   // Build a prioritised list of agents/ directories to search.
-  // CLAUDE_PLUGIN_ROOT is tried first when set; the script-relative path is always the
+  // CODEBUDDY_PLUGIN_ROOT (CLAUDE_PLUGIN_ROOT legacy alias) is tried first when
+  // set; the script-relative path is always the
   // final fallback. Checking per-file (not just per-directory) means a partially-populated
   // plugin install doesn't hide agents that exist in the script-relative tree.
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   const scriptAgentsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'agents');
   const candidateDirs = [
     ...(pluginRoot ? [join(pluginRoot, 'agents')] : []),
@@ -191,13 +192,13 @@ function splitAgentNamespace(subagentType) {
 }
 
 function getPluginAgentDirs() {
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   const scriptAgentsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'agents');
   return pluginRoot ? [join(pluginRoot, 'agents'), scriptAgentsDir] : [scriptAgentsDir];
 }
 
 function getPluginSkillsDirs() {
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   const scriptSkillsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills');
   return pluginRoot ? [join(pluginRoot, 'skills'), scriptSkillsDir] : [scriptSkillsDir];
 }
@@ -206,13 +207,13 @@ function getPluginSkillsDirs() {
  * Whether an agent definition resolves for the given identifier.
  * Namespaced identifiers (omc:X / omc:X) resolve only against
  * plugin agents; bare identifiers resolve through the full native chain
- * (plugin, project .claude/agents, user config agents). A real agent always
+ * (plugin, project .codebuddy/agents, user config agents). A real agent always
  * wins over a bundled skill with the same name (collision rule).
  */
 function agentDefinitionExists(agentType, directory, namespaced) {
   const agentDirs = getPluginAgentDirs();
   if (!namespaced) {
-    agentDirs.push(join(directory, '.claude', 'agents'));
+    agentDirs.push(join(directory, '.codebuddy', 'agents'));
     agentDirs.push(join(getClaudeConfigDir(), 'agents'));
   }
   return agentDirs.some((agentsDir) => existsSync(join(agentsDir, `${agentType}.md`)));
@@ -763,7 +764,9 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (existsSync(transcriptPath)) return transcriptPath;
   } catch { /* fallthrough */ }
 
-  const worktreePattern = /--claude-worktrees-[^/\\]+/;
+  // CodeBuddy encodes project-local worktrees as --codebuddy-worktrees-X inside
+  // the projects dir; legacy Claude Code used --claude-worktrees-X. Match both.
+  const worktreePattern = /--(?:codebuddy|claude)-worktrees-[^/\\]+/;
   if (worktreePattern.test(transcriptPath)) {
     const resolvedPath = transcriptPath.replace(worktreePattern, '');
     try {
@@ -895,7 +898,7 @@ async function getTodoStatus(directory) {
   const omcRoot = await resolveOmcStateRoot(directory);
   const localPaths = [
     join(omcRoot, 'todos.json'),
-    join(directory, '.claude', 'todos.json')
+    join(directory, '.codebuddy', 'todos.json')
   ];
 
   for (const todoFile of localPaths) {
@@ -1857,7 +1860,7 @@ async function main() {
     // Fires in PreToolUse so users get notified BEFORE the tool blocks for input (#597)
     if (toolName === 'AskUserQuestion') {
       try {
-        const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+        const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
         if (pluginRoot) {
           const { notify } = await import(pathToFileURL(join(pluginRoot, 'dist', 'notifications', 'index.js')).href);
 

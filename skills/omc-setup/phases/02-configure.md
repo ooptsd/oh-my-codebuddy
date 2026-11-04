@@ -1,26 +1,6 @@
 # Phase 2: Environment Configuration
 
-**Skip condition**: If resuming and `lastCompletedStep >= 4`, skip Steps 2.0–2.3 and begin at Step 2.4 so retired setup values are always cleared before the phase exits.
-
-## Resume Boundary
-
-Capture the original progress marker once when Phase 2 starts. A resumed run that enters at Step 2.4 must not repeat the completed Steps 2.5/2.6 prompts or overwrite a higher progress marker:
-
-```bash
-if ! command -v jq >/dev/null 2>&1; then
-  echo "ERROR: jq is required to resume setup safely. Existing setup state was not modified."
-  exit 1
-fi
-if ! RESUME_LAST_COMPLETED_STEP=$(jq -r '.lastCompletedStep // 0' ".omc/state/setup-state.json" 2>/dev/null); then
-  echo "ERROR: Setup state is invalid JSON. Existing setup state was not modified."
-  exit 1
-fi
-if [ "$RESUME_LAST_COMPLETED_STEP" -ge 4 ] 2>/dev/null; then
-  RESUMED_PHASE_TWO_BOUNDARY="true"
-else
-  RESUMED_PHASE_TWO_BOUNDARY="false"
-fi
-```
+**Skip condition**: If resuming a completed setup (Pre-Setup Check found `setupCompleted`), only Step 2.4 runs; Steps 2.0–2.3 and 2.5–2.6 are skipped.
 
 ## Step 2.0: Check Ralph Runtime Prerequisites
 
@@ -28,41 +8,26 @@ Ralph is an agent-driven persistence loop with no external language dependency. 
 
 ```bash
 node --version || echo "ERROR: Node is required for omc hooks and Ralph state persistence."
-mkdir -p "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" 2>/dev/null
-touch "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.omc-write-probe" 2>/dev/null && rm -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.omc-write-probe" \
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+mkdir -p "$CONFIG_DIR" 2>/dev/null
+touch "$CONFIG_DIR/.omc-write-probe" 2>/dev/null && rm -f "$CONFIG_DIR/.omc-write-probe" \
   || echo "WARNING: Config dir is not writable; Ralph state persistence will fail until it is."
 ```
 
 ## Step 2.1: Setup HUD Statusline
 
-**Note**: If resuming and `lastCompletedStep >= 3`, skip to Step 2.2.
-
-The HUD shows real-time status in Claude Code's status bar. Delegate all HUD/statusLine setup to the `hud` skill:
+The HUD shows real-time status in CodeBuddy's status bar. Delegate all HUD/statusLine setup to the `hud` skill:
 
 Use the Skill tool to invoke: `hud` with args: `setup`
 
 Do not generate, normalize, or patch `statusLine` paths inline in this phase. This is especially important on Windows, where backslash path handling must stay inside the `hud` skill.
 
 This will:
-1. Install the HUD wrapper script to `~/.claude/hud/omc-hud.mjs`
-2. Configure `statusLine` in `~/.claude/settings.json`
+1. Install the HUD script to `~/.codebuddy/hud/omc-hud.mjs`
+2. Configure `statusLine` in `~/.codebuddy/settings.json`
 3. Report status and prompt to restart if needed
 
-After HUD setup completes, save progress:
-```bash
-CONFIG_TYPE=$(jq -r '.configType // "unknown"' ".omc/state/setup-state.json" 2>/dev/null || echo "unknown")
-bash "${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/setup-progress.sh" save 3 "$CONFIG_TYPE"
-```
-
-## Step 2.2: Repair Stale Plugin Cache References
-
-After a marketplace update, Claude Code may still have old omc cache paths in the running session or plugin registry. Repair those references before any cache cleanup so setup does not repeatedly emit stale plugin directory errors.
-
-```bash
-node "${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/repair-plugin-cache.mjs"
-```
-
-## Step 2.3: Check for Updates
+## Step 2.2: Check for Updates
 
 Notify user if a newer version is available:
 
@@ -70,36 +35,41 @@ Notify user if a newer version is available:
 # Detect installed version (cross-platform)
 node -e "
 const p=require('path'),f=require('fs'),h=require('os').homedir();
-const raw=process.env.CLAUDE_CONFIG_DIR?.trim();
-const d=raw==null||raw===''? p.join(h,'.claude'):raw==='~'?h:raw.startsWith('~/')||raw.startsWith('~\\\\')?p.join(h,raw.slice(2)):raw;
+const raw=(process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||'').trim();
+const d=raw==null||raw===''? p.join(h,'.codebuddy'):raw==='~'?h:raw.startsWith('~/')||raw.startsWith('~\\\\')?p.join(h,raw.slice(2)):raw;
 let v='';
-// Try cache directory first
-const b=p.join(d,'plugins','cache','omc','oh-my-claudecode');
+// Try the omc marketplace cache directory first
+const b=p.join(d,'plugins','cache','omc-plugins','omc');
 try{const vs=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));if(vs.length)v=vs[vs.length-1]}catch{}
-// Try .omc-version.json second
-if(v==='')try{const j=JSON.parse(f.readFileSync('.omc-version.json','utf-8'));v=j.version||''}catch{}
-// Try CLAUDE.md header third
-if(v==='')for(const c of['.claude/CLAUDE.md',p.join(d,'CLAUDE.md')]){try{const m=f.readFileSync(c,'utf-8').match(/^# oh-my-claudecode.*?(v?\d+\.\d+\.\d+)/m);if(m){v=m[1].replace(/^v/,'');break}}catch{}}
+// Try CODEBUDDY.md header second
+if(v==='')for(const c of['CODEBUDDY.md','.codebuddy/CODEBUDDY.md',p.join(d,'CODEBUDDY.md')]){try{const m=f.readFileSync(c,'utf-8').match(/OMC:VERSION:([^\s>]+)/);if(m){v=m[1];break}}catch{}}
 console.log('Installed:',v||'(not found)');
 "
 
-# Check npm for latest version
-LATEST_VERSION=$(npm view oh-my-claude-sisyphus version 2>/dev/null)
+# Check the marketplace clone for the latest published version
+LATEST_VERSION=$(git -C "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/plugins/marketplaces/omc-plugins" describe --tags --abbrev=0 2>/dev/null || echo "")
 
-if [ -n "$INSTALLED_VERSION" ] && [ -n "$LATEST_VERSION" ]; then
-  if [ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]; then
-    echo ""
-    echo "UPDATE AVAILABLE:"
-    echo "  Installed: v$INSTALLED_VERSION"
-    echo "  Latest:    v$LATEST_VERSION"
-    echo ""
-    echo "To update, run: claude /install-plugin oh-my-claudecode"
-  else
-    echo "You're on the latest version: v$INSTALLED_VERSION"
-  fi
-elif [ -n "$LATEST_VERSION" ]; then
-  echo "Latest version available: v$LATEST_VERSION"
+if [ -n "$LATEST_VERSION" ]; then
+  echo "Latest published: $LATEST_VERSION (update via /plugin marketplace update omc-plugins)"
 fi
+```
+
+## Step 2.3: Repair Stale Plugin Cache References
+
+After a marketplace update, CodeBuddy may keep old omc cache paths in the plugin registry (`installed_plugins.json`). Inspect and, when stale entries for `omc@omc-plugins` point at non-existent install paths, advise the user to reinstall:
+
+```bash
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+node -e "
+const f=require('fs'),p=require('path');
+const regPath=process.argv[1]+'/plugins/installed_plugins.json';
+try{
+  const reg=JSON.parse(f.readFileSync(regPath,'utf-8'));
+  const entries=reg.plugins&&reg.plugins['omc@omc-plugins'];
+  if(!entries){console.log('omc not present in registry (fresh install path)');process.exit(0)}
+  for(const e of entries){const exists=f.existsSync(e.installPath);console.log((exists?'OK   ':'STALE')+': '+e.installPath+(exists?'':' (reinstall: /plugin install omc@omc-plugins)'))}
+}catch{console.log('No plugin registry found')}
+" "$CONFIG_DIR"
 ```
 
 ## Step 2.4: Clear Retired Setup Values
@@ -107,7 +77,7 @@ fi
 The `ultrawork` workflow was removed in 5.0.0 and the `defaultExecutionMode` config key is no longer read by any runtime surface. Upgrades from 4.x may still carry a dead persisted value in `.omc-config.json`. Clear it so the config matches the current contract:
 
 ```bash
-CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;
@@ -136,9 +106,7 @@ fi
 
 **Note:** Never write a new `defaultExecutionMode` value. Generic keywords no longer route through a configured execution mode; invoke `/omc:execute` or `/omc:team` directly instead.
 
-**Resume-only boundary:** If `RESUMED_PHASE_TWO_BOUNDARY` is `true`, stop Phase 2 after this cleanup. Do not execute Steps 2.5 or 2.6, do not prompt for task-tool or team settings again, and do not save a new progress value. Return to the setup orchestrator with the original `RESUME_LAST_COMPLETED_STEP` unchanged.
-
-## Step 2.5: Install omc CLI Tool
+## Step 2.5: Install omc CLI Tool (Optional)
 
 The omc CLI (`omc` command) provides standalone helper commands such as `omc hud`, `omc teleport`, and `omc team ...`.
 
@@ -182,7 +150,6 @@ else
   else
     echo "WARNING: Failed to install omc CLI (permission issue or network error)."
     echo "You can install manually later: npm install -g oh-my-claude-sisyphus"
-    echo "Or with sudo: sudo npm install -g oh-my-claude-sisyphus"
   fi
 fi
 ```
@@ -222,7 +189,7 @@ If beads or beads-rust is detected, use AskUserQuestion:
 **Question:** "Which task management tool should I use for tracking work?"
 
 **Options:**
-1. **Built-in Tasks (default)** - Use Claude Code's native TodoWrite or available task-list surface. Tasks are session-only.
+1. **Built-in Tasks (default)** - Use CodeBuddy's native task-list surface (TaskCreate/TaskUpdate). Tasks are session-scoped.
 2. **Beads (bd)** - Git-backed persistent tasks. Survives across sessions. [Only if detected]
 3. **Beads-Rust (br)** - Lightweight Rust port of beads. [Only if detected]
 
@@ -231,7 +198,7 @@ If beads or beads-rust is detected, use AskUserQuestion:
 Store the preference:
 
 ```bash
-CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;
@@ -268,14 +235,3 @@ echo "Task tool set to: USER_CHOICE"
 ```
 
 **Note:** The beads context instructions will be injected automatically on the next session start.
-
-## Save Progress
-
-```bash
-CONFIG_TYPE=$(jq -r '.configType // "unknown"' ".omc/state/setup-state.json" 2>/dev/null || echo "unknown")
-if [ "${RESUMED_PHASE_TWO_BOUNDARY:-false}" != "true" ]; then
-  bash "${OMC_SETUP_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/setup-progress.sh" save 4 "$CONFIG_TYPE"
-else
-  echo "Resumed Phase 2: preserving lastCompletedStep=$RESUME_LAST_COMPLETED_STEP"
-fi
-```

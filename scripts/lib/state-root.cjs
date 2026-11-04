@@ -61,7 +61,8 @@ function isSafeWorkspaceRoot(workspaceRoot) {
   let cursor = workspaceRoot;
   while (true) {
     const name = basename(cursor).toLowerCase();
-    if (cursor === home || cursor === '/' || cursor === '/tmp' || name.startsWith('.') || ['.ssh', '.gnupg', '.aws', '.config', '.claude', '.codex', '.cache', '.npm', 'desktop', 'documents', 'downloads', 'pictures', 'music'].includes(name)) return false;
+    // '.claude' / '.codex' kept for legacy-host compatibility; '.codebuddy' is the CodeBuddy home
+  if (cursor === home || cursor === '/' || cursor === '/tmp' || name.startsWith('.') || ['.ssh', '.gnupg', '.aws', '.config', '.claude', '.codebuddy', '.codex', '.cache', '.npm', 'desktop', 'documents', 'downloads', 'pictures', 'music'].includes(name)) return false;
     const parent = dirname(cursor);
     if (parent === cursor) break;
     cursor = parent;

@@ -230,7 +230,7 @@ function reconcileAbandonedSessionStarts(omcRoot, currentSessionId) {
 }
 
 function getRuntimeBaseDir() {
-  return process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..');
+  return process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..');
 }
 
 async function loadProjectMemoryModules() {
@@ -594,7 +594,7 @@ function buildSessionStartAdditionalContext(messages) {
   return selected.join('\n');
 }
 
-// Extract OMC version from CLAUDE.md content
+// Extract OMC version from memory-file content (CODEBUDDY.md / CLAUDE.md)
 function extractOmcVersion(content) {
   const match = content.match(/<!-- OMC:VERSION:(\d+\.\d+\.\d+[^\s]*?) -->/);
   return match ? match[1] : null;
@@ -722,15 +722,15 @@ function writeUpdateCheckCache(latestVersion, currentVersion, updateAvailable, s
 }
 
 function getPluginUpdateChannelVersion() {
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   if (!pluginRoot || !isManagedPluginCacheRoot(pluginRoot)) return { managed: false, version: null };
   return { managed: true, version: getMarketplaceCloneVersion() };
 }
 
-// Get plugin version from CLAUDE_PLUGIN_ROOT
+// Get plugin version from CODEBUDDY_PLUGIN_ROOT (CLAUDE_PLUGIN_ROOT legacy alias)
 function getPluginVersion() {
   try {
-    const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+    const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
     if (!pluginRoot) return null;
     const pkg = readJsonFile(join(pluginRoot, 'package.json'));
     const latestCacheVersion = isManagedPluginCacheRoot(pluginRoot) ? getLatestPluginCacheVersion() : null;
@@ -750,12 +750,16 @@ function getNpmVersion() {
   } catch { return null; }
 }
 
-// Get CLAUDE.md version
+// Get memory-file version (CodeBuddy: CODEBUDDY.md; legacy Claude: CLAUDE.md)
 function getClaudeMdVersion() {
   try {
-    const claudeMdPath = join(configDir, 'CLAUDE.md');
-    if (!existsSync(claudeMdPath)) return null;  // File doesn't exist
-    const content = readFileSync(claudeMdPath, 'utf-8');
+    const candidates = [
+      join(configDir, 'CODEBUDDY.md'),
+      join(configDir, 'CLAUDE.md'), // legacy Claude-host installs
+    ];
+    const memoryPath = candidates.find((p) => existsSync(p));
+    if (!memoryPath) return null;  // File doesn't exist
+    const content = readFileSync(memoryPath, 'utf-8');
     const version = extractOmcVersion(content);
     return version || 'unknown';  // File exists but no marker = 'unknown'
   } catch { return null; }
@@ -781,13 +785,13 @@ function detectVersionDrift() {
 
   if (claudeMdVersion === 'unknown') {
     drift.push({
-      component: 'CLAUDE.md instructions',
+      component: 'memory-file instructions (CODEBUDDY.md)',
       current: 'unknown (needs migration)',
       expected: pluginVersion
     });
   } else if (claudeMdVersion && claudeMdVersion !== pluginVersion) {
     drift.push({
-      component: 'CLAUDE.md instructions',
+      component: 'memory-file instructions (CODEBUDDY.md)',
       current: claudeMdVersion,
       expected: pluginVersion
     });
@@ -889,28 +893,6 @@ async function checkNpmUpdate(currentVersion) {
   } catch { return null; } finally { clearTimeout(timeoutId); }
 }
 
-// Refresh the cached latest Claude Code version (same 24h window and 2s timeout
-// as the OMC check). Stored alongside the OMC fields so the HUD reads one file;
-// the field is simply absent on caches written before this check existed.
-async function checkClaudeCodeUpdate() {
-  const CACHE_DURATION = 24 * 60 * 60 * 1000;
-  const cached = readUpdateCheckCache();
-  if (cached.claudeCodeCheckedAt && (Date.now() - cached.claudeCodeCheckedAt) < CACHE_DURATION) return;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000);
-  try {
-    const response = await fetch(registryLatestUrl('@anthropic-ai/claude-code'), {
-      signal: controller.signal
-    });
-    if (!response.ok) return;
-
-    const data = await response.json();
-    if (!data?.version) return;
-    mergeUpdateCheckCache({ claudeCodeLatestVersion: data.version, claudeCodeCheckedAt: Date.now() });
-  } catch {} finally { clearTimeout(timeoutId); }
-}
-
 // Refresh update caches and return a user-facing OMC update notice, if any.
 // Independent of the workspace, so it also runs for non-workspace cwds (#3942).
 async function runUpdateChecks() {
@@ -927,7 +909,6 @@ async function runUpdateChecks() {
         return formatUpdateNoticeForUser(updateInfo, { autoUpgradePrompt: omcConfig.autoUpgradePrompt !== false });
       } catch { return null; }
     })(),
-    checkClaudeCodeUpdate().catch(() => {}),
   ]);
   return notice;
 }
@@ -1092,7 +1073,7 @@ async function main() {
 
     // Fire sibling-retrofit warning once per session (lifted off getOmcRoot hot path)
     try {
-      const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
       if (pluginRoot) {
         const { findWorkspaceRoot, warnSiblingRetrofit } = await import(
           pathToFileURL(join(pluginRoot, 'dist', 'lib', 'worktree-paths.js')).href
@@ -1107,7 +1088,7 @@ async function main() {
     // the plugin-root branch below, consumed by the stale-cache GC scan below.
     let occupancyResolution = null;
     writeSessionStartedMarker(omcRoot, directory, sessionId);
-    if (process.env.CLAUDE_PLUGIN_ROOT) {
+    if (process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT) {
       // Issue #3995: resolve plugin-cache occupancy ONCE per session start.
       // The win32 batched identity host (the only PowerShell spawn on this
       // path) runs a single time; its identities map feeds the owner publish
@@ -1116,7 +1097,7 @@ async function main() {
       const configuredOwnerPid = Number(process.env.OMC_SESSION_OWNER_PID);
       const ownerPid = Number.isSafeInteger(configuredOwnerPid) && configuredOwnerPid > 1 ? configuredOwnerPid : process.ppid;
       occupancyResolution = readOccupiedPluginRoots(configDir, { includePids: [ownerPid] });
-      publishCacheOccupancy(process.env.CLAUDE_PLUGIN_ROOT, configDir, ownerPid, occupancyResolution.identities.get(ownerPid));
+      publishCacheOccupancy(process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT, configDir, ownerPid, occupancyResolution.identities.get(ownerPid));
     }
     reconcileAbandonedSessionStarts(omcRoot, sessionId);
     reconcileSessionEndJobsInBackground(getRuntimeBaseDir(), directory);
@@ -1140,7 +1121,7 @@ async function main() {
     if (updateNotice) userMessages.push(updateNotice);
 
     // Warn if silentAutoUpdate is enabled but running in plugin mode (#1773)
-    if (process.env.CLAUDE_PLUGIN_ROOT) {
+    if (process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT) {
       try {
         const omcConfigPath = join(configDir, '.omc-config.json');
         const omcConfig = readJsonFile(omcConfigPath);
@@ -1154,7 +1135,7 @@ async function main() {
     const hudCheck = await checkHudInstallation();
     if (!hudCheck.installed) {
       messages.push(`<system-reminder>
-[OMC] HUD not configured (${hudCheck.reason}). Run /hud setup then restart Claude Code.
+[OMC] HUD not configured (${hudCheck.reason}). Run /hud setup then restart CodeBuddy.
 </system-reminder>`);
     }
 
@@ -1204,7 +1185,7 @@ Treat this as prior-session context only. Prioritize the user's newest request, 
     // projects, causing phantom task counts in fresh sessions (see issue #354).
     const localTodoPaths = [
       join(omcRoot, 'todos.json'),
-      join(directory, '.claude', 'todos.json')
+      join(directory, '.codebuddy', 'todos.json')
     ];
     let incompleteCount = 0;
     for (const todoFile of localTodoPaths) {
@@ -1351,7 +1332,7 @@ ${cleanContent}
       // session still has the old CLAUDE_PLUGIN_ROOT in its environment, the
       // directory won't exist. Create a symlink so subsequent hook invocations
       // via run.cjs resolve correctly.
-      const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT?.replace(/[\/\\]+$/, ''); // strip trailing separators
+      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT?.replace(/[\/\\]+$/, ''); // strip trailing separators
       if (pluginRoot && !existsSync(pluginRoot)) {
         const pluginRootVersion = basename(pluginRoot);
         if (/^\d+\.\d+\.\d+/.test(pluginRootVersion) && versions.length > 0) {
@@ -1388,7 +1369,7 @@ ${cleanContent}
     // Notification transports/custom integrations must never write into this
     // foreground hook's stdout JSON protocol or stderr CI checks.
     try {
-      const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
       if (pluginRoot) {
         dispatchSessionStartNotificationInBackground(pluginRoot, {
           sessionId,

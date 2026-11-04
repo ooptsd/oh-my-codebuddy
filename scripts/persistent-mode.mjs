@@ -231,7 +231,7 @@ function recordIdleNotificationSent(stateDir) {
 function dispatchIdleNotificationInBackground(sessionId, directory) {
   if (process.env.OMC_NOTIFY === "0") return false;
 
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
   if (!pluginRoot) return false;
 
   const notificationsModuleUrl = pathToFileURL(join(pluginRoot, "dist", "notifications", "index.js")).href;

@@ -61,7 +61,7 @@ cleanup that cannot be done via file deletion alone.
 
 ```bash
 # Fallback: direct file removal when state_clear MCP tool is unavailable
-SESSION_ID="${CLAUDE_SESSION_ID:-${CLAUDECODE_SESSION_ID:-}}"
+SESSION_ID="${CODEBUDDY_SESSION_ID:-${CLAUDE_SESSION_ID:-${CLAUDECODE_SESSION_ID:-}}}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || { d="$PWD"; while [ "$d" != "/" ] && [ ! -d "$d/.omc" ]; do d="$(dirname "$d")"; done; echo "$d"; })"
 
 # Cross-platform SHA-256 (macOS: shasum, Linux: sha256sum)
@@ -138,7 +138,7 @@ Steps under the hood:
 1. `state_list_active` enumerates `.omc/state/sessions/{sessionId}/…` to find every known session.
 2. `state_clear` runs once per session to drop that session’s files.
 3. A global `state_clear` without `session_id` removes legacy files under `.omc/state/*.json`, `.omc/state/swarm*.db`, and compatibility artifacts (see list).
-4. Team artifacts (`~/.claude/teams/*/`, `~/.claude/tasks/*/`, `.omc/state/team-state.json`) are best-effort cleared as part of the legacy fallback.
+4. Team artifacts (`~/.codebuddy/teams/*/`, `~/.codebuddy/tasks/*/`, `.omc/state/team-state.json`) are best-effort cleared as part of the legacy fallback.
    - Cancel for native team does NOT affect omc-teams state, and vice versa.
 
 Every `state_clear` command honors the `session_id` argument, so even force mode still uses the session-aware paths first before deleting legacy files.
@@ -200,7 +200,7 @@ Use force mode to clear every session plus legacy artifacts via `state_clear`. D
 
 #### If Team Active (Claude Code implicit team)
 
-Teams are detected through omc team state, not removed Claude Code `~/.claude/teams` config directories:
+Teams are detected through omc team state, not removed CodeBuddy `~/.codebuddy/teams` config directories:
 
 ```bash
 # Check for active omc team state
@@ -240,9 +240,14 @@ After graceful pass:
 
 **Orphan Detection (Post-Cleanup):**
 
-For legacy omc tmux/CLI worker runs, verify no worker processes remain:
+For legacy omc tmux/CLI worker runs, verify no worker processes remain (only when the plugin ships the scanner):
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/cleanup-orphans.mjs" --team-name "{team_name}"
+PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}"
+if [ -f "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" ]; then
+  node "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" --team-name "{team_name}"
+else
+  pgrep -af "omc.*--team-name" || echo "No orphan worker processes found"
+fi
 ```
 
 The orphan scanner:
@@ -318,7 +323,7 @@ The cancel skill runs as follows:
 2. Use `state_list_active` to enumerate known session ids and `state_get_status` to learn each active mode; treat any Ultrawork record as cleanup-only legacy state.
 3. When operating in default mode, call `state_clear` with that session_id to remove only the session’s files, then run mode-specific cleanup (autopilot → ralph → …) based on the state tool signals.
 4. In force mode, iterate every active session, call `state_clear` per session, then run a global `state_clear` without `session_id` to drop legacy files (`.omc/state/*.json`, compatibility artifacts) and report success. Swarm remains a shared SQLite/marker mode outside session scoping.
-5. Team artifacts (`~/.claude/teams/*/`, `~/.claude/tasks/*/`, `.omc/state/team-state.json`) remain best-effort cleanup items invoked during the legacy/global pass.
+5. Team artifacts (`~/.codebuddy/teams/*/`, `~/.codebuddy/tasks/*/`, `.omc/state/team-state.json`) remain best-effort cleanup items invoked during the legacy/global pass.
 6. **Always** clear skill-active state as the final step, regardless of which mode was active or whether `--force` was used:
    ```
    state_clear(mode="skill-active", session_id)
