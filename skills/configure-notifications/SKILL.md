@@ -43,12 +43,12 @@ Set up Telegram notifications so omc can message you when sessions end, need inp
 
 ### How This Skill Works
 
-This is an interactive, natural-language configuration skill. Walk the user through setup by asking questions with AskUserQuestion. Write the result to `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/.omc-config.json`.
+This is an interactive, natural-language configuration skill. Walk the user through setup by asking questions with AskUserQuestion. Write the result to `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/.omc-config.json`.
 
 ### Step 1: Detect Existing Configuration
 
 ```bash
-CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/.omc-config.json"
+CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-config.json"
 
 if [ -f "$CONFIG_FILE" ]; then
   HAS_TELEGRAM=$(jq -r '.notifications.telegram.enabled // false' "$CONFIG_FILE" 2>/dev/null)
@@ -139,8 +139,8 @@ Use AskUserQuestion with multiSelect:
 **Question:** "Which events should trigger Telegram notifications?"
 
 **Options (multiSelect: true):**
-1. **Session end (Recommended)** - When a Claude session finishes
-2. **Input needed** - When Claude is waiting for your response (great for long-running tasks)
+1. **Session end (Recommended)** - When a CodeBuddy session finishes
+2. **Input needed** - When CodeBuddy is waiting for your response (great for long-running tasks)
 3. **Session start** - When a new session begins
 4. **Session continuing** - When a persistent mode keeps the session alive
 
@@ -151,7 +151,7 @@ Default selection: session-end + ask-user-question.
 Read the existing config, merge the new Telegram settings, and write back:
 
 ```bash
-CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/.omc-config.json"
+CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-config.json"
 mkdir -p "$(dirname "$CONFIG_FILE")"
 
 if [ -f "$CONFIG_FILE" ]; then
@@ -269,12 +269,12 @@ Set up Discord notifications so omc can ping you when sessions end, need input, 
 
 ### How This Skill Works
 
-This is an interactive, natural-language configuration skill. Walk the user through setup by asking questions with AskUserQuestion. Write the result to `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/.omc-config.json`.
+This is an interactive, natural-language configuration skill. Walk the user through setup by asking questions with AskUserQuestion. Write the result to `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/.omc-config.json`.
 
 ### Step 1: Detect Existing Configuration
 
 ```bash
-CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/.omc-config.json"
+CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-config.json"
 
 if [ -f "$CONFIG_FILE" ]; then
   # Check for existing discord config
@@ -362,8 +362,8 @@ Use AskUserQuestion with multiSelect:
 **Question:** "Which events should trigger Discord notifications?"
 
 **Options (multiSelect: true):**
-1. **Session end (Recommended)** - When a Claude session finishes
-2. **Input needed** - When Claude is waiting for your response (great for long-running tasks)
+1. **Session end (Recommended)** - When a CodeBuddy session finishes
+2. **Input needed** - When CodeBuddy is waiting for your response (great for long-running tasks)
 3. **Session start** - When a new session begins
 4. **Session continuing** - When a persistent mode keeps the session alive
 
@@ -377,7 +377,7 @@ Use AskUserQuestion:
 
 **Options:**
 1. **omc (default)** - Display as "omc"
-2. **Claude Code** - Display as "Claude Code"
+2. **CodeBuddy** - Display as "CodeBuddy"
 3. **Custom** - Enter a custom name
 
 ### Step 7: Write Configuration
@@ -385,7 +385,7 @@ Use AskUserQuestion:
 Read the existing config, merge the new Discord settings, and write back:
 
 ```bash
-CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/.omc-config.json"
+CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-config.json"
 mkdir -p "$(dirname "$CONFIG_FILE")"
 
 if [ -f "$CONFIG_FILE" ]; then
@@ -519,12 +519,12 @@ Set up Slack notifications so omc can message you when sessions end, need input,
 
 ### How This Skill Works
 
-This is an interactive, natural-language configuration skill. Walk the user through setup by asking questions with AskUserQuestion. Write the result to `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/.omc-config.json`.
+This is an interactive, natural-language configuration skill. Walk the user through setup by asking questions with AskUserQuestion. Write the result to `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/.omc-config.json`.
 
 ### Step 1: Detect Existing Configuration
 
 ```bash
-CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/.omc-config.json"
+CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-config.json"
 
 if [ -f "$CONFIG_FILE" ]; then
   HAS_SLACK=$(jq -r '.notifications.slack.enabled // false' "$CONFIG_FILE" 2>/dev/null)
@@ -610,8 +610,8 @@ Use AskUserQuestion with multiSelect:
 **Question:** "Which events should trigger Slack notifications?"
 
 **Options (multiSelect: true):**
-1. **Session end (Recommended)** - When a Claude session finishes
-2. **Input needed** - When Claude is waiting for your response (great for long-running tasks)
+1. **Session end (Recommended)** - When a CodeBuddy session finishes
+2. **Input needed** - When CodeBuddy is waiting for your response (great for long-running tasks)
 3. **Session start** - When a new session begins
 4. **Session continuing** - When a persistent mode keeps the session alive
 
@@ -637,7 +637,7 @@ Use AskUserQuestion:
 
 **Options:**
 1. **omc (default)** - Display as "omc"
-2. **Claude Code** - Display as "Claude Code"
+2. **CodeBuddy** - Display as "CodeBuddy"
 3. **Custom** - Enter a custom name
 
 ### Step 8: Write Configuration
@@ -645,7 +645,7 @@ Use AskUserQuestion:
 Read the existing config, merge the new Slack settings, and write back:
 
 ```bash
-CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/.omc-config.json"
+CONFIG_FILE="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-config.json"
 mkdir -p "$(dirname "$CONFIG_FILE")"
 
 if [ -f "$CONFIG_FILE" ]; then
@@ -792,7 +792,7 @@ If the trigger or argument contains "hook", "template", or "customize messages" 
 
 ### Step 1: Detect Existing Hook Config
 
-Check if `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/omc_config.hook.json` exists. If it does, show the current configuration. If not, explain what it does.
+Check if `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/omc_config.hook.json` exists. If it does, show the current configuration. If not, explain what it does.
 
 ```
 Hook event templates let you customize the notification messages sent to each platform.
@@ -809,9 +809,9 @@ Use AskUserQuestion:
 **Question:** "Which event would you like to configure templates for?"
 
 **Options:**
-1. **session-end** - When a Claude session finishes (most common)
-2. **ask-user-question** - When Claude is waiting for input
-3. **session-idle** - When Claude finishes and waits for input
+1. **session-end** - When a CodeBuddy session finishes (most common)
+2. **ask-user-question** - When CodeBuddy is waiting for input
+3. **session-idle** - When CodeBuddy finishes and waits for input
 4. **session-start** - When a new session begins
 
 ### Step 3: Show Available Variables
@@ -879,7 +879,7 @@ If per-platform: ask for each enabled platform's template separately.
 
 ### Step 6: Write Configuration
 
-Read or create `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/omc_config.hook.json` and merge the new settings:
+Read or create `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/omc_config.hook.json` and merge the new settings:
 
 ```json
 {
@@ -953,7 +953,7 @@ If `~/.codebuddy/omc_config.openclaw.json` exists, detect and offer migration:
 
 **Step 1: Detect Legacy Config**
 ```bash
-LEGACY_CONFIG="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/omc_config.openclaw.json"
+LEGACY_CONFIG="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/omc_config.openclaw.json"
 if [ -f "$LEGACY_CONFIG" ]; then
   echo "LEGACY_FOUND=true"
   # Check if already migrated
@@ -1197,7 +1197,7 @@ All custom integrations support these template variables:
 | `{{duration}}` | Human-readable duration | `45s` |
 | `{{durationMs}}` | Duration in milliseconds | `45000` |
 | `{{reason}}` | Stop/end reason | `completed` |
-| `{{tmuxSession}}` | tmux session name | `claude:my-project` |
+| `{{tmuxSession}}` | tmux session name | `codebuddy:my-project` |
 
 Session-end only:
 - `{{agentsSpawned}}`, `{{agentsCompleted}}`, `{{modesUsed}}`, `{{contextSummary}}`

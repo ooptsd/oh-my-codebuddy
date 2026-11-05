@@ -61,17 +61,17 @@ psm_create_tmux_session() {
     return 0
 }
 
-# Launch Claude Code in tmux session, optionally injecting either a context-file
+# Launch CodeBuddy in tmux session, optionally injecting either a context-file
 # trigger prompt or a literal initial prompt.
-# Usage: psm_launch_claude <session_name> [initial_context]
+# Usage: psm_launch_agent <session_name> [initial_context]
 # initial_context may be either:
 #   - a path relative to the worktree root (e.g. .psm/review.md), or
-#   - a literal prompt string to send after Claude boots.
+#   - a literal prompt string to send after CodeBuddy boots.
 #
 # Passes --dangerously-skip-permissions so the session does not stall on
 # directory-trust or repeated tool-approval prompts (issue #2508).
-# Set PSM_CLAUDE_STARTUP_DELAY (default: 5s) to tune literal-prompt delivery.
-psm_launch_claude() {
+# Set PSM_STARTUP_DELAY (default: 5s) to tune literal-prompt delivery.
+psm_launch_agent() {
     local session_name
     session_name=$(psm_tmux_safe_name "$1")
     local initial_context="${2:-}"
@@ -84,7 +84,7 @@ psm_launch_claude() {
     # --dangerously-skip-permissions bypasses both the directory-trust prompt and
     # every per-tool approval prompt. Without this flag, unattended PSM sessions
     # can block indefinitely on the first tool call (issue #2508).
-    tmux send-keys -t "$session_name" "claude --dangerously-skip-permissions" Enter
+    tmux send-keys -t "$session_name" "codebuddy --dangerously-skip-permissions" Enter
 
     if [[ -n "$initial_context" ]]; then
         local session_path=""
@@ -95,7 +95,7 @@ psm_launch_claude() {
         if [[ -n "$session_path" && -f "$session_path/$initial_context" ]]; then
             psm_inject_prompt "$session_name" "$initial_context"
         else
-            local startup_delay="${PSM_CLAUDE_STARTUP_DELAY:-5}"
+            local startup_delay="${PSM_STARTUP_DELAY:-5}"
             (
                 sleep "$startup_delay"
                 tmux send-keys -t "$session_name" -l -- "$initial_context" 2>/dev/null || true
@@ -133,18 +133,18 @@ psm_render_template() {
     printf '%s\n' "$content"
 }
 
-# Returns 0 if the captured pane text shows Claude's interactive input prompt.
+# Returns 0 if the captured pane text shows CodeBuddy's interactive input prompt.
 # Matches '>' (standard prompt) or '?' (trust prompt) as the sole content of a line.
-# Usage: _psm_pane_has_claude_prompt <pane_text>
-_psm_pane_has_claude_prompt() {
+# Usage: _psm_pane_has_agent_prompt <pane_text>
+_psm_pane_has_agent_prompt() {
     local pane_text="$1"
     printf '%s' "$pane_text" | grep -qE '^[[:space:]]*(>|\?)[[:space:]]*$'
 }
 
-# Poll the tmux pane until Claude's REPL prompt appears.
-# Usage: psm_wait_for_claude_prompt <session_name> [max_seconds]
+# Poll the tmux pane until CodeBuddy's REPL prompt appears.
+# Usage: psm_wait_for_agent_prompt <session_name> [max_seconds]
 # Returns 0 when prompt detected; 1 on timeout.
-psm_wait_for_claude_prompt() {
+psm_wait_for_agent_prompt() {
     local session_name
     session_name=$(psm_tmux_safe_name "$1")
     local max_wait="${2:-30}"
@@ -153,7 +153,7 @@ psm_wait_for_claude_prompt() {
     while [[ $waited -lt $max_wait ]]; do
         local pane_content
         pane_content=$(tmux capture-pane -t "$session_name" -p 2>/dev/null) || return 1
-        if _psm_pane_has_claude_prompt "$pane_content"; then
+        if _psm_pane_has_agent_prompt "$pane_content"; then
             return 0
         fi
         sleep 1
@@ -163,7 +163,7 @@ psm_wait_for_claude_prompt() {
     return 1
 }
 
-# Wait for Claude's REPL to be ready then inject a context-file trigger prompt.
+# Wait for CodeBuddy's REPL to be ready then inject a context-file trigger prompt.
 # Non-fatal: warns on timeout but does not fail the session creation.
 # Usage: psm_inject_prompt <session_name> <context_file_relative_path>
 psm_inject_prompt() {
@@ -171,8 +171,8 @@ psm_inject_prompt() {
     session_name=$(psm_tmux_safe_name "$1")
     local context_file="$2"
 
-    if ! psm_wait_for_claude_prompt "$session_name"; then
-        echo "warn|Timed out waiting for Claude prompt; task context not injected" >&2
+    if ! psm_wait_for_agent_prompt "$session_name"; then
+        echo "warn|Timed out waiting for CodeBuddy prompt; task context not injected" >&2
         return 0
     fi
 

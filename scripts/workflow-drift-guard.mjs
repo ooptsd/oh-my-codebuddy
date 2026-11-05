@@ -2,8 +2,7 @@
 /**
  * OMC Workflow Drift Guard Stop hook.
  *
- * Boundary source: CodeBuddy Code hook semantics mirror the legacy Claude Code
- * docs (https://code.claude.com/docs/en/hooks) which document Stop
+ * Boundary source: CodeBuddy Code hook semantics — Stop
  * hooks with last_assistant_message and decision:"block";
  * plugin hooks/hooks.json loading and the shared lifecycle events follow the
  * same shape.
@@ -901,7 +900,7 @@ async function main() {
     return;
   }
   const input = safeJsonParse(await readStdin());
-  // Claude Code docs warn Stop hooks receive stop_hook_active while already
+  // Host docs warn Stop hooks receive stop_hook_active while already
   // continuing from a Stop hook; fail open to avoid self-reinforcing loops.
   if (input.stop_hook_active === true || input.stopHookActive === true) {
     console.log(JSON.stringify({ suppressOutput: true }));

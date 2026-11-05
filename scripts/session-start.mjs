@@ -11,7 +11,7 @@ import { spawn } from 'child_process';
 import { join, dirname, basename, resolve, relative, isAbsolute } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { getClaudeConfigDir, getUpdateCheckCachePath } from './lib/config-dir.mjs';
+import { getConfigDir, getUpdateCheckCachePath } from './lib/config-dir.mjs';
 import { resolveOmcStateRoot } from './lib/state-root.mjs';
 import { pathIdentity, publishCacheOccupancy, readOccupiedPluginRoots } from './lib/cache-occupancy.mjs';
 
@@ -22,8 +22,8 @@ const REFRESH_UPDATE_CACHE_DEADLINE_MS = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-/** Host config directory (CODEBUDDY_CONFIG_DIR > CLAUDE_CONFIG_DIR > ~/.codebuddy) */
-const configDir = getClaudeConfigDir();
+/** Host config directory (CODEBUDDY_CONFIG_DIR > ~/.codebuddy) */
+const configDir = getConfigDir();
 
 // Import timeout-protected stdin reader (prevents hangs on Linux/Windows, see issue #240, #524)
 let readStdin;
@@ -133,7 +133,7 @@ function removeSessionStartedMarker(omcRoot, sessionId) {
 /**
  * Return true only when SessionStart has durable abandonment evidence.
  *
- * Claude Code SessionStart input currently provides session metadata such as
+ * CodeBuddy SessionStart input currently provides session metadata such as
  * session_id, transcript_path, cwd, source, model, and agent_type, but no
  * stable owner process for the interactive session. In installed OMC hooks the
  * immediate hook parent belongs to scripts/run.cjs and is intentionally
@@ -148,7 +148,7 @@ function hasDurableAbandonmentEvidence(marker) {
     return true;
   }
 
-  // Same-boot hard-kill cleanup requires a durable owner signal. Claude Code
+  // Same-boot hard-kill cleanup requires a durable owner signal. CodeBuddy
   // does not currently provide one to hooks, so keep active state rather than
   // guessing from hook-runner process ancestry or transcript metadata.
   return false;
@@ -230,7 +230,7 @@ function reconcileAbandonedSessionStarts(omcRoot, currentSessionId) {
 }
 
 function getRuntimeBaseDir() {
-  return process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || join(__dirname, '..');
+  return process.env.CODEBUDDY_PLUGIN_ROOT || join(__dirname, '..');
 }
 
 async function loadProjectMemoryModules() {
@@ -431,9 +431,6 @@ const SESSION_END_MODE_STATE_FILES = [
   'skill-active-state.json',
 ];
 
-import { MODEL_ROUTING_OVERRIDE_MESSAGE } from './lib/model-routing-override-message.mjs';
-export { MODEL_ROUTING_OVERRIDE_MESSAGE };
-
 /**
  * Validate that a candidate cwd is a real OMC workspace anchor.
  * Returns the candidate unchanged if it is non-empty AND contains a
@@ -470,66 +467,6 @@ function validateCwd(candidate) {
   );
   return null;
 }
-
-function isTruthyProviderFlag(value) {
-  return value === '1' || value === 'true';
-}
-
-function getSessionModelId() {
-  return process.env.CLAUDE_MODEL || process.env.ANTHROPIC_MODEL || '';
-}
-
-function isBedrockSession() {
-  if (isTruthyProviderFlag(process.env.CLAUDE_CODE_USE_BEDROCK)) return true;
-  const modelId = getSessionModelId();
-  return Boolean(
-    modelId && (
-      /^((us|eu|ap|global)\.anthropic\.|anthropic\.claude)/i.test(modelId) ||
-      (
-        /^arn:aws(-[^:]+)?:bedrock:/i.test(modelId) &&
-        /:(inference-profile|application-inference-profile)\//i.test(modelId) &&
-        modelId.toLowerCase().includes('claude')
-      )
-    )
-  );
-}
-
-function isVertexSession() {
-  if (isTruthyProviderFlag(process.env.CLAUDE_CODE_USE_VERTEX)) return true;
-  const modelId = getSessionModelId();
-  return Boolean(modelId && modelId.toLowerCase().startsWith('vertex_ai/'));
-}
-
-function readRoutingForceInheritFromConfig(directory) {
-  const configPaths = [
-    join(configDir, '.omc-config.json'),
-    join(directory, '.omc', 'config.json'),
-  ];
-
-  for (const configPath of configPaths) {
-    const config = readJsonFile(configPath);
-    if (config?.routing?.forceInherit === true) return true;
-  }
-
-  return false;
-}
-
-function shouldEmitModelRoutingOverride(directory) {
-  if (process.env.OMC_ROUTING_FORCE_INHERIT === 'true') return true;
-  if (process.env.OMC_ROUTING_FORCE_INHERIT === 'false') return false;
-  if (readRoutingForceInheritFromConfig(directory)) return true;
-
-  if (isBedrockSession() || isVertexSession()) return true;
-
-  const modelId = getSessionModelId();
-  if (modelId && !modelId.toLowerCase().includes('claude')) return true;
-
-  const baseUrl = process.env.ANTHROPIC_BASE_URL || '';
-  if (baseUrl && !baseUrl.includes('anthropic.com')) return true;
-
-  return false;
-}
-
 
 function compactBudgetedText(text, maxChars) {
   const notice = '\n...[truncated to preserve SessionStart context budget]';
@@ -594,7 +531,7 @@ function buildSessionStartAdditionalContext(messages) {
   return selected.join('\n');
 }
 
-// Extract OMC version from memory-file content (CODEBUDDY.md / CLAUDE.md)
+// Extract OMC version from memory-file content (CODEBUDDY.md)
 function extractOmcVersion(content) {
   const match = content.match(/<!-- OMC:VERSION:(\d+\.\d+\.\d+[^\s]*?) -->/);
   return match ? match[1] : null;
@@ -664,7 +601,7 @@ function readUpdateCheckCache() {
   } catch { return {}; }
 }
 
-// Merge into the existing cache so unrelated fields (e.g. the Claude Code
+// Merge into the existing cache so unrelated fields (e.g. the host's
 // version tracked below) survive an OMC-only refresh.
 function mergeUpdateCheckCache(fields) {
   const cachePath = getUpdateCheckCachePath();
@@ -722,15 +659,15 @@ function writeUpdateCheckCache(latestVersion, currentVersion, updateAvailable, s
 }
 
 function getPluginUpdateChannelVersion() {
-  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
   if (!pluginRoot || !isManagedPluginCacheRoot(pluginRoot)) return { managed: false, version: null };
   return { managed: true, version: getMarketplaceCloneVersion() };
 }
 
-// Get plugin version from CODEBUDDY_PLUGIN_ROOT (CLAUDE_PLUGIN_ROOT legacy alias)
+// Get plugin version from CODEBUDDY_PLUGIN_ROOT
 function getPluginVersion() {
   try {
-    const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+    const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
     if (!pluginRoot) return null;
     const pkg = readJsonFile(join(pluginRoot, 'package.json'));
     const latestCacheVersion = isManagedPluginCacheRoot(pluginRoot) ? getLatestPluginCacheVersion() : null;
@@ -750,15 +687,11 @@ function getNpmVersion() {
   } catch { return null; }
 }
 
-// Get memory-file version (CodeBuddy: CODEBUDDY.md; legacy Claude: CLAUDE.md)
-function getClaudeMdVersion() {
+// Get memory-file version (CODEBUDDY.md)
+function getMemoryFileVersion() {
   try {
-    const candidates = [
-      join(configDir, 'CODEBUDDY.md'),
-      join(configDir, 'CLAUDE.md'), // legacy Claude-host installs
-    ];
-    const memoryPath = candidates.find((p) => existsSync(p));
-    if (!memoryPath) return null;  // File doesn't exist
+    const memoryPath = join(configDir, 'CODEBUDDY.md');
+    if (!existsSync(memoryPath)) return null;  // File doesn't exist
     const content = readFileSync(memoryPath, 'utf-8');
     const version = extractOmcVersion(content);
     return version || 'unknown';  // File exists but no marker = 'unknown'
@@ -769,7 +702,7 @@ function getClaudeMdVersion() {
 function detectVersionDrift() {
   const pluginVersion = getPluginVersion();
   const npmVersion = getNpmVersion();
-  const claudeMdVersion = getClaudeMdVersion();
+  const memoryFileVersion = getMemoryFileVersion();
   const marketplaceChannel = getPluginUpdateChannelVersion();
 
   // Need at least plugin version to detect drift
@@ -783,16 +716,16 @@ function detectVersionDrift() {
     drift.push({ component: 'npm package (omc CLI)', current: npmVersion, expected: pluginVersion });
   }
 
-  if (claudeMdVersion === 'unknown') {
+  if (memoryFileVersion === 'unknown') {
     drift.push({
       component: 'memory-file instructions (CODEBUDDY.md)',
       current: 'unknown (needs migration)',
       expected: pluginVersion
     });
-  } else if (claudeMdVersion && claudeMdVersion !== pluginVersion) {
+  } else if (memoryFileVersion && memoryFileVersion !== pluginVersion) {
     drift.push({
       component: 'memory-file instructions (CODEBUDDY.md)',
-      current: claudeMdVersion,
+      current: memoryFileVersion,
       expected: pluginVersion
     });
   }
@@ -802,7 +735,7 @@ function detectVersionDrift() {
   return {
     pluginVersion,
     npmVersion,
-    claudeMdVersion,
+    memoryFileVersion,
     drift,
     source: marketplaceChannel.managed ? 'marketplace' : 'npm',
   };
@@ -811,7 +744,7 @@ function detectVersionDrift() {
 // Check if we should notify (once per unique drift combination)
 function shouldNotifyDrift(driftInfo) {
   const stateFile = join(configDir, '.omc', 'update-state.json');
-  const driftKey = `plugin:${driftInfo.pluginVersion}-npm:${driftInfo.npmVersion}-claude:${driftInfo.claudeMdVersion}`;
+  const driftKey = `plugin:${driftInfo.pluginVersion}-npm:${driftInfo.npmVersion}-memory:${driftInfo.memoryFileVersion}`;
 
   try {
     if (existsSync(stateFile)) {
@@ -1038,7 +971,7 @@ async function main() {
     const directory = validateCwd(rawDirectory);
     if (directory === null) {
       // No workspace here, but the registry update checks do not need one, so
-      // the HUD update cache still refreshes for users who launch Claude Code
+      // the HUD update cache still refreshes for users who launch CodeBuddy
       // outside a repo. It runs detached: this path must answer immediately and
       // must not touch any workspace or session state.
       refreshUpdateCacheInBackground();
@@ -1053,7 +986,7 @@ async function main() {
     let pendingRestoreMessage = null;
 
     // Restore the newest PreCompact checkpoint after compaction (issue #3730).
-    // Only fires when Claude Code signals the session resumed from compaction
+    // Only fires when the host signals the session resumed from compaction
     // (source === 'compact'); never on startup, resume, or clear.
     if (data.source === 'compact' && sessionId) {
       try {
@@ -1073,7 +1006,7 @@ async function main() {
 
     // Fire sibling-retrofit warning once per session (lifted off getOmcRoot hot path)
     try {
-      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
       if (pluginRoot) {
         const { findWorkspaceRoot, warnSiblingRetrofit } = await import(
           pathToFileURL(join(pluginRoot, 'dist', 'lib', 'worktree-paths.js')).href
@@ -1088,7 +1021,7 @@ async function main() {
     // the plugin-root branch below, consumed by the stale-cache GC scan below.
     let occupancyResolution = null;
     writeSessionStartedMarker(omcRoot, directory, sessionId);
-    if (process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT) {
+    if (process.env.CODEBUDDY_PLUGIN_ROOT) {
       // Issue #3995: resolve plugin-cache occupancy ONCE per session start.
       // The win32 batched identity host (the only PowerShell spawn on this
       // path) runs a single time; its identities map feeds the owner publish
@@ -1097,7 +1030,7 @@ async function main() {
       const configuredOwnerPid = Number(process.env.OMC_SESSION_OWNER_PID);
       const ownerPid = Number.isSafeInteger(configuredOwnerPid) && configuredOwnerPid > 1 ? configuredOwnerPid : process.ppid;
       occupancyResolution = readOccupiedPluginRoots(configDir, { includePids: [ownerPid] });
-      publishCacheOccupancy(process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT, configDir, ownerPid, occupancyResolution.identities.get(ownerPid));
+      publishCacheOccupancy(process.env.CODEBUDDY_PLUGIN_ROOT, configDir, ownerPid, occupancyResolution.identities.get(ownerPid));
     }
     reconcileAbandonedSessionStarts(omcRoot, sessionId);
     reconcileSessionEndJobsInBackground(getRuntimeBaseDir(), directory);
@@ -1121,7 +1054,7 @@ async function main() {
     if (updateNotice) userMessages.push(updateNotice);
 
     // Warn if silentAutoUpdate is enabled but running in plugin mode (#1773)
-    if (process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT) {
+    if (process.env.CODEBUDDY_PLUGIN_ROOT) {
       try {
         const omcConfigPath = join(configDir, '.omc-config.json');
         const omcConfig = readJsonFile(omcConfigPath);
@@ -1137,10 +1070,6 @@ async function main() {
       messages.push(`<system-reminder>
 [OMC] HUD not configured (${hudCheck.reason}). Run /hud setup then restart CodeBuddy.
 </system-reminder>`);
-    }
-
-    if (shouldEmitModelRoutingOverride(directory)) {
-      messages.push(MODEL_ROUTING_OVERRIDE_MESSAGE);
     }
 
     // Check for ralph loop state
@@ -1178,9 +1107,9 @@ Treat this as prior-session context only. Prioritize the user's newest request, 
     }
 
     // Check for incomplete todos (project-local only, not global
-    // [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/todos/)
+    // [CODEBUDDY_CONFIG_DIR|~/.codebuddy]/todos/)
     // NOTE: We intentionally do NOT scan the global
-    // [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/todos/ directory.
+    // [CODEBUDDY_CONFIG_DIR|~/.codebuddy]/todos/ directory.
     // That directory accumulates todo files from ALL past sessions across all
     // projects, causing phantom task counts in fresh sessions (see issue #354).
     const localTodoPaths = [
@@ -1257,7 +1186,7 @@ ${cleanContent}
     // Cleanup old plugin cache versions (keep latest 2, symlink the rest)
     // Instead of deleting old versions, replace them with symlinks to the latest.
     // This prevents "Cannot find module" errors for sessions started before a
-    // plugin update whose CLAUDE_PLUGIN_ROOT still points to the old version.
+    // plugin update whose CODEBUDDY_PLUGIN_ROOT still points to the old version.
     try {
       const cacheBase = getPluginCacheBase();
       // Issue #3995: reuse the occupancy resolution hoisted above the owner
@@ -1327,12 +1256,12 @@ ${cleanContent}
         }
       }
 
-      // Guard against CLAUDE_PLUGIN_ROOT pointing to a stale/deleted version.
+      // Guard against CODEBUDDY_PLUGIN_ROOT pointing to a stale/deleted version.
       // When an old version directory is removed during upgrade but a running
-      // session still has the old CLAUDE_PLUGIN_ROOT in its environment, the
+      // session still has the old CODEBUDDY_PLUGIN_ROOT in its environment, the
       // directory won't exist. Create a symlink so subsequent hook invocations
       // via run.cjs resolve correctly.
-      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT?.replace(/[\/\\]+$/, ''); // strip trailing separators
+      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT?.replace(/[\/\\]+$/, ''); // strip trailing separators
       if (pluginRoot && !existsSync(pluginRoot)) {
         const pluginRootVersion = basename(pluginRoot);
         if (/^\d+\.\d+\.\d+/.test(pluginRootVersion) && versions.length > 0) {
@@ -1369,7 +1298,7 @@ ${cleanContent}
     // Notification transports/custom integrations must never write into this
     // foreground hook's stdout JSON protocol or stderr CI checks.
     try {
-      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+      const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
       if (pluginRoot) {
         dispatchSessionStartNotificationInBackground(pluginRoot, {
           sessionId,

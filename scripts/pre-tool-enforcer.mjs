@@ -12,7 +12,7 @@ import { dirname, join, resolve, basename } from 'path';
 import { homedir } from 'os';
 import { execFileSync } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { getClaudeConfigDir } from './lib/config-dir.mjs';
+import { getConfigDir } from './lib/config-dir.mjs';
 import { encodeProjectPath } from './lib/encode-project-path.mjs';
 import { evaluateAgentHeavyPreflight } from './lib/pre-tool-enforcer-preflight.mjs';
 import { evaluateForceAgentDelegation } from './lib/force-agent-delegation-preflight.mjs';
@@ -24,154 +24,13 @@ import { isSkillVisibleToUser } from './lib/skill-entitlements.mjs';
 
 // Inlined from src/config/models.ts — avoids a dist/ import so the hook works
 // before a build and stays consistent with the TypeScript source.
-function isProviderSpecificModelId(modelId) {
-  if (/^((us|eu|ap|global)\.anthropic\.|anthropic\.claude)/i.test(modelId)) return true;
-  if (/^arn:aws(-[^:]+)?:bedrock:/i.test(modelId)) return true;
-  if (modelId.toLowerCase().startsWith('vertex_ai/')) return true;
-  return false;
-}
-function hasExtendedContextSuffix(modelId) {
-  return /\[\d+[mk]\]$/i.test(modelId);
-}
-function isSubagentSafeModelId(modelId) {
-  return isProviderSpecificModelId(modelId) && !hasExtendedContextSuffix(modelId);
-}
-function isBedrockProviderEnv() {
-  if (process.env.CLAUDE_CODE_USE_BEDROCK === '1') return true;
-  const modelId = process.env.CLAUDE_MODEL || process.env.ANTHROPIC_MODEL || '';
-  if (/^((us|eu|ap|global)\.anthropic\.|anthropic\.claude)/i.test(modelId)) return true;
-  if (
-    /^arn:aws(-[^:]+)?:bedrock:/i.test(modelId)
-    && /:(inference-profile|application-inference-profile)\//i.test(modelId)
-    && modelId.toLowerCase().includes('claude')
-  ) {
-    return true;
-  }
-  return false;
-}
-function isVertexProviderEnv() {
-  if (process.env.CLAUDE_CODE_USE_VERTEX === '1') return true;
-  const modelId = process.env.CLAUDE_MODEL || process.env.ANTHROPIC_MODEL || '';
-  return !!modelId && modelId.toLowerCase().startsWith('vertex_ai/');
-}
-function getActiveModelIds() {
-  return [process.env.CLAUDE_MODEL || '', process.env.ANTHROPIC_MODEL || ''].filter(Boolean);
-}
-function isNormalClaudeModelId(modelId) {
-  const lower = (modelId || '').toLowerCase();
-  return Boolean(lower) && lower.includes('claude') && !isProviderSpecificModelId(modelId);
-}
-function hasNormalClaudeActiveModel() {
-  return getActiveModelIds().some(isNormalClaudeModelId);
-}
-function isConfigForceInheritProxyEnv() {
-  const config = loadOmcConfig();
-  return config.routing?.forceInherit === true && !hasNormalClaudeActiveModel();
-}
-function isNonClaudeProviderEnv() {
-  if (isBedrockProviderEnv() || isVertexProviderEnv()) return true;
-  const modelId = process.env.CLAUDE_MODEL || process.env.ANTHROPIC_MODEL || '';
-  if (modelId && !modelId.toLowerCase().includes('claude')) return true;
-  const baseUrl = process.env.ANTHROPIC_BASE_URL || '';
-  if (baseUrl && !baseUrl.includes('anthropic.com')) return true;
-  return isConfigForceInheritProxyEnv();
-}
-function acceptsProxyAnthropicDefaultTierValue(key, value) {
-  return key.startsWith('ANTHROPIC_DEFAULT_')
-    && Boolean(value)
-    && isNonClaudeProviderEnv()
-    && !isBedrockProviderEnv()
-    && !isVertexProviderEnv();
-}
-const TIER_ALIASES = new Set(['sonnet', 'opus', 'haiku', 'fable']);
-function isTierAlias(modelId) {
-  return TIER_ALIASES.has((modelId || '').toLowerCase());
-}
-// Resolution chain for tier alias → subagent-safe model ID.
-// Order mirrors src/config/models.ts:TIER_ENV_KEYS with OMC_SUBAGENT_MODEL as top-priority override.
-// OMC_SUBAGENT_MODEL at position 0 wins for ALL tiers — tier-specific vars are only
-// reached when it is unset or fails isSubagentSafeModelId validation.
-// OMC_MODEL_* is intentionally excluded: those are OMC-internal vars that the OMC bridge
-// reads for its own routing, but CC itself does not read them when resolving tier aliases
-// (sonnet/haiku/opus). Allowing OMC_MODEL_* as proof would let the hook pass while CC
-// still fails to route the alias, reintroducing the downstream deadlock this gate prevents.
-const TIER_TO_DEFAULT_ENV_KEYS = {
-  haiku:  ['OMC_SUBAGENT_MODEL', 'CLAUDE_CODE_BEDROCK_HAIKU_MODEL',  'ANTHROPIC_DEFAULT_HAIKU_MODEL'],
-  sonnet: ['OMC_SUBAGENT_MODEL', 'CLAUDE_CODE_BEDROCK_SONNET_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL'],
-  opus:   ['OMC_SUBAGENT_MODEL', 'CLAUDE_CODE_BEDROCK_OPUS_MODEL',   'ANTHROPIC_DEFAULT_OPUS_MODEL'],
-  fable:  ['OMC_SUBAGENT_MODEL', 'CLAUDE_CODE_BEDROCK_FABLE_MODEL',  'ANTHROPIC_DEFAULT_FABLE_MODEL'],
-};
-function resolveTierAliasToSafeModel(tierAlias) {
-  const keys = TIER_TO_DEFAULT_ENV_KEYS[(tierAlias || '').toLowerCase()];
-  if (!keys) return '';
-  for (const key of keys) {
-    const value = (process.env[key] || '').trim();
-    // CC-native vars (ANTHROPIC_DEFAULT_* and CLAUDE_CODE_BEDROCK_*) are read by CC's own
-    // model resolution, which handles [1m] suffixes correctly for explicit model= calls.
-    // OMC-internal vars (OMC_SUBAGENT_MODEL, OMC_MODEL_*) are not read by CC, so a [1m]
-    // value there is not a valid routing proof — keep the stricter isSubagentSafeModelId check.
-    const isAnthropicDefaultTierVar = key.startsWith('ANTHROPIC_DEFAULT_');
-    const isNativeCcVar = isAnthropicDefaultTierVar || key.startsWith('CLAUDE_CODE_BEDROCK_');
-    const validator = isNativeCcVar ? isProviderSpecificModelId : isSubagentSafeModelId;
-    if (value && (validator(value) || acceptsProxyAnthropicDefaultTierValue(key, value))) return value;
-  }
-  return '';
-}
-/** Map a bare Anthropic model ID to its CC tier alias (sonnet/opus/haiku/fable), or null if unrecognised. */
-function normalizeToCcAlias(model) {
-  if (!model) return null;
-  const lower = model.toLowerCase();
-  if (lower.includes('opus'))   return 'opus';
-  if (lower.includes('sonnet')) return 'sonnet';
-  if (lower.includes('haiku'))  return 'haiku';
-  if (lower.includes('fable'))  return 'fable';
-  return null;
-}
-/**
- * Read the `model:` field from an OMC agent definition's YAML frontmatter.
- * Returns the raw model string (e.g. "claude-opus-4-6") or null if not found.
- */
-function readAgentDefinitionModel(subagentType) {
-  // Guard: subagent_type must be a string — non-string payloads would throw on .replace()
-  // and the catch block would silently return {continue:true}, bypassing enforcement.
-  const agentType = (typeof subagentType === 'string' ? subagentType : '').replace(/^omc:/, '');
-  if (!agentType) return null;
-  // Reject path traversal: agent names are simple identifiers; no path separators allowed.
-  if (!/^[a-zA-Z0-9_-]+$/.test(agentType)) return null;
-  // Build a prioritised list of agents/ directories to search.
-  // CODEBUDDY_PLUGIN_ROOT (CLAUDE_PLUGIN_ROOT legacy alias) is tried first when
-  // set; the script-relative path is always the
-  // final fallback. Checking per-file (not just per-directory) means a partially-populated
-  // plugin install doesn't hide agents that exist in the script-relative tree.
-  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
-  const scriptAgentsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'agents');
-  const candidateDirs = [
-    ...(pluginRoot ? [join(pluginRoot, 'agents')] : []),
-    scriptAgentsDir,
-  ];
-  const agentFile = candidateDirs.map(d => join(d, `${agentType}.md`)).find(f => existsSync(f)) ?? null;
-  try {
-    if (!agentFile) return null;
-    const content = readFileSync(agentFile, 'utf-8').replace(/^\uFEFF/, '');
-    // Extract the YAML frontmatter block (content between the opening and closing ---).
-    // Searching the whole file would match `model:` lines in the body/prompt text, causing
-    // false denies for agents whose prompt happens to contain that word.
-    const fmMatch = content.match(/^---[\r\n]+([\s\S]*?)[\r\n]+---/);
-    if (!fmMatch) return null;
-    // Strip surrounding quotes so `model: "global.anthropic.claude-sonnet-4-6"` and
-    // `model: global.anthropic.claude-sonnet-4-6` are treated identically.
-    const modelMatch = fmMatch[1].match(/^model:\s*(\S+)/m);
-    return modelMatch ? modelMatch[1].trim().replace(/^["']|["']$/g, '') : null;
-  } catch {
-    return null;
-  }
-}
+
 // ---------------------------------------------------------------------------
 // Skill vs agent namespace guard (issue #3667)
 //
 // Task/Agent subagent_type identifiers and bundled skills share the same
 // `omc:` namespace, so a caller can hand a skill name to
-// Task(subagent_type=...) and receive only Claude Code's generic native
+// Task(subagent_type=...) and receive only the host's generic native
 // "Agent type not found". OMC owns both registries (agents/*.md and
 // skills/*/SKILL.md), so the PreToolUse hook denies the call BEFORE the
 // native boundary with an error that names the Skill tool and the exact
@@ -192,13 +51,13 @@ function splitAgentNamespace(subagentType) {
 }
 
 function getPluginAgentDirs() {
-  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
   const scriptAgentsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'agents');
   return pluginRoot ? [join(pluginRoot, 'agents'), scriptAgentsDir] : [scriptAgentsDir];
 }
 
 function getPluginSkillsDirs() {
-  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
   const scriptSkillsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'skills');
   return pluginRoot ? [join(pluginRoot, 'skills'), scriptSkillsDir] : [scriptSkillsDir];
 }
@@ -214,14 +73,14 @@ function agentDefinitionExists(agentType, directory, namespaced) {
   const agentDirs = getPluginAgentDirs();
   if (!namespaced) {
     agentDirs.push(join(directory, '.codebuddy', 'agents'));
-    agentDirs.push(join(getClaudeConfigDir(), 'agents'));
+    agentDirs.push(join(getConfigDir(), 'agents'));
   }
   return agentDirs.some((agentsDir) => existsSync(join(agentsDir, `${agentType}.md`)));
 }
 
 /**
  * Extract the primary `name` and raw alias list from a bundled SKILL.md YAML
- * frontmatter block. Mirrors readAgentDefinitionModel's frontmatter
+ * frontmatter block. Mirrors the agent-definition frontmatter
  * extraction: only the first `--- ... ---` block is inspected, so `name:`
  * lines in the skill body cannot create false matches.
  */
@@ -247,7 +106,7 @@ function parseSkillFrontmatterIdentifiers(content) {
 }
 
 /**
- * Claude Code native command names that must not be shadowed by OMC skill
+ * Host native command names that must not be shadowed by OMC skill
  * short names. Mirrors src/features/builtin-skills/skills.ts:CC_NATIVE_COMMANDS
  * and toSafeSkillName (plan -> omc-plan).
  */
@@ -339,7 +198,7 @@ function buildCanonicalSkillRegistry() {
  *
  * Bare (un-namespaced) identifiers are denied ONLY on canonical registry
  * claims. The directory shortcut would otherwise mistake legitimate runtime
- * agents for skills: Claude Code's built-in `Plan` agent and session-defined
+ * agents for skills: the host's built-in `Plan` agent and session-defined
  * agents are not visible to file-based plugin/project/user agent discovery,
  * yet `skills/plan` exists (registering `omc-plan`). Bare names therefore
  * never consult the directory shortcut; explicitly namespaced identifiers
@@ -414,7 +273,7 @@ function evaluateSkillAsAgentCall(toolName, toolInput, directory) {
   const reason =
     `[SKILL vs AGENT] ${queriedName} is a Skill, not an agent. ` +
     `Do NOT call it via ${toolName}(subagent_type=...) — that subagent type does not exist, ` +
-    `and Claude Code will fail the call with a generic "Agent type not found". ` +
+    `and the host will fail the call with a generic "Agent type not found". ` +
     `Use the Skill tool instead: Skill(skill="${skillIdentifier}"). ` +
     `Do NOT substitute a similarly-named agent as a "closest match".`;
   return {
@@ -764,8 +623,8 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (existsSync(transcriptPath)) return transcriptPath;
   } catch { /* fallthrough */ }
 
-  // CodeBuddy encodes project-local worktrees as --codebuddy-worktrees-X inside
-  // the projects dir; legacy Claude Code used --claude-worktrees-X. Match both.
+  // Project-local worktrees are encoded as --codebuddy-worktrees-X (or the
+  // upstream-shaped --claude-worktrees-X) inside the projects dir. Match both.
   const worktreePattern = /--(?:codebuddy|claude)-worktrees-[^/\\]+/;
   if (worktreePattern.test(transcriptPath)) {
     const resolvedPath = transcriptPath.replace(worktreePattern, '');
@@ -798,7 +657,7 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (mainRepoRoot !== worktreeTop) {
       const sessionFile = basename(transcriptPath);
       if (sessionFile) {
-        const configDir = getClaudeConfigDir();
+        const configDir = getConfigDir();
         const projectsDir = join(configDir, 'projects');
         if (existsSync(projectsDir)) {
           const encodedMain = encodeProjectPath(mainRepoRoot);
@@ -918,7 +777,7 @@ async function getTodoStatus(directory) {
   }
 
   // NOTE: We intentionally do NOT scan the global
-  // [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/todos/ directory.
+  // [CODEBUDDY_CONFIG_DIR|~/.codebuddy]/todos/ directory.
   // That directory accumulates todo files from ALL past sessions across all
   // projects, causing phantom task counts in fresh sessions (see issue #354).
 
@@ -1028,10 +887,6 @@ function readSessionModeState(stateDir, mode, sessionId) {
 
 function getExpectedUltragoalObjective(state, directory) {
   const candidates = [
-    state?.claude_goal_objective,
-    state?.claudeGoalObjective,
-    state?.codex_objective,
-    state?.codexObjective,
     state?.goal_objective,
     state?.goalObjective,
     state?.objective,
@@ -1041,7 +896,6 @@ function getExpectedUltragoalObjective(state, directory) {
   }
 
   const plan = readJsonFile(join(directory, '.omc', 'ultragoal', 'goals.json'));
-  if (typeof plan?.claudeObjective === 'string' && plan.claudeObjective.trim()) return plan.claudeObjective.trim();
   if (typeof plan?.aggregateCompletion?.objective === 'string' && plan.aggregateCompletion.objective.trim()) {
     return plan.aggregateCompletion.objective.trim();
   }
@@ -1053,7 +907,7 @@ function getExpectedUltragoalObjective(state, directory) {
 // Upper bound on the transcript we are willing to read on every tool call.
 const MAX_TRANSCRIPT_BYTES = 25 * 1024 * 1024;
 // The authoritative `/goal` signal is the slash-command *invocation* record, not the
-// `<local-command-stdout>` display echo (which Claude Code also emits for ordinary
+// `<local-command-stdout>` display echo (which the host also emits for ordinary
 // user-typed/pasted prompts, so display text is spoofable). A real record looks like
 // `<command-name>/goal</command-name> ... <command-args>OBJECTIVE</command-args>`.
 const GOAL_COMMAND_MARKER = /<command-name>\s*\/goal\s*<\/command-name>/;
@@ -1098,9 +952,9 @@ function readBoundedTranscript(path) {
   }
 }
 
-// Recover the active Claude `/goal` from the session transcript.
+// Recover the active `/goal` from the session transcript.
 //
-// Claude Code does not expose live `/goal` state to hooks (the PreToolUse payload
+// The host does not expose live `/goal` state to hooks (the PreToolUse payload
 // carries none of the goal fields read below), but every hook receives
 // `transcript_path`, where a `/goal` invocation is recorded as a command record.
 // Reading it lets the guard observe a goal the user actually set instead of denying
@@ -1120,7 +974,7 @@ function extractGoalFromTranscript(rawTranscriptPath, sessionId, cwd) {
 
   const resolved = resolveTranscriptPath(rawTranscriptPath, cwd);
   if (typeof resolved !== 'string' || !resolved) return null;
-  // Bind to the active session; Claude Code names the transcript `<sessionId>.jsonl`.
+  // Bind to the active session; the host names the transcript `<sessionId>.jsonl`.
   if (basename(resolved).replace(/\.jsonl$/i, '') !== sessionId) return null;
 
   const content = readBoundedTranscript(resolved);
@@ -1150,17 +1004,12 @@ function extractGoalFromTranscript(rawTranscriptPath, sessionId, cwd) {
   return { objective, status: 'active' };
 }
 
-function extractClaudeGoalSnapshot(data, sessionId, cwd) {
+function extractGoalSnapshot(data, sessionId, cwd) {
   const candidates = [
     data.goal,
-    data.claude_goal,
-    data.claudeGoal,
     data.goal_state,
     data.goalState,
-    data.codex_goal,
-    data.codexGoal,
     data.context?.goal,
-    data.context?.claude_goal,
   ];
   for (const candidate of candidates) {
     const goal = candidate?.goal && typeof candidate.goal === 'object' ? candidate.goal : candidate;
@@ -1172,7 +1021,7 @@ function extractClaudeGoalSnapshot(data, sessionId, cwd) {
       }
     }
   }
-  // Runtime injected no goal field (the standard Claude Code case): fall back to the
+  // Runtime injected no goal field: fall back to the
   // transcript, the only place a hook can observe an active `/goal`.
   return extractGoalFromTranscript(data.transcript_path ?? data.transcriptPath, sessionId, cwd);
 }
@@ -1238,14 +1087,14 @@ function evaluateUltragoalPreToolEnforcement(stateDir, directory, sessionId, dat
   if (isAwaitingConfirmation(state)) return null;
 
   const expected = getExpectedUltragoalObjective(state, directory);
-  const actual = extractClaudeGoalSnapshot(data, sessionId, directory);
+  const actual = extractGoalSnapshot(data, sessionId, directory);
   const actualObjective = normalizeText(actual?.objective);
   const expectedObjective = normalizeText(expected);
   const status = normalizePhase(actual?.status);
   const objectiveMatches = Boolean(actualObjective && expectedObjective && actualObjective === expectedObjective);
   const activeStatus = status === '' || status === 'active' || status === 'in_progress' || status === 'running';
 
-  // #3341: Claude Code does not expose live `/goal` state to a PreToolUse hook, so
+  // #3341: the host does not expose live `/goal` state to a PreToolUse hook, so
   // `actual` may be recovered from the session transcript (see extractGoalFromTranscript)
   // in addition to the payload. Objective/status matching semantics are otherwise
   // unchanged: an explicit or recovered goal must match the expected ultragoal objective
@@ -1255,9 +1104,9 @@ function evaluateUltragoalPreToolEnforcement(stateDir, directory, sessionId, dat
   if (objectiveMatches && activeStatus) return null;
 
   const mismatch = actualObjective
-    ? `current Claude /goal appears unrelated: "${actual.objective}".`
-    : 'no active Claude /goal snapshot was visible to the hook.';
-  return `[ULTRAGOAL /GOAL REQUIRED] Active ultragoal state requires the matching Claude /goal before tools run; ${mismatch} Activate /goal with the ultragoal objective, or set ALLOW_ULTRAGOAL_WITHOUT_GOAL=1 to bypass this guard intentionally. Expected objective: ${expected || '<record one in ultragoal-state.json or .omc/ultragoal/goals.json>'}`;
+    ? `current /goal appears unrelated: "${actual.objective}".`
+    : 'no active /goal snapshot was visible to the hook.';
+  return `[ULTRAGOAL /GOAL REQUIRED] Active ultragoal state requires the matching /goal before tools run; ${mismatch} Activate /goal with the ultragoal objective, or set ALLOW_ULTRAGOAL_WITHOUT_GOAL=1 to bypass this guard intentionally. Expected objective: ${expected || '<record one in ultragoal-state.json or .omc/ultragoal/goals.json>'}`;
 }
 
 function hasActiveJsonMode(stateDir, { allowSessionTagged = false } = {}) {
@@ -1415,17 +1264,17 @@ async function generateAgentSpawnMessage(toolInput, stateDir, directory, todoSta
   const tracking = await getAgentTrackingInfo(stateDir, directory, sessionId);
 
   // Team-routing guidance:
-  // Claude Code 2.1.178+ removed TeamCreate/TeamDelete. When OMC team state is
+  // CodeBuddy removed TeamCreate/TeamDelete. When OMC team state is
   // active, teammates should be spawned into the session's implicit agent team by
   // giving each Agent/Task call a distinct name. team_name is ignored by native
-  // Claude Code and should only be treated as legacy metadata.
+  // and should only be treated as legacy metadata.
   const teamState = getActiveTeamState(stateDir, sessionId);
   if (teamState && !toolInput.name) {
     const teamName = teamState.team_name || teamState.teamName || 'team';
     return `[TEAM ROUTING REQUIRED] Team "${teamName}" is active but you are spawning an unnamed subagent. ` +
-      `Claude Code 2.1.178+ uses the session's implicit native agent team; TeamCreate and TeamDelete are removed. ` +
+      `CodeBuddy uses the session's implicit native agent team; TeamCreate and TeamDelete are removed. ` +
       `Spawn teammates directly with Agent/Task name="worker-N" and subagent_type="${agentType}". ` +
-      `Do NOT rely on team_name for routing; native Claude Code accepts it only as ignored legacy metadata.`;
+      `Do NOT rely on team_name for routing; native CodeBuddy accepts it only as ignored legacy metadata.`;
   }
 
   if (QUIET_LEVEL >= 2) return '';
@@ -1514,10 +1363,10 @@ function getSkillProtectionLevel(skillName, rawSkillName) {
   return SKILL_PROTECTION_MAP[normalized] || 'none';
 }
 
-// Load OMC config to check forceInherit setting (issues #1135, #1201)
+// Load OMC config for routing/delegation settings (issues #1135, #1201)
 function loadOmcConfig() {
   const configPaths = [
-    join(getClaudeConfigDir(), '.omc-config.json'),
+    join(getConfigDir(), '.omc-config.json'),
     join(process.cwd(), '.omc', 'config.json'),
   ];
   for (const configPath of configPaths) {
@@ -1528,13 +1377,6 @@ function loadOmcConfig() {
     } catch { /* continue */ }
   }
   return {};
-}
-
-// Check if forceInherit is enabled via config or env var
-function isForceInheritEnabled() {
-  if (process.env.OMC_ROUTING_FORCE_INHERIT === 'true') return true;
-  const config = loadOmcConfig();
-  return config.routing?.forceInherit === true;
 }
 
 function extractSkillName(toolInput) {
@@ -1566,7 +1408,7 @@ function writeSkillActiveState(stateDir, skillName, sessionId, rawSkillName) {
   // If the SAME skill is re-invoked, allow the overwrite (idempotent refresh).
   //
   // NOTE: This read-check-write sequence has a TOCTOU race condition
-  // (non-atomic), but this is acceptable because Claude Code sessions are
+  // (non-atomic), but this is acceptable because host sessions are
   // single-threaded — only one tool call executes at a time within a session.
   try {
     if (existsSync(targetPath)) {
@@ -1733,13 +1575,11 @@ async function main() {
     // so a configured per-agent model (agents.<name>.model) is applied (issue #3242).
     let updatedToolInput = null;
 
-    // Force-inherit check: deny Task/Agent calls with invalid model param when forceInherit is
-    // enabled (Bedrock, Vertex, CC Switch, etc.) - issues #1135, #1201, #1767, #1868
-    //
-    // New behaviour (issue #1868 — [1m] suffix deadlock):
-    //   ALLOW explicit valid provider-specific model IDs (full Bedrock/Vertex format, no [1m])
-    //   DENY  tier names (sonnet/opus/haiku) and [1m]-suffixed IDs
-    //   DENY  no-model calls when the session model itself has [1m] — guide to OMC_SUBAGENT_MODEL
+    // Force-inherit routing guard (Bedrock/Vertex/proxy tier-alias denial) was
+    // removed with the CodeBuddy port: the CodeBuddy host never injects the
+    // upstream model-provider env vars that gated it, so the branch was
+    // unreachable here. What remains is the skill-vs-agent namespace guard and
+    // the per-agent model override injection below.
     if (toolName === 'Task' || toolName === 'Agent') {
       const toolInput = data.toolInput || data.tool_input || {};
       // Skill vs agent namespace guard (issue #3667): deny BEFORE the native
@@ -1751,107 +1591,15 @@ async function main() {
         return;
       }
       const toolModel = toolInput.model;
-      if (isForceInheritEnabled()) {
-        // Check both vars: if either carries [1m] the session model is unsafe for sub-agents.
-        // Avoids a split-brain between the hook and runtime code that may read the vars in
-        // different orders (e.g. model-contract.ts uses ANTHROPIC_MODEL first).
-        const claudeModel = process.env.CLAUDE_MODEL || '';
-        const anthropicModel = process.env.ANTHROPIC_MODEL || '';
-        const sessionHasLmSuffix =
-          hasExtendedContextSuffix(claudeModel) || hasExtendedContextSuffix(anthropicModel);
-        // For error messages: prefer whichever var actually carries the [1m] suffix.
-        const sessionModel = hasExtendedContextSuffix(claudeModel)
-          ? claudeModel
-          : hasExtendedContextSuffix(anthropicModel)
-            ? anthropicModel
-            : claudeModel || anthropicModel;
-
-        if (toolModel) {
-          // Allow tier aliases (sonnet/opus/haiku) when a subagent-safe model can be
-          // resolved for that tier. Resolution chain: OMC_SUBAGENT_MODEL (global override)
-          // → CLAUDE_CODE_BEDROCK_*_MODEL → ANTHROPIC_DEFAULT_*_MODEL.
-          if (isTierAlias(toolModel) && resolveTierAliasToSafeModel(toolModel)) {
-            // fall through to continue — tier alias resolves to a safe provider-specific ID
-          } else if (!isSubagentSafeModelId(toolModel)) {
-            const tierUpper = isTierAlias(toolModel) ? toolModel.toUpperCase() : '';
-            const derivedTier = tierUpper || (normalizeToCcAlias(toolModel) || '').toUpperCase();
-            const guidance = derivedTier
-              ? `Set ANTHROPIC_DEFAULT_${derivedTier}_MODEL=<valid-bedrock-id> in settings.json env, or set OMC_SUBAGENT_MODEL as a global override.`
-              : `Remove the \`model\` parameter, or set ANTHROPIC_DEFAULT_SONNET_MODEL=<valid-bedrock-id> in settings.json env.`;
-            console.log(JSON.stringify({
-              continue: true,
-              hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: `[MODEL ROUTING] This environment uses a non-standard provider (Bedrock/Vertex/proxy). ${guidance} The model "${toolModel}" is not valid for this provider.`
-              }
-            }));
-            return;
-          }
-          // else: valid provider-specific model ID — fall through to continue.
-        } else if (sessionHasLmSuffix) {
-          // No model param, but the session model has a [1m] context-window suffix.
-          // Sub-agents would inherit it and fail — the runtime strips [1m] to a bare
-          // Anthropic model ID (e.g. claude-sonnet-5) which is invalid on Bedrock.
-          // Fix: pass a tier alias (sonnet/haiku/opus). The Agent tool schema only accepts
-          // tier aliases for the model param — full Bedrock IDs are rejected by the schema.
-          const tierAlias = normalizeToCcAlias(sessionModel) || 'sonnet';
-          const resolvedSafe = resolveTierAliasToSafeModel(tierAlias);
-          const suggestion = resolvedSafe
-            ? `Pass model="${tierAlias}" explicitly on this ${toolName} call — tier aliases resolve cleanly on Bedrock.`
-            : `Pass model="${tierAlias}" explicitly on this ${toolName} call, and set ANTHROPIC_DEFAULT_${tierAlias.toUpperCase()}_MODEL=<valid-bedrock-id> in settings.json env.`;
-          console.log(JSON.stringify({
-            continue: true,
-            hookSpecificOutput: {
-              hookEventName: 'PreToolUse',
-              permissionDecision: 'deny',
-              permissionDecisionReason: `[MODEL ROUTING] Your session model "${sessionModel}" has a context-window suffix ([1m]) that sub-agents cannot inherit — the runtime strips it to a bare Anthropic model ID which is invalid on Bedrock. ${suggestion}`
-            }
-          }));
-          return;
-        }
-        // Agent-definition model check: runs for any no-model call with a subagent_type,
-        // independent of the sessionHasLmSuffix branch above (which may have matched and
-        // fallen through safely). Claude Code reads the agent definition's `model:` field
-        // AFTER this hook and injects it — if that's a bare Anthropic ID, Bedrock rejects
-        // with 400. Detect it here and deny with guidance to retry with an explicit tier alias.
-        if (!toolModel && toolInput.subagent_type) {
-          const agentDefModel = readAgentDefinitionModel(toolInput.subagent_type);
-          // Only deny when a safe routing target exists for the derived tier alias.
-          // Without a routing target the tier-alias escape hatch doesn't exist, so blocking
-          // would strand Claude in a retry loop with no viable path forward.
-          const defTierAlias = agentDefModel ? normalizeToCcAlias(agentDefModel) : null;
-          const resolvedModel = defTierAlias ? resolveTierAliasToSafeModel(defTierAlias) : '';
-          const hasSafeRouting = !!resolvedModel;
-          if (agentDefModel && !isSubagentSafeModelId(agentDefModel) && !isTierAlias(agentDefModel)
-              && hasSafeRouting) {
-            const guidance = `Add model="${defTierAlias}" to this ${toolName} call — tier aliases resolve to configured provider models (${resolvedModel}).`;
-            const agentType = (toolInput.subagent_type).replace(/^omc:/, '');
-            console.log(JSON.stringify({
-              continue: true,
-              hookSpecificOutput: {
-                hookEventName: 'PreToolUse',
-                permissionDecision: 'deny',
-                permissionDecisionReason: `[MODEL ROUTING] Agent type "${agentType}" has model "${agentDefModel}" in its definition, which is not valid for this Bedrock/Vertex/proxy environment. ${guidance}`
-              }
-            }));
-            return;
-          }
-        }
-        // else: no model param and no [1m] on session model → normal forceInherit,
-        // agents inherit the parent session's model cleanly.
-      } else if (!toolModel && toolInput.subagent_type) {
-        // Non-forceInherit: honor agents.<name>.model from config.jsonc for native
-        // Task/Agent calls without an explicit model param. Without this, Claude Code
-        // reads the static agents/*.md frontmatter and silently ignores the user's
-        // per-agent override (issue #3242). Inject the resolved tier alias via
-        // updatedInput so the spawned subagent runs on the configured model.
+      // Honor agents.<name>.model from config.jsonc for native
+      // Task/Agent calls without an explicit model param. Without this, the host
+      // reads the static agents/*.md frontmatter and silently ignores the user's
+      // per-agent override (issue #3242). Inject the configured model via
+      // updatedInput so the spawned subagent runs on the configured model.
+      if (!toolModel && toolInput.subagent_type) {
         const configuredModel = resolveConfiguredAgentModel(toolInput.subagent_type, directory);
         if (configuredModel && configuredModel !== 'inherit') {
-          const normalizedModel = normalizeToCcAlias(configuredModel);
-          if (normalizedModel) {
-            updatedToolInput = { ...toolInput, model: normalizedModel };
-          }
+          updatedToolInput = { ...toolInput, model: configuredModel };
         }
       }
     }
@@ -1860,7 +1608,7 @@ async function main() {
     // Fires in PreToolUse so users get notified BEFORE the tool blocks for input (#597)
     if (toolName === 'AskUserQuestion') {
       try {
-        const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+        const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
         if (pluginRoot) {
           const { notify } = await import(pathToFileURL(join(pluginRoot, 'dist', 'notifications', 'index.js')).href);
 
@@ -1896,7 +1644,7 @@ async function main() {
     if (delegationBlock) {
       // Force-delegation preflight returns `{ decision: 'block', reason }` to
       // match the agent-heavy preflight contract. Translate to the
-      // Claude Code hookSpecificOutput shape (`permissionDecision: 'deny'`).
+      // host hookSpecificOutput shape (`permissionDecision: 'deny'`).
       console.log(JSON.stringify({
         continue: true,
         hookSpecificOutput: {

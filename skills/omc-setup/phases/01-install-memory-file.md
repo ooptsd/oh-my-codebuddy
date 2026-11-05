@@ -25,7 +25,7 @@ Set `CONFIG_TARGET` to `local` or `global` based on user's choice.
 
 **Installation procedure** (idempotent, marker-based):
 
-1. Read the canonical block from `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/docs/CODEBUDDY.md`.
+1. Read the canonical block from `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/docs/CODEBUDDY.md`.
 2. Read the target file if it exists.
 3. If the target already contains an `<!-- OMC:START -->...<!-- OMC:END -->` block, replace that exact block (marker-to-marker, inclusive) with the canonical block, leaving all other content untouched.
 4. If the target has no OMC block, append the canonical block at the end of the file separated by a blank line (create the file with just the block when absent).

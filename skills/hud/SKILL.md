@@ -11,7 +11,7 @@ level: 2
 
 Configure the omc HUD (Heads-Up Display) for the statusline.
 
-Note: All `~/.codebuddy/...` paths in this guide respect `CODEBUDDY_CONFIG_DIR` when that environment variable is set (`CLAUDE_CONFIG_DIR` is honored as a legacy alias).
+Note: All `~/.codebuddy/...` paths in this guide respect `CODEBUDDY_CONFIG_DIR` when that environment variable is set
 
 ## Quick Commands
 
@@ -38,21 +38,21 @@ When you run `/omc:hud` or `/omc:hud setup`, the system will automatically:
 
 **Step 1:** Check if setup is needed:
 ```bash
-node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy');console.log(f.existsSync(p.join(d,'hud','omc-hud.mjs'))?'EXISTS':'MISSING')"
+node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy');console.log(f.existsSync(p.join(d,'hud','omc-hud.mjs'))?'EXISTS':'MISSING')"
 ```
 
 **Step 2:** Verify the plugin is installed:
 ```bash
-node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));if(v.length===0){console.log('Plugin not installed - run: /plugin install omc@omc-plugins');process.exit()}const l=v[v.length-1],h=p.join(b,l,'scripts','lib','hud-wrapper-template.txt');console.log('Version:',l);console.log(f.existsSync(h)?'READY':'NOT_FOUND - try reinstalling: /plugin install omc@omc-plugins')}catch{console.log('Plugin not installed - run: /plugin install omc@omc-plugins')}"
+node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));if(v.length===0){console.log('Plugin not installed - run: /plugin install omc@omc-plugins');process.exit()}const l=v[v.length-1],h=p.join(b,l,'scripts','lib','hud-wrapper-template.txt');console.log('Version:',l);console.log(f.existsSync(h)?'READY':'NOT_FOUND - try reinstalling: /plugin install omc@omc-plugins')}catch{console.log('Plugin not installed - run: /plugin install omc@omc-plugins')}"
 ```
 
 **Step 3:** If omc-hud.mjs is MISSING or argument is `setup`, install the HUD wrapper and its dependency from the canonical template:
 
 ```bash
-HUD_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/hud"
+HUD_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/hud"
 # (inner :- default works in bash/zsh; plain sh users: export CODEBUDDY_CONFIG_DIR or set HUD_DIR manually)
 mkdir -p "$HUD_DIR/lib"
-PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}"
+PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT}"
 cp "$PLUGIN_ROOT/scripts/lib/hud-wrapper-template.txt" "$HUD_DIR/omc-hud.mjs"
 cp "$PLUGIN_ROOT/scripts/lib/config-dir.mjs" "$HUD_DIR/lib/config-dir.mjs"
 ```
@@ -61,12 +61,12 @@ cp "$PLUGIN_ROOT/scripts/lib/config-dir.mjs" "$HUD_DIR/lib/config-dir.mjs"
 
 **Step 4:** Make it executable (Unix only, skip on Windows):
 ```bash
-node -e "if(process.platform==='win32'){console.log('Skipped (Windows)')}else{require('fs').chmodSync(require('path').join(process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||require('path').join(require('os').homedir(),'.codebuddy'),'hud','omc-hud.mjs'),0o755);console.log('Done')}"
+node -e "if(process.platform==='win32'){console.log('Skipped (Windows)')}else{require('fs').chmodSync(require('path').join(process.env.CODEBUDDY_CONFIG_DIR||require('path').join(require('os').homedir(),'.codebuddy'),'hud','omc-hud.mjs'),0o755);console.log('Done')}"
 ```
 
 **Step 5:** Update settings.json to use the HUD:
 
-Read `${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-~/.codebuddy}}/settings.json`, then update/add the `statusLine` field.
+Read `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/settings.json`, then update/add the `statusLine` field.
 
 **IMPORTANT:** Do not use `~` in the command. On Unix, use `$HOME` to keep the path portable across machines. On Windows, use an absolute path because Windows does not expand `~` in shell commands.
 
@@ -82,7 +82,7 @@ Then set the `statusLine` field. On Unix it should stay portable and look like:
 {
   "statusLine": {
     "type": "command",
-    "command": "node ${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/hud/omc-hud.mjs"
+    "command": "node ${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/hud/omc-hud.mjs"
   }
 }
 ```
@@ -101,10 +101,10 @@ Use the Edit tool to add/update this field while preserving other settings.
 
 **Step 6:** Clean up old HUD scripts (if any):
 ```bash
-node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy'),t=p.join(d,'hud','omc-hud.js');try{if(f.existsSync(t)){f.unlinkSync(t);console.log('Removed legacy omc-hud.js')}else{console.log('No legacy script found')}}catch{}"
+node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy'),t=p.join(d,'hud','omc-hud.js');try{if(f.existsSync(t)){f.unlinkSync(t);console.log('Removed legacy omc-hud.js')}else{console.log('No legacy script found')}}catch{}"
 ```
 
-**Step 7:** Tell the user to restart Claude Code for changes to take effect.
+**Step 7:** Tell the user to restart CodeBuddy for changes to take effect.
 
 ## Display Presets
 
@@ -239,12 +239,12 @@ If the HUD is not showing:
 2. Restart CodeBuddy after setup completes
 3. If still not working, run `/omc:omc-doctor` for full diagnostics
 
-**Legacy string format migration:** Older omc versions wrote `statusLine` as a plain string (e.g., `"~/.codebuddy/hud/omc-hud.mjs"`). Modern Claude Code (v2.1+) requires an object format. Running the installer or `/omc:hud setup` will auto-migrate legacy strings to the correct object format:
+**Legacy string format migration:** Older omc versions wrote `statusLine` as a plain string (e.g., `"~/.codebuddy/hud/omc-hud.mjs"`). Modern CodeBuddy requires an object format. Running the installer or `/omc:hud setup` will auto-migrate legacy strings to the correct object format:
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "node ${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}/hud/omc-hud.mjs"
+    "command": "node ${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/hud/omc-hud.mjs"
   }
 }
 ```

@@ -4,7 +4,7 @@ import { closeSync, constants as fsConstants, existsSync, fstatSync, openSync, r
 import { TextDecoder } from 'util';
 import { homedir } from 'os';
 import { basename, dirname, join, parse, resolve, sep } from 'path';
-import { getClaudeConfigDir } from './config-dir.mjs';
+import { getConfigDir } from './config-dir.mjs';
 import { resolveCanonicalWorkflowStagePrompt } from './workflow-stage-prompts.mjs';
 
 const SEQUENCES = Object.freeze([Object.freeze(['ralplan', 'execution']), Object.freeze(['ralplan', 'execution', 'ralph']), Object.freeze(['ralplan', 'execution', 'qa']), Object.freeze(['ralplan', 'execution', 'ralph', 'qa'])]);
@@ -51,7 +51,7 @@ export function resolveWorkflowStagePrompt(state, stageId) {
   if (!task || !hasValidWorkflowHash(workflow) || !workflow.stages.includes(stageId)) return null;
   return resolveCanonicalWorkflowStagePrompt(stageId, task);
 }
-function transcriptRoot() { return realpathSync(resolve(getClaudeConfigDir(), 'projects')); }
+function transcriptRoot() { return realpathSync(resolve(getConfigDir(), 'projects')); }
 function fileIdentity(stat, contentSha256) { return { device: Number(stat.dev), inode: Number(stat.ino), size: Number(stat.size), mtimeNs: stat.mtimeNs.toString(), ctimeNs: stat.ctimeNs.toString(), contentSha256 }; }
 function hashRange(fd, start, end) { const hash = createHash('sha256'); const chunk = Buffer.allocUnsafe(TRANSCRIPT_CHUNK_BYTES); for (let offset = start; offset < end;) { const count = readSync(fd, chunk, 0, Math.min(chunk.length, end - offset), offset); if (count <= 0) return null; hash.update(chunk.subarray(0, count)); offset += count; } return hash.digest('hex'); }
 function scanJsonl(fd, start, end, sessionId, callback, hash) { const chunk = Buffer.allocUnsafe(TRANSCRIPT_CHUNK_BYTES); const record = Buffer.allocUnsafe(MAX_JSONL_RECORD_BYTES + 1); let recordBytes = 0; let byteOffset = start; let lineNumber = 0; const decodeRecord = length => { try { return new TextDecoder('utf-8', { fatal: true }).decode(record.subarray(0, length)); } catch { return null; } }; const emitRecord = crlf => { const length = recordBytes - (crlf && recordBytes > 0 && record[recordBytes - 1] === 0x0d ? 1 : 0); const line = decodeRecord(length); if (line === null) return false; return !callback || callback(line, byteOffset, lineNumber, createHash('sha256').update(record.subarray(0, length)).digest('hex')) !== false; }; for (let offset = start; offset < end;) { const maxRead = recordBytes >= MAX_JSONL_RECORD_BYTES ? 1 : MAX_JSONL_RECORD_BYTES + 1 - recordBytes; const count = readSync(fd, chunk, 0, Math.min(chunk.length, end - offset, maxRead), offset); if (count <= 0) return false; hash?.update(chunk.subarray(0, count)); for (let index = 0; index < count; index += 1) { const byte = chunk[index]; if (byte === 0x0a) { if (!emitRecord(true)) return false; byteOffset += recordBytes + 1; recordBytes = 0; lineNumber += 1; } else if ((recordBytes === MAX_JSONL_RECORD_BYTES && byte !== 0x0d) || recordBytes > MAX_JSONL_RECORD_BYTES) { workflowTranscriptFailures.set(sessionId, WORKFLOW_TRANSCRIPT_RECORD_TOO_LARGE); return false; } else { record[recordBytes++] = byte; } } offset += count; } if (recordBytes > MAX_JSONL_RECORD_BYTES) { workflowTranscriptFailures.set(sessionId, WORKFLOW_TRANSCRIPT_RECORD_TOO_LARGE); return false; } return recordBytes === 0 || emitRecord(false); }

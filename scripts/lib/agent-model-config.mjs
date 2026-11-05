@@ -14,8 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-// omc adaptation: user config lives in the CodeBuddy home dir (~/.codebuddy)
-// instead of OMC's ~/.config/claude-omc.
+// User config lives in the CodeBuddy home dir (~/.codebuddy).
 function getConfigDir() {
   return join(homedir(), '.codebuddy');
 }
@@ -120,7 +119,7 @@ const DEPRECATED_ROLE_ALIASES = {
 
 /**
  * Resolve the configured per-agent model for a subagent_type from config.jsonc.
- * Returns the raw configured model string (e.g. "sonnet", "claude-opus-4-6"),
+ * Returns the raw configured model string (e.g. "sonnet", "glm-4.6"),
  * or null when no per-agent override is configured. Project config takes
  * precedence over user config, matching loadConfig()'s merge order.
  */

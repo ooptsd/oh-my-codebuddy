@@ -98,7 +98,7 @@ process.on("unhandledRejection", (error) => {
 const { advanceWorkflowOnStop, isValidWorkflowDescriptor, isValidWorkflowTrackingState, isWorkflowRuntimeSupported, refreshWorkflowBoundaryForCommit, resolveWorkflowStagePrompt, takeWorkflowTranscriptFailure } = await import(pathToFileURL(join(__dirname, "lib", "workflow-profile-runtime.mjs")).href);
 const { acquireStateFileLockSync, atomicWriteFileSync, isStateFileLockingSupported, releaseStateFileLockSync, withStateFileLockSync } = await import(pathToFileURL(join(__dirname, "lib", "atomic-write.mjs")).href);
 
-const { getClaudeConfigDir } = await import(pathToFileURL(join(__dirname, "lib", "config-dir.mjs")).href);
+const { getConfigDir } = await import(pathToFileURL(join(__dirname, "lib", "config-dir.mjs")).href);
 const { readStdin } = await import(
   pathToFileURL(join(__dirname, "lib", "stdin.mjs")).href
 );
@@ -231,7 +231,7 @@ function recordIdleNotificationSent(stateDir) {
 function dispatchIdleNotificationInBackground(sessionId, directory) {
   if (process.env.OMC_NOTIFY === "0") return false;
 
-  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
   if (!pluginRoot) return false;
 
   const notificationsModuleUrl = pathToFileURL(join(pluginRoot, "dist", "notifications", "index.js")).href;
@@ -728,10 +728,6 @@ function isUltragoalTerminalState(state, omcRoot) {
 
 function getUltragoalObjective(state, omcRoot) {
   const candidates = [
-    state?.claude_goal_objective,
-    state?.claudeGoalObjective,
-    state?.codex_objective,
-    state?.codexObjective,
     state?.goal_objective,
     state?.goalObjective,
     state?.objective,
@@ -742,7 +738,6 @@ function getUltragoalObjective(state, omcRoot) {
     if (typeof value === "string" && value.trim()) return value.trim();
   }
   const plan = readJsonFile(join(omcRoot, "ultragoal", "goals.json"));
-  if (typeof plan?.claudeObjective === "string" && plan.claudeObjective.trim()) return plan.claudeObjective.trim();
   if (typeof plan?.aggregateCompletion?.objective === "string" && plan.aggregateCompletion.objective.trim()) {
     return plan.aggregateCompletion.objective.trim();
   }
@@ -847,7 +842,7 @@ function isWorkflowFileIdentity(value) {
 
 function hasWorkflowBoundaryTopology(value, sessionId) {
   let root;
-  try { root = realpathSync(resolve(getClaudeConfigDir(), "projects")); } catch { root = resolve(getClaudeConfigDir(), "projects"); }
+  try { root = realpathSync(resolve(getConfigDir(), "projects")); } catch { root = resolve(getConfigDir(), "projects"); }
   if (!hasExactWorkflowKeys(value, ["transcriptPath", "transcriptRoot", "transcriptBasename", "sessionId", "byteOffset", "fileIdentity"]) ||
     typeof value.transcriptPath !== "string" || value.transcriptRoot !== root || value.transcriptBasename !== `${sessionId}.jsonl` || value.sessionId !== sessionId ||
     !Number.isSafeInteger(value.byteOffset) || value.byteOffset < 0 || !isWorkflowFileIdentity(value.fileIdentity) ||
@@ -920,7 +915,7 @@ function isValidSessionId(sessionId) {
 
 /**
  * Detect if stop was triggered by context-limit related reasons.
- * When context is exhausted, Claude Code needs to stop so it can compact.
+ * When context is exhausted, the host needs to stop so it can compact.
  * Blocking these stops causes a deadlock: can't compact because can't stop,
  * can't continue because context is full.
  *
@@ -1084,9 +1079,9 @@ async function main() {
       return;
     }
 
-    // Claude Code sets stop_hook_active when a Stop hook is already running.
+    // The host sets stop_hook_active when a Stop hook is already running.
     // Never emit another decision:block in that re-entrant path: doing so trips
-    // Claude Code's safety override for repeatedly blocked Stop hooks.
+    // The host's safety override for repeatedly blocked Stop hooks.
     if (data.stop_hook_active === true) {
       console.log(JSON.stringify({ continue: true, suppressOutput: true }));
       return;
@@ -1101,7 +1096,7 @@ async function main() {
     const globalStateDir = join(homedir(), ".omc", "state");
 
     // CRITICAL: Never block context-limit stops.
-    // Blocking these causes a deadlock where Claude Code cannot compact.
+    // Blocking these causes a deadlock where the host cannot compact.
     // See: https://github.com/Yeachan-Heo/oh-my-claudecode/issues/213
     if (isContextLimitStop(data)) {
       console.log(JSON.stringify({ continue: true, suppressOutput: true }));
@@ -1316,9 +1311,9 @@ async function main() {
         }
         writeJsonFile(ultragoal.path, ultragoal.state);
 
-        let reason = `[ULTRAGOAL #${newCount}/${maxReinforcements}] Ultragoal mode is active. Continue the durable goal workflow, keep the matching Claude /goal active, and checkpoint .omc/ultragoal/ledger.jsonl before stopping. When all ultragoal stories are complete and the final quality gate passes, run /omc:cancel to cleanly exit.`;
+        let reason = `[ULTRAGOAL #${newCount}/${maxReinforcements}] Ultragoal mode is active. Continue the durable goal workflow, keep the matching /goal active, and checkpoint .omc/ultragoal/ledger.jsonl before stopping. When all ultragoal stories are complete and the final quality gate passes, run /omc:cancel to cleanly exit.`;
         const objective = getUltragoalObjective(ultragoal.state, omcRoot);
-        if (objective) reason += `\nClaude /goal objective: ${objective}`;
+        if (objective) reason += `\n/goal objective: ${objective}`;
         if (errorGuidance) {
           reason = errorGuidance + reason;
         }
@@ -1553,7 +1548,7 @@ async function main() {
       }
     }
 
-    // Priority 6: Team (native Claude Code teams / staged pipeline)
+    // Priority 6: Team (native CodeBuddy teams / staged pipeline)
     if (
       team.state?.active &&
       !isStaleState(team.state) &&

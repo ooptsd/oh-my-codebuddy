@@ -34,14 +34,14 @@ function canonicalPluginRoot(pluginRoot) {
 
 /**
  * Resolve the hook script target path, handling stale plugin-root env vars.
- * CODEBUDDY_PLUGIN_ROOT is authoritative; CLAUDE_PLUGIN_ROOT is the legacy alias.
+ * CODEBUDDY_PLUGIN_ROOT is authoritative.
  *
  * A direct target remains valid for the generic child path even without a
  * trusted plugin root. Worker eligibility receives only independently proven
  * configured-root or selected-cache-version provenance.
  */
 function getPluginRootEnv() {
-  return process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+  return process.env.CODEBUDDY_PLUGIN_ROOT;
 }
 
 function resolveTarget(targetPath) {
@@ -346,7 +346,7 @@ function reapTree(child, childIdentity) {
   }
   if (process.platform === 'win32') {
     // Protocol stdout/stderr are owned by run.cjs pipes, so a descendant that
-    // outlives this process cannot retain Claude Code's handles (#3920).
+    // outlives this process cannot retain the host's handles (#3920).
     // Do not spawnSync here: Node waits for the killer even after its timeout,
     // which can hold the runner past the declared host fuse. Fire-and-forget
     // taskkill with stdio ignored after protocol detach is the fail-open path.
@@ -383,9 +383,9 @@ function resolveGenericChildCommand(targetPath, extraArgs, platform = process.pl
 }
 
 function resolveGenericChildStdio(platform = process.platform) {
-  // stdin inherit: hook JSON payload from Claude Code.
+  // stdin inherit: hook JSON payload from the host.
   // stdout/stderr pipe: run.cjs owns the protocol handles so a descendant that
-  // outlives the runner cannot keep Claude Code blocked on EOF (#3920).
+  // outlives the runner cannot keep the host blocked on EOF (#3920).
   // ipc: Windows supervisor parent-death reap.
   return platform === 'win32'
     ? ['inherit', 'pipe', 'pipe', 'ipc']

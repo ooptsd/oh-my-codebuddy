@@ -3,7 +3,7 @@
 ## Step 3.1: Verify Plugin Installation
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;
@@ -64,7 +64,7 @@ Use AskUserQuestion:
 Store the team configuration in the active config directory's `.omc-config.json`:
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;

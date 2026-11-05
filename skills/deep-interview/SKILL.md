@@ -67,19 +67,19 @@ When arguments include `--autoresearch`, Deep Interview becomes the zero-learnin
 
 ## Native Plugin Invocation Guard (Issue #3030)
 
-If this raw bundled skill is loaded by Claude Code's native plugin skill loader through `/omc:deep-interview` or `Skill("omc:deep-interview")`, do not treat that path as permission to skip rendered omc setup. The user-facing preferred invocation is `/deep-interview`; do not recommend or advertise `/omc:deep-interview` as the deep-interview entrypoint. Regardless of invocation path, Phase 0 below remains blocking and must resolve `omc.deepInterview.ambiguityThreshold` from settings before any announcement, state write, question, or ambiguity score.
+If this raw bundled skill is loaded by CodeBuddy's native plugin skill loader through `/omc:deep-interview` or `Skill("omc:deep-interview")`, do not treat that path as permission to skip rendered omc setup. The user-facing preferred invocation is `/deep-interview`; do not recommend or advertise `/omc:deep-interview` as the deep-interview entrypoint. Regardless of invocation path, Phase 0 below remains blocking and must resolve `omc.deepInterview.ambiguityThreshold` from settings before any announcement, state write, question, or ambiguity score.
 
 ## Phase 0: Resolve Ambiguity Threshold (blocking prerequisite)
 
 Complete this phase before Phase 1, before brownfield exploration, before `state_write`, before Round 0, and before any ambiguity scoring. Do not continue if the resolved threshold and source are unknown.
 
 1. **Read threshold settings in precedence order**:
-   - User settings: `[$CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`
+   - User settings: `[$CODEBUDDY_CONFIG_DIR|~/.codebuddy]/settings.json`
    - Project settings: `./.codebuddy/settings.json` (overrides user settings)
 2. **Resolve threshold and source**:
    - Read `omc.deepInterview.ambiguityThreshold` from both files when present.
    - Use the project value when valid; otherwise use the user value when valid; otherwise use the default `0.2`.
-   - Set these run variables exactly: `<resolvedThreshold>`, `<resolvedThresholdPercent>`, and `<resolvedThresholdSource>` (for example `./.codebuddy/settings.json`, `[$CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`, or `default`).
+   - Set these run variables exactly: `<resolvedThreshold>`, `<resolvedThresholdPercent>`, and `<resolvedThresholdSource>` (for example `./.codebuddy/settings.json`, `[$CODEBUDDY_CONFIG_DIR|~/.codebuddy]/settings.json`, or `default`).
 3. **Emit the required first line to the user before any other interview announcement**:
 
 ```

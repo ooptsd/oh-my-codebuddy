@@ -5,7 +5,7 @@
 Check if user has existing 2.x configuration:
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;
@@ -121,13 +121,13 @@ Your configuration is preserved; retired commands are not recreated.
 If the plugin ships `templates/rules/`, you can copy rule templates into your project's `.codebuddy/rules/` directory for automatic context injection. Check availability first:
 
 ```bash
-ls "${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/templates/rules/"*.md 2>/dev/null
+ls "${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/templates/rules/"*.md 2>/dev/null
 ```
 
 If present, copy with:
 ```bash
 mkdir -p .codebuddy/rules
-cp "${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/templates/rules/"*.md .codebuddy/rules/
+cp "${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/templates/rules/"*.md .codebuddy/rules/
 ```
 
 ## Mark Completion
@@ -137,7 +137,7 @@ Get the current omc version and mark setup complete:
 ```bash
 # Get current omc version from the installed OMC block
 OMC_VERSION=""
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;

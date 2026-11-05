@@ -27,7 +27,7 @@ Automatically detects which mode is active and cancels it:
 - **Swarm**: Stops coordinated agent swarm, releases claimed tasks
 - **Ultrapilot**: Stops parallel autopilot workers
 - **Pipeline**: Stops sequential agent pipeline
-- **Team**: Requests shutdown from all teammates through the active team/conversation surface, waits for responses/timeouts, clears omc team state, clears linked ralph if present. Claude Code 2.1.178+ has no TeamDelete.
+- **Team**: Requests shutdown from all teammates through the active team/conversation surface, waits for responses/timeouts, clears omc team state, clears linked ralph if present. CodeBuddy has no TeamDelete.
 - **Team+Ralph (linked)**: Cancels team first (graceful shutdown), then clears ralph state. Cancelling ralph when linked also cancels team first.
 
 ## Usage
@@ -41,7 +41,7 @@ Or say: "cancelomc", "stopomc"
 ## Critical: Deferred Tool Handling
 
 The state management tools (`state_clear`, `state_read`, `state_write`, `state_list_active`,
-`state_get_status`) may be registered as **deferred tools** by Claude Code. Before calling
+`state_get_status`) may be registered as **deferred tools** by CodeBuddy. Before calling
 any state tool, you MUST first load all of them via `ToolSearch`:
 
 ```
@@ -61,7 +61,7 @@ cleanup that cannot be done via file deletion alone.
 
 ```bash
 # Fallback: direct file removal when state_clear MCP tool is unavailable
-SESSION_ID="${CODEBUDDY_SESSION_ID:-${CLAUDE_SESSION_ID:-${CLAUDECODE_SESSION_ID:-}}}"
+SESSION_ID="${CODEBUDDY_SESSION_ID:-}"
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || { d="$PWD"; while [ "$d" != "/" ] && [ ! -d "$d/.omc" ]; do d="$(dirname "$d")"; done; echo "$d"; })"
 
 # Cross-platform SHA-256 (macOS: shasum, Linux: sha256sum)
@@ -117,7 +117,7 @@ Active modes are still cancelled in dependency order:
 5. Swarm (standalone)
 6. Ultrapilot (standalone)
 7. Pipeline (standalone)
-8. Team (Claude Code native)
+8. Team (CodeBuddy native)
 9. omc Teams (tmux CLI workers)
 10. Plan Consensus (standalone)
 11. Self-Improve (standalone — clear state, clean orphaned worktrees, preserve iteration_state for resume, set status: "user_stopped" in the resolved `<self-improve-root>/state/agent-settings.json`; new runs use `.omc/self-improve/topics/<topic-slug>/`, with flat `.omc/self-improve/` retained only for legacy single-track resumes)
@@ -198,7 +198,7 @@ Use force mode to clear every session plus legacy artifacts via `state_clear`. D
 
 ### 3B. Smart Cancellation (default)
 
-#### If Team Active (Claude Code implicit team)
+#### If Team Active (CodeBuddy native team)
 
 Teams are detected through omc team state, not removed CodeBuddy `~/.codebuddy/teams` config directories:
 
@@ -226,7 +226,7 @@ For the active omc team state:
 After graceful pass:
   1. Wait 5 more seconds for unresponsive teammates that may still be processing
   2. Record any remaining unresponsive teammates in the cancellation report
-  3. Do not call TeamDelete; Claude Code 2.1.178+ removed per-team native cleanup
+  3. Do not call TeamDelete; CodeBuddy removed per-team native cleanup
 ```
 
 **omc State Cleanup:**
@@ -242,7 +242,7 @@ After graceful pass:
 
 For legacy omc tmux/CLI worker runs, verify no worker processes remain (only when the plugin ships the scanner):
 ```bash
-PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}"
+PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT}"
 if [ -f "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" ]; then
   node "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" --team-name "{team_name}"
 else
@@ -368,7 +368,7 @@ Mode-specific subsections below describe what extra cleanup each handler perform
 - **Dependency-aware**: Autopilot cancellation cleans up Ralph and any retired ultraqa state
 - **Local-only**: Clears state files in `.omc/state/` directory
 - **Resume-friendly**: Autopilot state is preserved for seamless resume
-- **Team-aware**: Detects native Claude Code teams and performs graceful shutdown
+- **Team-aware**: Detects native CodeBuddy teams and performs graceful shutdown
 
 ## MCP Worker Cleanup
 

@@ -15,7 +15,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const { getClaudeConfigDir } = await import(pathToFileURL(join(__dirname, "lib", "config-dir.mjs")).href);
+const { getConfigDir } = await import(pathToFileURL(join(__dirname, "lib", "config-dir.mjs")).href);
 
 function uniquePaths(paths) {
   return [...new Set(paths.filter(Boolean).map((candidate) => resolve(candidate)))];
@@ -98,8 +98,7 @@ async function main() {
   // 1. OMC_PLUGIN_ROOT / CODEBUDDY_PLUGIN_ROOT — highest priority (set by `omc --plugin-dir <path>` or the CodeBuddy plugin host)
   try {
     const pluginRootEnv = process.env.OMC_PLUGIN_ROOT
-      || process.env.CODEBUDDY_PLUGIN_ROOT
-      || process.env.CLAUDE_PLUGIN_ROOT;
+      || process.env.CODEBUDDY_PLUGIN_ROOT;
     if (pluginRootEnv && pluginRootEnv.trim().length > 0) {
       const envHudPath = join(pluginRootEnv, "dist/hud/index.js");
       if (existsSync(envHudPath)) {
@@ -115,8 +114,8 @@ async function main() {
   } catch { /* fall through to next resolution step */ }
 
   // 2. Plugin cache (for production installs; CodeBuddy layout: plugins/cache/omc-plugins/omc/<version>)
-  // Respect CODEBUDDY_CONFIG_DIR/CLAUDE_CONFIG_DIR so installs under a custom config dir are found
-  const configDir = getClaudeConfigDir();
+  // Respect CODEBUDDY_CONFIG_DIR so installs under a custom config dir are found
+  const configDir = getConfigDir();
   const pluginCacheBase = join(configDir, "plugins", "cache", "omc-plugins", "omc");
   if (existsSync(pluginCacheBase)) {
     try {

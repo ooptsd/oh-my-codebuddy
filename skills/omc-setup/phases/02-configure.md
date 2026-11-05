@@ -8,7 +8,7 @@ Ralph is an agent-driven persistence loop with no external language dependency. 
 
 ```bash
 node --version || echo "ERROR: Node is required for omc hooks and Ralph state persistence."
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 mkdir -p "$CONFIG_DIR" 2>/dev/null
 touch "$CONFIG_DIR/.omc-write-probe" 2>/dev/null && rm -f "$CONFIG_DIR/.omc-write-probe" \
   || echo "WARNING: Config dir is not writable; Ralph state persistence will fail until it is."
@@ -35,7 +35,7 @@ Notify user if a newer version is available:
 # Detect installed version (cross-platform)
 node -e "
 const p=require('path'),f=require('fs'),h=require('os').homedir();
-const raw=(process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||'').trim();
+const raw=(process.env.CODEBUDDY_CONFIG_DIR||'').trim();
 const d=raw==null||raw===''? p.join(h,'.codebuddy'):raw==='~'?h:raw.startsWith('~/')||raw.startsWith('~\\\\')?p.join(h,raw.slice(2)):raw;
 let v='';
 // Try the omc marketplace cache directory first
@@ -59,7 +59,7 @@ fi
 After a marketplace update, CodeBuddy may keep old omc cache paths in the plugin registry (`installed_plugins.json`). Inspect and, when stale entries for `omc@omc-plugins` point at non-existent install paths, advise the user to reinstall:
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 node -e "
 const f=require('fs'),p=require('path');
 const regPath=process.argv[1]+'/plugins/installed_plugins.json';
@@ -77,7 +77,7 @@ try{
 The `ultrawork` workflow was removed in 5.0.0 and the `defaultExecutionMode` config key is no longer read by any runtime surface. Upgrades from 4.x may still carry a dead persisted value in `.omc-config.json`. Clear it so the config matches the current contract:
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;
@@ -198,7 +198,7 @@ If beads or beads-rust is detected, use AskUserQuestion:
 Store the preference:
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;

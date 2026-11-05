@@ -113,7 +113,7 @@ Each pipeline stage uses **specialized agents** -- not just executors. The lead 
 **Routing rules:**
 
 1. **The lead picks agents per stage, not the user.** The user's `N:agent-type` parameter only overrides the `team-exec` stage worker type. All other stages use stage-appropriate specialists.
-2. **Specialist agents complement executor agents.** Route analysis/review to architect/critic Claude agents and UI work to designer agents. Tmux CLI workers are one-shot and don't participate in team communication.
+2. **Specialist agents complement executor agents.** Route analysis/review to architect/critic agents and UI work to designer agents. Tmux CLI workers are one-shot and don't participate in team communication.
 3. **Cost mode affects model tier.** In downgrade: `opus` agents to `sonnet`, `sonnet` to `haiku` where quality permits. `team-verify` always uses at least `sonnet`.
 4. **Risk level escalates review.** Security-sensitive or >20 file changes must include `security-reviewer` + `code-reviewer` (opus) in `team-verify`.
 
@@ -569,7 +569,7 @@ After the blocking shutdown pass completes and all teammates acknowledge, call `
 For legacy omc tmux/CLI worker runs (`omc team` / `/omc-teams`), check for worker processes that survived cleanup:
 
 ```bash
-PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}"
+PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT}"
 if [ -f "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" ]; then
   node "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" --team-name fix-ts-errors
 else
@@ -588,7 +588,7 @@ When the scanner is present it terminates stale orphans (SIGTERM → 5s wait →
 
 ## CLI Workers (Codex and Gemini)
 
-The team skill supports **hybrid execution** combining Claude agent teammates with external CLI workers (Codex CLI and Gemini CLI). Both types can make code changes -- they differ in capabilities and cost. These are standalone CLI tools, not MCP servers.
+The team skill supports **hybrid execution** combining native agent teammates with external CLI workers (Codex CLI and Gemini CLI). Both types can make code changes -- they differ in capabilities and cost. These are standalone CLI tools, not MCP servers.
 
 ### Execution Modes
 
@@ -611,7 +611,7 @@ Tmux CLI workers run in dedicated tmux panes with filesystem access. They are **
 4. Results/summary are written to an output file
 5. Lead reads the output, marks the task complete, and feeds results to dependent tasks
 
-**Key difference from Claude teammates:**
+**Key difference from agent teammates:**
 
 - CLI workers operate via tmux, not the host tool system
 - They cannot use CodeBuddy's native task-list or team messaging surfaces
@@ -628,14 +628,14 @@ The default busy-worker evidence budget is therefore 60 seconds, plus probe and 
 
 | Task Type                        | Best Route                     | Why                                                 |
 | -------------------------------- | ------------------------------ | --------------------------------------------------- |
-| Iterative multi-step work        | Claude teammate                | Needs tool-mediated iteration + team communication  |
+| Iterative multi-step work        | Agent teammate                 | Needs tool-mediated iteration + team communication  |
 | Code review / security audit     | CLI worker or specialist agent | Autonomous execution, good at structured analysis   |
-| Architecture analysis / planning | architect Claude agent         | Strong analytical reasoning with codebase access    |
+| Architecture analysis / planning | architect agent                | Strong analytical reasoning with codebase access    |
 | Refactoring (well-scoped)        | CLI worker or executor agent   | Autonomous execution, good at structured transforms |
-| UI/frontend implementation       | designer Claude agent          | Design expertise, framework idioms                  |
-| Large-scale documentation        | writer Claude agent            | Writing expertise + large context for consistency   |
-| Build/test iteration loops       | Claude teammate                | Needs Bash tool + iterative fix cycles              |
-| Tasks needing team coordination  | Claude teammate                | Needs team/conversation status updates              |
+| UI/frontend implementation       | designer agent                 | Design expertise, framework idioms                  |
+| Large-scale documentation        | writer agent                   | Writing expertise + large context for consistency   |
+| Build/test iteration loops       | Agent teammate                 | Needs Bash tool + iterative fix cycles              |
+| Tasks needing team coordination  | Agent teammate                 | Needs team/conversation status updates              |
 
 ### Example: Hybrid Team with CLI Workers
 
@@ -650,7 +650,7 @@ Task decomposition:
 #5 [gemini_worker] Final code review of all changes
 ```
 
-The lead runs #1 (Codex security analysis), then #2 and #3 in parallel (Codex refactors backend, designer agent redesigns frontend), then #4 (Claude teammate handles test iteration), then #5 (Gemini final review).
+The lead runs #1 (Codex security analysis), then #2 and #3 in parallel (Codex refactors backend, designer agent redesigns frontend), then #4 (an agent teammate handles test iteration), then #5 (Gemini final review).
 
 ### Pre-flight Analysis (Optional)
 
@@ -932,7 +932,7 @@ Declare which provider (`claude`, `codex`, `gemini`, `antigravity`, `grok`, `cur
 
 | Role            | Provider        | Model                     |
 | --------------- | --------------- | ------------------------- |
-| `orchestrator`  | claude (pinned) | inherits invoking session |
+| `orchestrator`  | session (pinned) | inherits invoking session |
 | `planner`       | claude          | `HIGH` (opus)             |
 | `analyst`       | claude          | `HIGH` (opus)             |
 | `executor`      | claude          | `MEDIUM` (sonnet)         |
@@ -953,9 +953,9 @@ User-friendly aliases normalize via `normalizeDelegationRole()` — e.g. `review
 - **model** — tier name (`"HIGH" | "MEDIUM" | "LOW"`) or an explicit model ID. Tiers resolve through `routing.tierModels`.
 - **agent** — optional Claude agent name (e.g. `"critic"`, `"executor"`). Only honored when the resolved provider is `claude`.
 
-`orchestrator` is pinned to `claude`; only `model` is user-configurable. Any other key on `orchestrator` is rejected by the validator.
+`orchestrator` is pinned to the session provider; only `model` is user-configurable. Any other key on `orchestrator` is rejected by the validator.
 
-`cursor` launches `cursor-agent` as an interactive worker. Reviewer/verdict roles (`critic`, `code-reviewer`, `security-reviewer`, `test-engineer`) are supported and receive the same structured verdict-output contract as other non-Claude providers. The leader owns the terminal task transition after consuming the verdict; final approval remains a lead-session responsibility.
+`cursor` launches `cursor-agent` as an interactive worker. Reviewer/verdict roles (`critic`, `code-reviewer`, `security-reviewer`, `test-engineer`) are supported and receive the same structured verdict-output contract as other external providers. The leader owns the terminal task transition after consuming the verdict; final approval remains a lead-session responsibility.
 
 ### Env override
 
@@ -967,7 +967,7 @@ Precedence: `OMC_TEAM_ROLE_OVERRIDES` > `.codebuddy/omc.jsonc` (project) > `~/.c
 
 ### Missing CLI preflight
 
-Team startup strictly preflights only providers that are effective for its initial workers, including idle-worker assignments and explicit role routes. Role routing selects each worker's initial startup provider; later tasks delivered to an existing pane keep that worker's provider and are not re-routed by task role. A missing, relative, or untrusted binary for a selected provider fails before team state or multiplexer side effects are created. Providers that are merely present in the routing snapshot or declared agent list, including providers for roles never selected for a launch, are not probed. Routing is authoritative: the runtime never silently changes a selected role to Claude when its provider is unavailable. Scale-up and worker recovery independently preflight the provider they are about to launch and fail closed if it is unavailable. Probe provider availability with `omc doctor --team-routing`.
+Team startup strictly preflights only providers that are effective for its initial workers, including idle-worker assignments and explicit role routes. Role routing selects each worker's initial startup provider; later tasks delivered to an existing pane keep that worker's provider and are not re-routed by task role. A missing, relative, or untrusted binary for a selected provider fails before team state or multiplexer side effects are created. Providers that are merely present in the routing snapshot or declared agent list, including providers for roles never selected for a launch, are not probed. Routing is authoritative: the runtime never silently changes a selected role to another provider when its provider is unavailable. Scale-up and worker recovery independently preflight the provider they are about to launch and fail closed if it is unavailable. Probe provider availability with `omc doctor --team-routing`.
 
 ### Stickiness — resolved once, reused everywhere
 
@@ -975,7 +975,7 @@ Resolved routing is immutable per team. It selects each worker's initial startup
 
 ### Zero-config behavior
 
-An empty `team.roleRouting` preserves pre-patch behavior: every worker is Claude, model tiers follow `routing.tierModels`, and `/team 3:executor ...` still spawns three Claude Sonnet executors.
+An empty `team.roleRouting` preserves pre-patch behavior: every worker uses the default provider, model tiers follow `routing.tierModels`, and `/team 3:executor ...` still spawns three executors on the default tier.
 
 ## State Cleanup
 

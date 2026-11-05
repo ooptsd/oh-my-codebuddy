@@ -27,7 +27,7 @@ Ralph is a PRD-driven persistence loop that keeps working on a task until ALL us
 - User wants to explore or plan before committing -- use `plan` skill instead
 - User wants a quick one-shot fix -- delegate directly to an executor agent
 - User wants manual control over completion -- delegate directly to an executor agent
-- User already has an active Claude Code `/goal` and only wants that native goal loop monitored -- adopt the existing `/goal` explicitly or use artifact-only Ultragoal notes instead of starting Ralph as a competing persistence loop
+- User already has an active host `/goal` and only wants that native goal loop monitored -- adopt the existing `/goal` explicitly or use artifact-only Ultragoal notes instead of starting Ralph as a competing persistence loop
   </Do_Not_Use_When>
 
 <Why_This_Exists>
@@ -98,7 +98,7 @@ Rules:
 - Always pass the `model` parameter explicitly when delegating to agents
 - Read `docs/shared/agent-tiers.md` before first delegation to select correct agent tiers
 - Deliver the full implementation: no scope reduction, no partial completion, no deleting tests to make them pass
-- If a Claude Code `/goal` is mentioned, treat it as a native session-loop handoff/evidence source only and use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. Ralph remains the omc loop authority for this run; do not claim `/goal` independently ran tests or read files, and do not treat evaluator success as a substitute for Ralph reviewer verification.
+- If a host `/goal` is mentioned, treat it as a native session-loop handoff/evidence source only and use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. Ralph remains the omc loop authority for this run; do not claim `/goal` independently ran tests or read files, and do not treat evaluator success as a substitute for Ralph reviewer verification.
   </Execution_Policy>
 
 <Steps>
@@ -144,7 +144,7 @@ Rules:
    - <5 files, <100 lines with full tests: STANDARD tier minimum (architect-medium / Sonnet)
    - Standard changes: STANDARD tier (architect-medium / Sonnet)
    - > 20 files or security/architectural changes: THOROUGH tier (architect / Opus)
-   - If `--critic=critic`, use the Claude `critic` agent for the approval pass
+   - If `--critic=critic`, use the `critic` agent for the approval pass
    - If `--critic=codex`, run `omc ask codex --agent-prompt critic "..."` for the approval pass. The Codex critic prompt MUST include:
      1. The full list of acceptance criteria from prd.json for verification
      2. A directive to evaluate whether the implementation is **OPTIMAL** — not just correct, but whether there exists a meaningfully better approach (simpler, faster, more maintainable) that the implementation missed
@@ -308,7 +308,7 @@ Why good: The falsified criterion stops governing, the measurement is preserved 
 
 - **Multi-repo workspace anchor:** drop a `.omc-workspace` marker at the parent directory so multiple sessions across sub-repos share one `.omc/`. Resolution order: `OMC_STATE_DIR > .omc-workspace > git > cwd`. See `docs/REFERENCE.md`.
 - **Session id source:** OMC_SESSION_ID env var wins in CLI contexts; hook payload data.session_id wins in hook contexts.
-- **Plan id (when applicable):** Two ralph runs in the same workspace will conflict on `prd.json`. Use distinct session IDs (the hook payload session_id is already isolated per Claude Code session). For parallel ultragoal-backed ralph runs, use `--plan-id`.
+- **Plan id (when applicable):** Two ralph runs in the same workspace will conflict on `prd.json`. Use distinct session IDs (the hook payload session_id is already isolated per session). For parallel ultragoal-backed ralph runs, use `--plan-id`.
 - **Parallel verdict:** supported (each session writes its own session-scoped state)
 
 <Advanced>

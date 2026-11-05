@@ -22,7 +22,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname, resolve, basename } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { getClaudeConfigDir } from './lib/config-dir.mjs';
+import { getConfigDir } from './lib/config-dir.mjs';
 import { encodeProjectPath } from './lib/encode-project-path.mjs';
 import { readStdin } from './lib/stdin.mjs';
 import { resolveContextPercent } from './lib/context-usage.mjs';
@@ -90,9 +90,9 @@ function runGitRevParse(args, cwd) {
 
 /**
  * Resolve a transcript path that may be mismatched in worktree sessions (issue #1094).
- * When the host CLI runs inside .codebuddy/worktrees/X (legacy: .claude/worktrees/X),
+ * When the host CLI runs inside .codebuddy/worktrees/X,
  * the encoded project directory
- * contains `--codebuddy-worktrees-X` (or `--claude-worktrees-X`) which doesn't
+ * contains `--codebuddy-worktrees-X` which doesn't
  * exist. Strip it to find the real path.
  */
 function resolveTranscriptPath(transcriptPath, cwd) {
@@ -102,8 +102,8 @@ function resolveTranscriptPath(transcriptPath, cwd) {
   } catch { /* fallthrough */ }
 
   // Strategy 1: Strip worktree segment from encoded project directory.
-  // CodeBuddy: --codebuddy-worktrees-X; legacy Claude Code: --claude-worktrees-X.
-  const worktreePattern = /--(?:codebuddy|claude)-worktrees-[^/\\]+/;
+  // CodeBuddy: --codebuddy-worktrees-X.
+  const worktreePattern = /--codebuddy-worktrees-[^/\\]+/;
   if (worktreePattern.test(transcriptPath)) {
     const resolved = transcriptPath.replace(worktreePattern, '');
     try {
@@ -129,7 +129,7 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (mainRepoRoot !== worktreeTop) {
       const sessionFile = basename(transcriptPath);
       if (sessionFile) {
-        const configDir = getClaudeConfigDir();
+        const configDir = getConfigDir();
         const projectsDir = join(configDir, 'projects');
         if (existsSync(projectsDir)) {
           const encodedMain = encodeProjectPath(mainRepoRoot);
@@ -151,7 +151,7 @@ function resolveTranscriptPath(transcriptPath, cwd) {
  * Prevents infinite block loops by capping at MAX_BLOCKS.
  */
 function getGuardFilePath(sessionId) {
-  const configDir = getClaudeConfigDir();
+  const configDir = getConfigDir();
   const guardDir = join(configDir, 'projects', '.omc-guards');
   try {
     mkdirSync(guardDir, { recursive: true, mode: 0o700 });

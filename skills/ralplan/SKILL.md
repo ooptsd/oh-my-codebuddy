@@ -19,8 +19,8 @@ Ralplan is a shorthand alias for `/omc:plan --consensus`. It triggers iterative 
 
 - `--interactive`: Enables user prompts at key decision points (draft review in step 2 and final approval in step 6). Without this flag the workflow runs fully automated — Planner → Architect → Critic loop — marks the final plan `pending approval`, outputs it, and stops without asking for confirmation or executing changes.
 - `--deliberate`: Forces deliberate mode for high-risk work. Adds pre-mortem (3 scenarios) and expanded test planning (unit/integration/e2e/observability). Without this flag, deliberate mode can still auto-enable when the request explicitly signals high risk (auth/security, migrations, destructive changes, production incidents, compliance/PII, public API breakage).
-- `--architect codex`: Use Codex for the Architect pass when Codex CLI is available. Otherwise, briefly note the fallback and keep the default Claude Architect review.
-- `--critic codex`: Use Codex for the Critic pass when Codex CLI is available. Otherwise, briefly note the fallback and keep the default Claude Critic review.
+- `--architect codex`: Use Codex for the Architect pass when Codex CLI is available. Otherwise, briefly note the fallback and keep the default Architect review.
+- `--critic codex`: Use Codex for the Critic pass when Codex CLI is available. Otherwise, briefly note the fallback and keep the default Critic review.
 
 ## Usage with interactive mode
 

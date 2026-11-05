@@ -149,14 +149,19 @@ node -e "
 " || fail "banned-imports check failed"
 
 # 7. Claude-config residue audit (CodeBuddy-native conventions)
-# Flag active .claude paths / CLAUDE.md targets; legacy-compat pairings with
-# CODEBUDDY equivalents and provider model-id regexes are allowed.
+# Zero-tolerance: any CLAUDE_* env var, active .claude path, or CLAUDE.md
+# target is a violation. Allow-list is limited to (a) the upstream project
+# name "oh-my-claudecode" family, (b) .claude-plugin/ compat notes that
+# describe host lookup behavior, (c) the upstream-shaped worktree-dir
+# encoding --claude-worktrees-X, and (d) omc ask provider routing where
+# "claude" names an external CLI provider, not the host.
 AUDIT_TMP="$(mktemp)"
 cat > "$AUDIT_TMP" <<'AUDIT_EOF'
 const fs = require('fs');
 const path = require('path');
 const PLUGIN = process.argv[2];
-const roots = ['scripts', 'hooks', 'skills', 'commands', 'agents', 'docs'].map(d => path.join(PLUGIN, d));
+// docs/plans/ records design history and legitimately mentions removed items.
+const roots = ['scripts', 'hooks', 'skills', 'commands', 'agents'].map(d => path.join(PLUGIN, d));
 function walk(dir, out) {
   let entries = [];
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return out; }
@@ -174,16 +179,26 @@ for (const file of files) {
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
   lines.forEach((line, i) => {
     const trimmed = line.trim();
-    const isLegacyCompat = /legacy/.test(line) || /CODEBUDDY/.test(line) || /anthropic\.claude/.test(line);
-    // .claude path segments used as active paths. A '.claude' literal on the
-    // same line as '.codebuddy' is an intentional co-exclusion/co-existence
-    // (e.g. traversal exclusion lists, dual-fallback chains) — allowed.
-    if ((/['" ]\.claude(\/|['" ])/.test(line) || /~\/\.claude/.test(line))
-        && !/\.codebuddy/.test(line) && !/worktrees\/X/.test(line)) {
+    // Upstream project/package names keep "claude" in their identifier.
+    const isUpstreamName = /oh-my-claude|claude-plugins-official/.test(line);
+    // Host-lookup compat note (README compat table: .claude-plugin/ fallback).
+    const isCompatNote = /\.claude-plugin/.test(line);
+    // Upstream-shaped worktree dir encoding kept in defensive regexes.
+    const isWorktreeCompat = /worktrees/.test(line) && /claude-worktrees/.test(line);
+    // "claude" as an external CLI provider (omc ask / team routing), not the host.
+    const isProviderName = /omc ask|provider/.test(line) && /[`|"']claude[`|"']/.test(line);
+    const allowed = isUpstreamName || isCompatNote || isWorktreeCompat || isProviderName;
+    if (allowed) return;
+    // CLAUDE_* env vars (CLAUDE_CONFIG_DIR, CLAUDE_PLUGIN_ROOT, ...) — gone.
+    if (/\bCLAUDE_[A-Z_]+\b/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': CLAUDE_* env: ' + trimmed.slice(0, 90));
+    }
+    // Active .claude paths.
+    if (/['" ]\.claude(\/|['" ])/.test(line) || /~\/\.claude/.test(line)) {
       violations.push(rel + ':' + (i + 1) + ': .claude path: ' + trimmed.slice(0, 90));
     }
-    // CLAUDE.md as active target (allowed when paired with CODEBUDDY.md or marked legacy)
-    if (/CLAUDE\.md/.test(line) && !isLegacyCompat) {
+    // CLAUDE.md as active target.
+    if (/CLAUDE\.md/.test(line)) {
       violations.push(rel + ':' + (i + 1) + ': CLAUDE.md ref: ' + trimmed.slice(0, 90));
     }
   });

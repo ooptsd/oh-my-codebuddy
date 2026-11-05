@@ -1,13 +1,8 @@
 {
   "aliases": {
     "omc": {
-      "repo": "Yeachan-Heo/oh-my-claudecode",
-      "local": "~/Workspace/oh-my-claudecode",
-      "default_base": "main"
-    },
-    "cc": {
-      "repo": "anthropics/claude-code",
-      "local": "~/Workspace/claude-code",
+      "repo": "ooptsd/oh-my-codebuddy",
+      "local": "~/Workspace/oh-my-codebuddy",
       "default_base": "main"
     }
   },

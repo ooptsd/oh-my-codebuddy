@@ -56,7 +56,7 @@
 | `marketplace.json` 格式 | Claude Code schema | 同 schema | 两个运行时都接受同一 marketplace 格式 |
 | `plugin.json` 位置 | `.claude-plugin/plugin.json` | `.codebuddy-plugin/plugin.json` | CodeBuddy 优先查找 `.codebuddy-plugin/`，再查找 `.claude-plugin/` |
 | Hook stdin/stdout 协议 | JSON 入参，JSON 出参 | 同 | 遵循同一份 hook 契约 |
-| `${CODEBUDDY_PLUGIN_ROOT}` 替换 | ✅（注入 `${CLAUDE_PLUGIN_ROOT}`） | ✅（注入 `${CODEBUDDY_PLUGIN_ROOT}`，并保留 `${CLAUDE_PLUGIN_ROOT}` 兼容别名） | CodeBuddy 同时注入两者：`${CODEBUDDY_PLUGIN_ROOT}` 为权威环境变量，`${CLAUDE_PLUGIN_ROOT}` 作为历史兼容别名保留。`hooks/hooks.json` 中现有的 `${CLAUDE_PLUGIN_ROOT}` 引用继续工作 |
+| `${CODEBUDDY_PLUGIN_ROOT}` 替换 | ✅（注入 `${CLAUDE_PLUGIN_ROOT}`） | ✅（注入 `${CODEBUDDY_PLUGIN_ROOT}`） | `${CODEBUDDY_PLUGIN_ROOT}` 为权威环境变量，`hooks/hooks.json` 全部使用该引用；本插件自 v5.4.3 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 兼容别名 |
 | `.omc/` 磁盘状态文件 | ✅ | ✅ | 同路径、同 JSON 结构；skill 直接读取 |
 | `package.json` / `npm`（hook 脚本） | 必需 | 无要求 | 本发行版 hook 脚本全部用纯 Node + stdin/stdout；唯一可选原生模块（`better-sqlite3`）在已安装时被兼容 |
 
@@ -266,7 +266,7 @@ codebuddy --plugin-dir ./oh-my-codebuddy
 - Stop 时刻的上下文守卫、漂移守卫、persistent mode、code simplifier（`Stop`）。
 - 会话结束异步清理（`SessionEnd`）。
 
-变量 `${CLAUDE_PLUGIN_ROOT}`（出现在每条 hook 命令中）由 CodeBuddy 在 hook 执行时替换为插件根目录。**CodeBuddy 注入机制**：权威环境变量是 `${CODEBUDDY_PLUGIN_ROOT}`，同时保留 `${CLAUDE_PLUGIN_ROOT}` 作为历史兼容别名 —— 两者的值都指向同一个插件根目录。自 v5.4.2 起 `hooks/hooks.json` 已全部改用权威的 `${CODEBUDDY_PLUGIN_ROOT}` 引用；脚本读取统一为 `process.env.CODEBUDDY_PLUGIN_ROOT ?? process.env.CLAUDE_PLUGIN_ROOT`（历史别名仍被宿主注入，作为回退保留）。包装脚本 `scripts/run.cjs` 按 hook 契约从 stdin 读取、向 stdout 写入 JSON。
+变量 `${CODEBUDDY_PLUGIN_ROOT}`（出现在每条 hook 命令中）由 CodeBuddy 在 hook 执行时替换为插件根目录。**CodeBuddy 注入机制**：权威环境变量是 `${CODEBUDDY_PLUGIN_ROOT}`，指向插件根目录。`hooks/hooks.json` 全部使用权威的 `${CODEBUDDY_PLUGIN_ROOT}` 引用；脚本读取统一为 `process.env.CODEBUDDY_PLUGIN_ROOT`（自 v5.4.3 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 历史别名）。包装脚本 `scripts/run.cjs` 按 hook 契约从 stdin 读取、向 stdout 写入 JSON。
 
 ---
 

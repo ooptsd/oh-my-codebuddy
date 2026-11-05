@@ -5,7 +5,7 @@ description: Diagnose the current omc session or repo state using logs, traces, 
 
 # Debug
 
-Use this skill when the user wants help diagnosing a current omc/Claude-Code session problem, workflow breakage, or confusing runtime behavior.
+Use this skill when the user wants help diagnosing a current omc/CodeBuddy session problem, workflow breakage, or confusing runtime behavior.
 
 ## Goal
 Find the real failure signal quickly and explain the next corrective step.

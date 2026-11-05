@@ -5,7 +5,7 @@
  * read the same .txt file. Keep them in sync — enforced by
  * src/__tests__/hud-wrapper-template-sync.test.ts.
  *
- * Used by scripts/plugin-setup.mjs (Path B: Claude Code plugin marketplace).
+ * Used by scripts/plugin-setup.mjs (plugin marketplace installs).
  * The TS module is used by src/installer/index.ts (Path A: `omc setup` / npm).
  */
 

@@ -71,5 +71,5 @@ At session end, significant discoveries are automatically captured as session-lo
 - `haiku` — quick lookups, lightweight inspection, narrow docs work
 - `sonnet` — standard implementation, debugging, and review
 - `opus` — architecture, deep analysis, consensus planning, and high-risk review
-- `fable` — Claude Fable 5 (above Opus); pass it explicitly on the Task call or pin it per agent with `agents.<name>.model`
+- `fable` — the top reasoning tier; pass it explicitly on the Task call or pin it per agent with `agents.<name>.model`
 - The session model chosen with `/model` applies to the main loop only. Delegated agents run on their pinned tier unless the Task call passes `model` explicitly or the agent is overridden via `agents.<name>.model`. To run delegated work on Fable, use one of those two surfaces; selecting Fable in `/model` alone does not change delegation.

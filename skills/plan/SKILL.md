@@ -42,7 +42,7 @@ Jumping into code without understanding requirements leads to rework, scope cree
 - Consensus mode runs fully automated by default; add `--interactive` to enable user prompts at draft review and final approval steps
 - Consensus mode uses RALPLAN-DR short mode by default; switch to deliberate mode with `--deliberate` or when the request explicitly signals high risk (auth/security, data migration, destructive/irreversible changes, production incident, compliance/PII, public API breakage)
 - **Planning/execution boundary:** planning modes inspect context and produce plans/specs/proposals only. They MUST mark artifacts as `pending approval` unless the user has explicitly opted into execution in the current turn or via the structured approval UI. Before explicit execution approval, planning modes MUST NOT run mutation-oriented shell commands, edit source files, commit, push, open PRs, invoke execution skills, or delegate implementation tasks.
-- **Goal workflow boundary:** when a plan compares Claude Code `/goal`, Ralph, Team, or artifact-only Ultragoal, identify exactly one primary loop authority and use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. `/goal` facts must cite Claude Code/Anthropic sources only (Claude Code `/goal` docs: https://code.claude.com/docs/en/goal; Anthropic Claude Code changelog: https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md), and plans MUST NOT claim the `/goal` evaluator independently runs commands or reads files; require surfaced proof evidence before any completion claim.
+- **Goal workflow boundary:** when a plan compares the host `/goal`, Ralph, Team, or artifact-only Ultragoal, identify exactly one primary loop authority and use the deterministic conflict policies `refuse`, `adopt_existing`, and `artifact_only` rather than non-deterministic warning handling. `/goal` facts must cite authoritative host sources only, and plans MUST NOT claim the `/goal` evaluator independently runs commands or reads files; require surfaced proof evidence before any completion claim.
 - **Goal workflow doc target:** for user-facing comparisons, keep examples aligned with `docs/shared/mode-selection-guide.md#goal-oriented-workflow-selection` and `docs/REFERENCE.md#goal-workflow-ux-goal-ralph-team-ultragoal`.
   </Execution_Policy>
 
@@ -78,9 +78,9 @@ Jumping into code without understanding requirements leads to rework, scope cree
 
 **Provider overrides (supported when the provider CLI is installed):**
 
-- `--architect codex` — replace the Claude Architect pass with `omc ask codex --agent-prompt architect "..."` for implementation-heavy architecture review
-- `--critic codex` — replace the Claude Critic pass with `omc ask codex --agent-prompt critic "..."` for an external review pass before execution
-- If the requested provider is unavailable, briefly note that and continue with the default Claude Architect/Critic step for that stage
+- `--architect codex` — replace the default Architect pass with `omc ask codex --agent-prompt architect "..."` for implementation-heavy architecture review
+- `--critic codex` — replace the default Critic pass with `omc ask codex --agent-prompt critic "..."` for an external review pass before execution
+- If the requested provider is unavailable, briefly note that and continue with the default Architect/Critic step for that stage
 
 **State lifecycle**: The persistent-mode stop hook uses `ralplan-state.json` to enforce continuation during the consensus loop. The skill **MUST** manage this state:
 

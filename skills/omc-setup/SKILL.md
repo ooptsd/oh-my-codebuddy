@@ -10,7 +10,7 @@ This is the **only command you need to learn**. After running this, everything e
 
 **When this skill is invoked, immediately execute the workflow below. Do not only restate or summarize these instructions back to the user.**
 
-Note: All `~/.codebuddy/...` paths in this guide respect `CODEBUDDY_CONFIG_DIR` when that environment variable is set (`CLAUDE_CONFIG_DIR` is honored as a legacy alias).
+Note: All `~/.codebuddy/...` paths in this guide respect `CODEBUDDY_CONFIG_DIR` when that environment variable is set
 
 ## Best-Fit Use
 
@@ -79,7 +79,7 @@ EXAMPLES:
 The active plugin root is supplied by the running plugin environment:
 
 ```bash
-PLUGIN_ROOT="${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}"
+PLUGIN_ROOT="${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}"
 ```
 
 All phase files and canonical assets referenced below are read from `$PLUGIN_ROOT`.
@@ -89,7 +89,7 @@ All phase files and canonical assets referenced below are read from `$PLUGIN_ROO
 **CRITICAL**: Before doing anything else, check if setup has already been completed. This prevents users from having to re-run the full setup wizard after every update.
 
 ```bash
-CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.codebuddy}}"
+CONFIG_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"
 case "$CONFIG_DIR" in
   "~") CONFIG_DIR="$HOME" ;;
   "~/"*) CONFIG_DIR="$HOME/${CONFIG_DIR#\~/}" ;;
@@ -149,19 +149,19 @@ If user passes `--force` flag, skip this check and proceed directly to setup.
 ## Phase Execution
 
 ### For `--local` or `--global` flags:
-Read the file at `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/skills/omc-setup/phases/01-install-memory-file.md` and follow its instructions.
+Read the file at `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/skills/omc-setup/phases/01-install-memory-file.md` and follow its instructions.
 (The phase file handles early exit for flag mode.)
 
 ### For full setup (default or --force):
 Execute phases sequentially. For each phase, read the corresponding file and follow its instructions:
 
-1. **Phase 1 - Install CODEBUDDY.md**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/skills/omc-setup/phases/01-install-memory-file.md` and follow its instructions.
+1. **Phase 1 - Install CODEBUDDY.md**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/skills/omc-setup/phases/01-install-memory-file.md` and follow its instructions.
 
-2. **Phase 2 - Environment Configuration**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/skills/omc-setup/phases/02-configure.md` and follow its instructions. Phase 2 must delegate HUD/statusLine setup to the `hud` skill; do not generate or patch `statusLine` paths inline here.
+2. **Phase 2 - Environment Configuration**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/skills/omc-setup/phases/02-configure.md` and follow its instructions. Phase 2 must delegate HUD/statusLine setup to the `hud` skill; do not generate or patch `statusLine` paths inline here.
 
-3. **Phase 3 - Integration Setup**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/skills/omc-setup/phases/03-integrations.md` and follow its instructions.
+3. **Phase 3 - Integration Setup**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/skills/omc-setup/phases/03-integrations.md` and follow its instructions.
 
-4. **Phase 4 - Completion**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}}/skills/omc-setup/phases/04-welcome.md` and follow its instructions.
+4. **Phase 4 - Completion**: Read `${OMC_SETUP_PLUGIN_ROOT:-${CODEBUDDY_PLUGIN_ROOT}}/skills/omc-setup/phases/04-welcome.md` and follow its instructions.
 
 ## Keeping Up to Date
 

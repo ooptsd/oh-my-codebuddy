@@ -6,7 +6,7 @@ level: 3
 
 # Doctor Skill
 
-Note: All `~/.codebuddy/...` paths in this guide respect `CODEBUDDY_CONFIG_DIR` when that environment variable is set (`CLAUDE_CONFIG_DIR` is honored as a legacy alias).
+Note: All `~/.codebuddy/...` paths in this guide respect `CODEBUDDY_CONFIG_DIR` when that environment variable is set
 
 ## Task: Run Installation Diagnostics
 
@@ -16,7 +16,7 @@ You are the omc Doctor - diagnose and fix installation issues.
 
 ```bash
 # Get installed and latest versions (cross-platform)
-node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(h,'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));console.log('Installed:',v.length?v[v.length-1]:'(none)')}catch{console.log('Installed: (none)')}"
+node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(h,'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));console.log('Installed:',v.length?v[v.length-1]:'(none)')}catch{console.log('Installed: (none)')}"
 npm view oh-my-claude-sisyphus version 2>/dev/null || echo "Latest: (unavailable)"
 ```
 
@@ -54,7 +54,7 @@ ls -la "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"/CODEBUDDY.md 2>/dev/null
 grep -q "<!-- OMC:START -->" "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/CODEBUDDY.md" 2>/dev/null && echo "Has omc config" || echo "Missing omc config in CODEBUDDY.md"
 
 # Check memory-file version marker and compare with latest installed plugin cache version
-node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(h,'.codebuddy');const base=p.join(d,'CODEBUDDY.md');let claudeV='(missing)';let claudeSource='(none)';try{const c=f.readFileSync(base,'utf8');const m=c.match(/<!--\s*OMC:VERSION:([^\s]+)\s*-->/i);if(m){claudeV=m[1];claudeSource=base}}catch{};let pluginV='(none)';try{const b=p.join(d,'plugins','cache','omc-plugins','omc');const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));pluginV=v.length?v[v.length-1]:'(none)';}catch{};console.log('CODEBUDDY.md omc version:',claudeV);console.log('omc version source:',claudeSource);console.log('Latest cached plugin version:',pluginV);if(claudeV==='(missing)'){console.log('VERSION CHECK SKIPPED: memory file or marker missing')}else if(pluginV==='(none)'){console.log('VERSION CHECK SKIPPED: plugin cache missing')}else if(claudeV===pluginV){console.log('VERSION MATCH: memory file and plugin cache are aligned')}else{console.log('VERSION DRIFT: CODEBUDDY.md and plugin versions differ')}"
+node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(h,'.codebuddy');const base=p.join(d,'CODEBUDDY.md');let memV='(missing)';let memSource='(none)';try{const c=f.readFileSync(base,'utf8');const m=c.match(/<!--\s*OMC:VERSION:([^\s]+)\s*-->/i);if(m){memV=m[1];memSource=base}}catch{};let pluginV='(none)';try{const b=p.join(d,'plugins','cache','omc-plugins','omc');const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));pluginV=v.length?v[v.length-1]:'(none)';}catch{};console.log('CODEBUDDY.md omc version:',memV);console.log('omc version source:',memSource);console.log('Latest cached plugin version:',pluginV);if(memV==='(missing)'){console.log('VERSION CHECK SKIPPED: memory file or marker missing')}else if(pluginV==='(none)'){console.log('VERSION CHECK SKIPPED: plugin cache missing')}else if(memV===pluginV){console.log('VERSION MATCH: memory file and plugin cache are aligned')}else{console.log('VERSION DRIFT: CODEBUDDY.md and plugin versions differ')}"
 ```
 
 **Diagnosis**:
@@ -82,7 +82,7 @@ touch "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/.omc-write-probe" 2>/dev/null &
 
 ```bash
 # Count versions in cache (cross-platform)
-node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(h,'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x));console.log(v.length+' version(s):',v.join(', '))}catch{console.log('0 versions')}"
+node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(h,'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x));console.log(v.length+' version(s):',v.join(', '))}catch{console.log('0 versions')}"
 ```
 
 **Diagnosis**:
@@ -175,13 +175,13 @@ rm -f "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}"/hooks/stop-continuation.sh
 ### Fix: Outdated Plugin
 ```bash
 # Clear plugin cache (cross-platform)
-node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{f.rmSync(b,{recursive:true,force:true});console.log('Plugin cache cleared. Restart CodeBuddy and reinstall omc to fetch the latest version.')}catch{console.log('No plugin cache found')}"
+node -e "const p=require('path'),f=require('fs'),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(require('os').homedir(),'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{f.rmSync(b,{recursive:true,force:true});console.log('Plugin cache cleared. Restart CodeBuddy and reinstall omc to fetch the latest version.')}catch{console.log('No plugin cache found')}"
 ```
 
 ### Fix: Stale Cache (multiple versions)
 ```bash
 # Keep only latest version (cross-platform)
-node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||process.env.CLAUDE_CONFIG_DIR||p.join(h,'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));v.slice(0,-1).forEach(x=>f.rmSync(p.join(b,x),{recursive:true,force:true}));console.log('Removed',v.length-1,'old version(s)')}catch(e){console.log('No cache to clean')}"
+node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=process.env.CODEBUDDY_CONFIG_DIR||p.join(h,'.codebuddy'),b=p.join(d,'plugins','cache','omc-plugins','omc');try{const v=f.readdirSync(b).filter(x=>/^\d/.test(x)).sort((a,c)=>a.localeCompare(c,void 0,{numeric:true}));v.slice(0,-1).forEach(x=>f.rmSync(p.join(b,x),{recursive:true,force:true}));console.log('Removed',v.length-1,'old version(s)')}catch(e){console.log('No cache to clean')}"
 ```
 
 ### Fix: Missing/Outdated CODEBUDDY.md

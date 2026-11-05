@@ -12,7 +12,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, ren
 import { basename, join, dirname, resolve } from 'path';
 import { homedir, tmpdir } from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { getClaudeConfigDir } from './lib/config-dir.mjs';
+import { getConfigDir } from './lib/config-dir.mjs';
 import { encodeProjectPath } from './lib/encode-project-path.mjs';
 import { resolveOmcStateRoot } from './lib/state-root.mjs';
 import { readStdin } from './lib/stdin.mjs';
@@ -138,7 +138,7 @@ const debugLog = (...args) => {
 };
 
 // State file for session tracking
-const cfgDir = getClaudeConfigDir();
+const cfgDir = getConfigDir();
 const STATE_FILE = join(cfgDir, '.session-stats.json');
 const MAX_SESSION_STATS = 100;
 
@@ -243,18 +243,18 @@ function appendToBashHistory(command) {
   }
 }
 
-// Pattern to match Claude Code temp CWD permission errors (false positives on macOS)
-// e.g. "zsh:1: permission denied: /var/folders/.../T/claude-abc123-cwd"
-const CLAUDE_TEMP_CWD_PATTERN = /zsh:\d+: permission denied:.*\/T\/claude-[a-z0-9]+-cwd/gi;
+// Pattern to match host temp CWD permission errors (false positives on macOS)
+// e.g. "zsh:1: permission denied: /var/folders/.../T/codebuddy-abc123-cwd"
+const HOST_TEMP_CWD_PATTERN = /zsh:\d+: permission denied:.*\/T\/(?:claude|codebuddy)-[a-z0-9]+-cwd/gi;
 
-// Strip Claude Code temp CWD noise before pattern matching
-function stripClaudeTempCwdErrors(output) {
-  return output.replace(CLAUDE_TEMP_CWD_PATTERN, '');
+// Strip host temp CWD noise before pattern matching
+function stripHostTempCwdErrors(output) {
+  return output.replace(HOST_TEMP_CWD_PATTERN, '');
 }
 
-// Pattern matching Claude Code's "Error: Exit code N" prefix line
+// Pattern matching the host's "Error: Exit code N" prefix line
 // Note: no /g flag — module-level regex with /g is stateful (.lastIndex persists across calls)
-const CLAUDE_EXIT_CODE_PREFIX = /^Error: Exit code \d+\s*$/m;
+const HOST_EXIT_CODE_PREFIX = /^Error: Exit code \d+\s*$/m;
 const QUOTED_SPAN_PATTERN =
   /"[^"\n]{1,400}"|'[^'\n]{1,400}'|“[^”\n]{1,400}”|‘[^’\n]{1,400}’/g;
 const NON_ACTIONABLE_ERROR_LINES = [
@@ -272,7 +272,7 @@ function stripQuotedSpans(output) {
 function isPytestRunOutput(output) {
   if (!output) return false;
 
-  const cleaned = stripClaudeTempCwdErrors(output);
+  const cleaned = stripHostTempCwdErrors(output);
   const hasPytestHeader =
     /(^|\n)=+\s*test session starts\s*=+/i.test(cleaned) ||
     /(^|\n).*pytest-\d/i.test(cleaned) ||
@@ -300,19 +300,19 @@ function stripNonActionableErrorContext(output) {
 
 /**
  * Detect non-zero exit code with valid stdout (issue #960).
- * Returns true when output has Claude Code's "Error: Exit code N" prefix
+ * Returns true when output has the host's "Error: Exit code N" prefix
  * AND substantial content that doesn't itself indicate real errors.
  * Example: `gh pr checks` exits 8 (pending) but outputs valid CI status.
  */
 export function isNonZeroExitWithOutput(output) {
   if (!output) return false;
-  const cleaned = stripNonActionableErrorContext(stripClaudeTempCwdErrors(output));
+  const cleaned = stripNonActionableErrorContext(stripHostTempCwdErrors(output));
 
-  // Must contain Claude Code's exit code prefix
-  if (!CLAUDE_EXIT_CODE_PREFIX.test(cleaned)) return false;
+  // Must contain the host's exit code prefix
+  if (!HOST_EXIT_CODE_PREFIX.test(cleaned)) return false;
 
   // Strip exit code prefix line(s) and check remaining content
-  const remaining = cleaned.replace(CLAUDE_EXIT_CODE_PREFIX, '').trim();
+  const remaining = cleaned.replace(HOST_EXIT_CODE_PREFIX, '').trim();
 
   // Must have at least one non-empty line of real output
   const contentLines = remaining.split('\n').filter(l => l.trim().length > 0);
@@ -337,7 +337,7 @@ export function isNonZeroExitWithOutput(output) {
 export function detectBashFailure(output) {
   if (!output) return false;
 
-  const cleaned = stripClaudeTempCwdErrors(output);
+  const cleaned = stripHostTempCwdErrors(output);
 
   if (isPytestRunOutput(cleaned)) {
     return false;
@@ -401,8 +401,8 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (existsSync(transcriptPath)) return transcriptPath;
   } catch {}
 
-  // CodeBuddy encodes project-local worktrees as --codebuddy-worktrees-X inside
-  // the projects dir; legacy Claude Code used --claude-worktrees-X. Match both.
+  // Project-local worktrees are encoded as --codebuddy-worktrees-X (or the
+  // upstream-shaped --claude-worktrees-X) inside the projects dir. Match both.
   const worktreePattern = /--(?:codebuddy|claude)-worktrees-[^/\\]+/;
   if (worktreePattern.test(transcriptPath)) {
     const resolvedPath = transcriptPath.replace(worktreePattern, '');
@@ -433,7 +433,7 @@ function resolveTranscriptPath(transcriptPath, cwd) {
     if (mainRepoRoot !== worktreeTop) {
       const sessionFile = basename(transcriptPath);
       if (sessionFile) {
-        const projectsDir = join(getClaudeConfigDir(), 'projects');
+        const projectsDir = join(getConfigDir(), 'projects');
         if (existsSync(projectsDir)) {
           const encodedMain = encodeProjectPath(mainRepoRoot);
           const resolvedPath = join(projectsDir, encodedMain, sessionFile);
@@ -715,7 +715,7 @@ function processRememberTags(output, directory) {
 // Patterns are tightened to tool-level failure phrases to avoid false positives
 // when edited file content contains error-handling code (issue #1005)
 export function detectWriteFailure(output) {
-  const cleaned = stripQuotedSpans(stripClaudeTempCwdErrors(output));
+  const cleaned = stripQuotedSpans(stripHostTempCwdErrors(output));
   const errorPatterns = [
     /\berror:/i,              // "error:" with word boundary — avoids "setError", "console.error"
     /\bfailed to\b/i,        // "failed to write" — avoids "failedOidc", UI strings
@@ -730,12 +730,12 @@ export function detectWriteFailure(output) {
   return errorPatterns.some(pattern => pattern.test(cleaned));
 }
 
-// Detect Claude Code's deterministic write/edit success markers so docs or
+// Detect the host's deterministic write/edit success markers so docs or
 // serialized tool output containing diagnostic prose do not override success.
-export function isClaudeCodeWriteSuccess(output) {
+export function isHostWriteSuccess(output) {
   if (!output) return false;
 
-  const cleaned = stripClaudeTempCwdErrors(output);
+  const cleaned = stripHostTempCwdErrors(output);
   const successPatterns = [
     /(^|\n)The file has been updated successfully\.?(\n|$)/i,
     /(^|\n)The file .+ has been updated successfully\.?(\n|$)/i,
@@ -877,7 +877,7 @@ function hasStructuredWriteSuccess(rawResponse, toolName = '') {
   if (!rawResponse || typeof rawResponse === 'string') return false;
   if (toolName === 'Edit' && hasEditEnvelopeSuccess(rawResponse)) return true;
   if (toolName === 'Write' && hasWriteEnvelopeSuccess(rawResponse)) return true;
-  return extractTextFromKnownToolResponseField(rawResponse).some(isClaudeCodeWriteSuccess);
+  return extractTextFromKnownToolResponseField(rawResponse).some(isHostWriteSuccess);
 }
 
 function hasStructuredWriteFailure(rawResponse) {
@@ -984,7 +984,7 @@ function generateMessage(toolName, toolOutput, sessionId, toolCount, directory, 
     }
 
     case 'Edit':
-      if (structuredWriteFailure || (!structuredWriteSuccess && !isClaudeCodeWriteSuccess(toolOutput) && detectWriteFailure(toolOutput))) {
+      if (structuredWriteFailure || (!structuredWriteSuccess && !isHostWriteSuccess(toolOutput) && detectWriteFailure(toolOutput))) {
         message = 'Edit operation failed. Verify file exists and content matches exactly.';
       } else if (QUIET_LEVEL === 0) {
         message = 'Code modified. Verify changes work as expected before marking complete.';
@@ -992,7 +992,7 @@ function generateMessage(toolName, toolOutput, sessionId, toolCount, directory, 
       break;
 
     case 'Write':
-      if (structuredWriteFailure || (!structuredWriteSuccess && !isClaudeCodeWriteSuccess(toolOutput) && detectWriteFailure(toolOutput))) {
+      if (structuredWriteFailure || (!structuredWriteSuccess && !isHostWriteSuccess(toolOutput) && detectWriteFailure(toolOutput))) {
         message = 'Write operation failed. Check file permissions and directory existence.';
       } else if (QUIET_LEVEL === 0) {
         message = 'File written. Test the changes to ensure they work correctly.';

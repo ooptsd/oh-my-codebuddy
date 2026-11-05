@@ -105,7 +105,7 @@ function readDelegationConfig(loadOmcConfig) {
  * Evaluate force-agent-delegation rules for the current PreToolUse call.
  *
  * @param {object} args
- * @param {string} args.toolName - Claude Code tool name (Read|Edit|Write|...)
+ * @param {string} args.toolName - host tool name (Read|Edit|Write|...)
  * @param {string} [args.stateDir] - Directory used to persist the event window.
  *   Typically `<cwd>/.omc/state` to mirror the rest of OMC state storage.
  * @param {object} [args.env=process.env] - Environment for bypass-flag lookup.

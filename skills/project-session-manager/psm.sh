@@ -166,7 +166,7 @@ EOF
 # Command: review
 cmd_review() {
     local ref="$1"
-    local no_claude="${2:-false}"
+    local no_agent="${2:-false}"
     local no_tmux="${3:-false}"
 
     log_info "Parsing reference: $ref"
@@ -265,7 +265,7 @@ cmd_review() {
 
     log_success "Worktree created at $worktree_path"
 
-    # Render PR review context file into the worktree so Claude starts with full task context
+    # Render PR review context file into the worktree so CodeBuddy starts with full task context
     local context_rel=".psm/review.md"
     local context_file="${worktree_path}/${context_rel}"
     mkdir -p "$(dirname "$context_file")"
@@ -279,7 +279,7 @@ cmd_review() {
             "PR_BODY=${pr_body}" \
             "CHANGED_FILES=${changed_files}" \
             > "$context_file"; then
-        log_warn "Failed to render review template; Claude will start without task context"
+        log_warn "Failed to render review template; CodeBuddy will start without task context"
         context_rel=""
     fi
 
@@ -302,10 +302,10 @@ cmd_review() {
         else
             log_success "Tmux session created: $session_name"
 
-            # Launch Claude Code with review context so it starts on the PR task
-            if [[ "$no_claude" != "true" ]]; then
-                log_info "Launching Claude Code..."
-                psm_launch_claude "$session_name" "$context_rel"
+            # Launch CodeBuddy with review context so it starts on the PR task
+            if [[ "$no_agent" != "true" ]]; then
+                log_info "Launching CodeBuddy..."
+                psm_launch_agent "$session_name" "$context_rel"
             fi
         fi
     fi
@@ -342,7 +342,7 @@ cmd_review() {
 # Command: fix
 cmd_fix() {
     local ref="$1"
-    local no_claude="${2:-false}"
+    local no_agent="${2:-false}"
 
     log_info "Parsing reference: $ref"
 
@@ -446,7 +446,7 @@ cmd_fix() {
     log_success "Worktree created at $worktree_path"
     log_info "Branch: $branch_name"
 
-    # Render issue fix context file into the worktree so Claude starts with full task context
+    # Render issue fix context file into the worktree so CodeBuddy starts with full task context
     local fix_context_rel=".psm/fix.md"
     local fix_context_file="${worktree_path}/${fix_context_rel}"
     mkdir -p "$(dirname "$fix_context_file")"
@@ -458,7 +458,7 @@ cmd_fix() {
             "ISSUE_BODY=${issue_body}" \
             "BRANCH_NAME=${branch_name}" \
             > "$fix_context_file"; then
-        log_warn "Failed to render issue fix template; Claude will start without task context"
+        log_warn "Failed to render issue fix template; CodeBuddy will start without task context"
         fix_context_rel=""
     fi
 
@@ -469,8 +469,8 @@ cmd_fix() {
     log_info "Creating tmux session..."
     psm_create_tmux_session "$session_name" "$worktree_path"
 
-    if [[ "$no_claude" != "true" ]]; then
-        psm_launch_claude "$session_name" "$fix_context_rel"
+    if [[ "$no_agent" != "true" ]]; then
+        psm_launch_agent "$session_name" "$fix_context_rel"
     fi
 
     # Create metadata
@@ -544,7 +544,7 @@ cmd_feature() {
 
     psm_create_tmux_session "$session_name" "$worktree_path"
     local feature_prompt="Implement feature \"${feature_name}\" for project ${project}. Working branch: ${branch_name}. Build the feature, add tests, and open a PR when ready: gh pr create --title \"feat: ${feature_name}\""
-    psm_launch_claude "$session_name" "$feature_prompt"
+    psm_launch_agent "$session_name" "$feature_prompt"
 
     psm_add_session "$session_id" "feature" "$project" "feat-${safe_name}" "$branch_name" "$base" "$session_name" "$worktree_path" "$local_path" "{}"
 

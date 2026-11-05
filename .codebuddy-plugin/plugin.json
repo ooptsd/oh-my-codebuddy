@@ -1,7 +1,7 @@
 {
   "name": "omc",
   "displayName": "Oh My Buddy",
-  "version": "5.4.2",
+  "version": "5.4.3",
   "description": "Multi-agent orchestration with intelligent model routing across specialized agents and skills",
   "author": {
     "name": "ooptsd",

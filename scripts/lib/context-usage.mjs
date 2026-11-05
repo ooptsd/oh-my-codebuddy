@@ -7,7 +7,7 @@ const HUD_CACHE_FILENAME = 'hud-stdin-cache.json';
 
 // Same priority order as SESSION_ID_ENV_VARS in src/hud/stdin.ts, so this
 // resolver picks the same session identity the HUD itself would use.
-const SESSION_ID_ENV_VARS = ['CLAUDE_SESSION_ID', 'CLAUDECODE_SESSION_ID'];
+const SESSION_ID_ENV_VARS = ['CODEBUDDY_SESSION_ID'];
 
 /**
  * List candidate session ids in the same priority order the HUD uses: the
@@ -100,7 +100,7 @@ function hasContextWindowObject(data) {
  * for percent calculation; this helper only locates and parses its cache.
  */
 export async function resolveHudCacheContextPercent(data, directory) {
-  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT;
+  const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
   if (!pluginRoot) return null;
 
   try {
@@ -186,9 +186,9 @@ export async function resolveHudCacheContextPercent(data, directory) {
 }
 
 /**
- * Resolve context usage from the tail of a Claude transcript.
+ * Resolve context usage from the tail of a host transcript.
  * Transcript fixtures must include an explicit numeric context_window field;
- * real Claude transcripts commonly omit that field, in which case callers
+ * real transcripts commonly omit that field, in which case callers
  * should continue to the hook payload and HUD cache fallbacks.
  */
 export function resolveTranscriptContextPercent(transcriptPath, tailBytes = TRANSCRIPT_TAIL_BYTES) {

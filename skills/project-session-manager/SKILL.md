@@ -17,7 +17,7 @@ level: 2
 > ```
 > See [Teleport Command](#teleport-command) below for details.
 
-Automate isolated development environments using git worktrees and tmux sessions with Claude Code. Enables parallel work across multiple tasks, projects, and repositories.
+Automate isolated development environments using git worktrees and tmux sessions with CodeBuddy. Enables parallel work across multiple tasks, projects, and repositories.
 
 Canonical slash command: `/omc:project-session-manager` (alias: `/omc:psm`).
 
@@ -178,7 +178,7 @@ When the user invokes a PSM command, follow this protocol:
 Parse `{{ARGUMENTS}}` to determine:
 1. **Subcommand**: review, fix, feature, list, attach, kill, cleanup, status
 2. **Reference**: project#number, URL, or session ID
-3. **Options**: --branch, --base, --no-claude, --no-tmux, etc.
+3. **Options**: --branch, --base, --no-agent, --no-tmux, etc.
 
 ### Subcommand: `review <ref>`
 
@@ -255,15 +255,15 @@ Parse `{{ARGUMENTS}}` to determine:
    tmux new-session -d -s "psm_${project_alias}_pr-$pr_number" -c "$worktree_path"
    ```
 
-8. **Launch Claude Code** (unless --no-claude):
+8. **Launch CodeBuddy** (unless --no-agent):
    ```bash
    # --dangerously-skip-permissions prevents the "Do you trust this directory?" prompt
    # and repeated tool-approval prompts from stalling the session (issue #2508).
-   tmux send-keys -t "psm_${project_alias}_pr-$pr_number" "claude --dangerously-skip-permissions" Enter
+   tmux send-keys -t "psm_${project_alias}_pr-$pr_number" "codebuddy --dangerously-skip-permissions" Enter
 
-   # After claude boots (PSM_CLAUDE_STARTUP_DELAY, default 5s), deliver the task.
+   # After codebuddy boots (PSM_STARTUP_DELAY, default 5s), deliver the task.
    # Use -l (literal) so special characters are not misinterpreted by tmux.
-   sleep "${PSM_CLAUDE_STARTUP_DELAY:-5}"
+   sleep "${PSM_STARTUP_DELAY:-5}"
    tmux send-keys -t "psm_${project_alias}_pr-$pr_number" -l \
      "Review PR #$pr_number: \"$pr_title\" by @$pr_author ($head_branch → $base_branch). URL: $pr_url." Enter
    ```
@@ -308,11 +308,11 @@ Parse `{{ARGUMENTS}}` to determine:
 
 5. **Create session metadata** (similar to review, type="fix")
 
-6. **Update registry, create tmux, launch claude**:
+6. **Update registry, create tmux, launch codebuddy**:
    Same as review, but pass issue context as the initial task prompt:
    ```bash
-   tmux send-keys -t "psm_${project_alias}_issue-$issue_number" "claude --dangerously-skip-permissions" Enter
-   # After claude boots, deliver the task (see PSM_CLAUDE_STARTUP_DELAY):
+   tmux send-keys -t "psm_${project_alias}_issue-$issue_number" "codebuddy --dangerously-skip-permissions" Enter
+   # After codebuddy boots, deliver the task (see PSM_STARTUP_DELAY):
    tmux send-keys -t "psm_${project_alias}_issue-$issue_number" -l \
      "Fix issue #$issue_number: \"$issue_title\". URL: $issue_url. Branch: $branch_name." Enter
    ```
@@ -339,9 +339,9 @@ Parse `{{ARGUMENTS}}` to determine:
    git worktree add "$worktree_path" "$branch_name"
    ```
 
-4. **Create session, tmux, launch claude** with feature context as initial prompt:
+4. **Create session, tmux, launch codebuddy** with feature context as initial prompt:
    ```bash
-   tmux send-keys -t "psm_${project_alias}_feat-$feature_name" "claude --dangerously-skip-permissions" Enter
+   tmux send-keys -t "psm_${project_alias}_feat-$feature_name" "codebuddy --dangerously-skip-permissions" Enter
    tmux send-keys -t "psm_${project_alias}_feat-$feature_name" -l \
      "Implement feature \"$feature_name\" for project $project. Branch: $branch_name." Enter
    ```
@@ -538,7 +538,7 @@ omc teleport remove --force feat/my-repo-my-feature
 |---------|-----|----------|
 | Git worktree | Yes | Yes |
 | Tmux session | Yes | No |
-| Claude Code launch | Yes | No |
+| CodeBuddy launch | Yes | No |
 | Session registry | Yes | No |
 | Auto-cleanup | Yes | No |
 | Project aliases | Yes | No (uses current repo) |

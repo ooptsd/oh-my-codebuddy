@@ -119,7 +119,7 @@ V1 does not support `stageModels`, model routing, provider or role selection; in
 - Use `Task(subagent_type="omc:architect", ...)` for Phase 4 architecture validation
 - Use `Task(subagent_type="omc:security-reviewer", ...)` for Phase 4 security review
 - Use `Task(subagent_type="omc:code-reviewer", ...)` for Phase 4 quality review
-- Agents form their own analysis and return it; the LEAD then spawns any cross-validation agents itself. Do not rely on a subagent spawning further subagents without checking the Claude Code depth setting: Claude Code 2.1.217–2.1.218 defaulted `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to 1, while 2.1.219+ defaults to 3. Keep cross-validation at the LEAD level unless nested delegation is deliberate and supported by the active runtime.
+- Agents form their own analysis and return it; the LEAD then spawns any cross-validation agents itself. Do not rely on a subagent spawning further subagents: the active runtime's spawn-depth setting controls subagent layers. Keep cross-validation at the LEAD level unless nested delegation is deliberate and supported by the active runtime.
 - Never block on external tools; proceed with available agents if delegation fails
 </Tool_Usage>
 
@@ -205,7 +205,7 @@ With that config, the execution stage must launch executor-style work through:
 omc team 1:cursor "<implementation task>"
 ```
 
-or the Claude Code slash compatibility surface:
+or the host slash compatibility surface:
 
 ```text
 /omc-teams 1:cursor "<implementation task>"
@@ -213,7 +213,7 @@ or the Claude Code slash compatibility surface:
 
 Limitations:
 - Cursor workers support implementation and reviewer-style team roles. `critic`, `code-reviewer`, `security-reviewer`, and `test-engineer` workers must emit the structured verdict file consumed by the team leader; final approval remains a lead-session responsibility.
-- Cursor requires the `cursor-agent` CLI to be installed and authenticated. If `cursor-agent` is unavailable, report that setup requirement instead of silently falling back to Claude-only execution.
+- Cursor requires the `cursor-agent` CLI to be installed and authenticated. If `cursor-agent` is unavailable, report that setup requirement instead of silently falling back to a single-provider execution.
 
 ## Resume
 

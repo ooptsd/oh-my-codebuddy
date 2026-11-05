@@ -25,14 +25,14 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync, unlinkSync } from '
 import { join, dirname, isAbsolute } from 'path';
 import { homedir } from 'os';
 import { fileURLToPath } from 'url';
-import { getClaudeConfigDir } from './lib/config-dir.mjs';
+import { getConfigDir } from './lib/config-dir.mjs';
 import { atomicWriteFileSync, recoverEmergencyStateFile, withStateFileLockSync } from './lib/atomic-write.mjs';
 import { readStdin } from './lib/stdin.mjs';
 import { resolveOmcStateRoot, resolveSessionStatePathsForHook } from './lib/state-root.mjs';
 import { parseWorkflowInvocation, selectWorkflowProfile, createWorkflowState, isValidWorkflowTrackingState, isWorkflowRuntimeSupported, resolveWorkflowStagePrompt, takeWorkflowTranscriptFailure } from './lib/workflow-profile-runtime.mjs';
 
-// Resolve OMC package root: CLAUDE_PLUGIN_ROOT (plugin system) or derive from this script's location
-const _omcRoot = process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT ||
+// Resolve OMC package root: CODEBUDDY_PLUGIN_ROOT (plugin system) or derive from this script's location
+const _omcRoot = process.env.CODEBUDDY_PLUGIN_ROOT ||
   join(dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL_INVOCATION_USER_REQUEST_MAX = 1200;
 
@@ -96,7 +96,7 @@ function compactHookText(text, maxChars = SKILL_INVOCATION_USER_REQUEST_MAX) {
 
 function getSkillPathCandidates(skillName) {
   const roots = [
-    process.env.CODEBUDDY_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT,
+    process.env.CODEBUDDY_PLUGIN_ROOT,
     _omcRoot,
     process.cwd(),
   ].filter(Boolean);
@@ -459,7 +459,7 @@ const SYSTEM_ECHO_BLOCK_PATTERNS = [
   // keyword-detector.mjs block headers
   buildEchoBlockRegex('\\[MAGIC KEYWORD:[^\\]\\n]*\\]'),
   buildEchoBlockRegex('\\[MAGIC KEYWORDS DETECTED:[^\\]\\n]*\\]'),
-  // Stop-hook wrapping by the Claude Code harness
+  // Stop-hook wrapping by the host harness
   buildEchoBlockRegex('Stop hook (?:blocking error|feedback|stopped continuation)'),
   buildEchoBlockRegex('PreToolUse:[^\\n]*hook additional context:'),
   buildEchoBlockRegex('PostToolUse:[^\\n]*hook additional context:'),
@@ -1020,7 +1020,7 @@ async function activateState(directory, prompt, stateName, sessionId) {
       last_checked_at: now
     };
   } else if (stateName === 'ultragoal') {
-    // Ultragoal persists a durable goal workflow and requires Claude /goal parity.
+    // Ultragoal persists a durable goal workflow and requires /goal parity.
     state = {
       active: true,
       started_at: now,
@@ -1247,185 +1247,6 @@ function linkRalphTeam(directory, sessionId, omcRoot) {
   } catch { /* silent */ }
 }
 
-/**
- * Check if the team feature is enabled in Claude Code settings.
- * Reads settings.json from [CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy] and checks for
- * CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS env var.
- * @returns {boolean} true if team feature is enabled
- */
-function isTeamEnabled() {
-  try {
-    // Check settings.json first (authoritative, user-controlled)
-    const cfgDir = getClaudeConfigDir();
-    const settingsPath = join(cfgDir, 'settings.json');
-    if (existsSync(settingsPath)) {
-      const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
-      if (settings.env?.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1' ||
-          settings.env?.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === 'true') {
-        return true;
-      }
-    }
-    // Fallback: check env var (for dev/CI environments)
-    if (process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === '1' ||
-        process.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS === 'true') {
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Detect an installed AND enabled official Anthropic `ralph-loop` plugin
- * that exposes a `/ralph-loop` command, without scanning any plugin payloads.
- *
- * Two independent signals, following existing installer semantics
- * (`hasEnabledOmcPlugin` in src/installer/index.ts):
- *
- * 1. INSTALLED: the machine-readable plugin registry
- *    `[CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/plugins/installed_plugins.json` contains
- *    the official id `ralph-loop@claude-plugins-official` with a real
- *    `commands/ralph-loop.md` payload under its installPath. The registry's
- *    own `enabled` flag is deliberately NOT consulted: it does not
- *    authoritatively encode enablement (a plugin disabled through canonical
- *    settings can still carry `enabled: true`, and vice versa).
- * 2. ENABLED: the official id is enabled by the effective CodeBuddy settings
- *    for the active project, resolved highest-precedence-first across
- *    `<project>/.codebuddy/settings.local.json`, `<project>/.codebuddy/settings.json`
- *    and `[CODEBUDDY_CONFIG_DIR|$CLAUDE_CONFIG_DIR|~/.codebuddy]/settings.json`. Within a file the
- *    canonical `enabledPlugins` field decides (legacy `plugins` field accepted
- *    for backward compatibility), as an array of plugin ids or a map whose
- *    value is not `false`. Missing or malformed settings are treated as not
- *    enabled, exactly like the installer.
- *
- * Both signals match the FULL plugin id exactly, marketplace suffix included.
- * The suffix is never stripped, so a same-named community plugin
- * (`ralph-loop@community`) can never stand in for the official one — not even
- * when the official plugin is installed and explicitly disabled.
- *
- * No SKILL.md body, command body, or private payload is ever read.
- *
- * Returns a short notice string, or '' when the official plugin is not
- * installed and enabled.
- */
-const OFFICIAL_RALPH_LOOP_PLUGIN_ID = 'ralph-loop@claude-plugins-official';
-
-function isOfficialRalphLoopPluginId(value) {
-  return typeof value === 'string'
-    && value.trim().toLowerCase() === OFFICIAL_RALPH_LOOP_PLUGIN_ID;
-}
-
-/**
- * Enablement verdict of a single settings field for the official plugin:
- * `true`/`false` when the field mentions the official id, `null` when it does
- * not mention it at all (so the next field may decide).
- */
-function officialRalphLoopEnablementIn(field) {
-  if (Array.isArray(field)) {
-    return field.some((id) => isOfficialRalphLoopPluginId(id)) ? true : null;
-  }
-  if (field && typeof field === 'object') {
-    for (const [id, value] of Object.entries(field)) {
-      if (isOfficialRalphLoopPluginId(id)) return value !== false;
-    }
-  }
-  return null;
-}
-
-function officialRalphLoopEnablementInSettings(settings) {
-  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return null;
-  // Canonical `enabledPlugins` wins outright when it mentions the official id;
-  // the legacy `plugins` field only decides when canonical is silent about it.
-  for (const field of [settings.enabledPlugins, settings.plugins]) {
-    const verdict = officialRalphLoopEnablementIn(field);
-    if (verdict !== null) return verdict;
-  }
-  return null;
-}
-
-/**
- * A hook payload's cwd is caller-supplied. Only an absolute path is a usable
- * project root; anything else would silently resolve a caller-controlled
- * fragment against the hook process cwd, so it is rejected in favour of the
- * hook's own cwd.
- */
-function resolveSettingsProjectRoot(directory) {
-  return typeof directory === 'string' && directory.length > 0 && isAbsolute(directory)
-    ? directory
-    : process.cwd();
-}
-
-/**
- * CodeBuddy resolves `enabledPlugins` across settings scopes, so a project may
- * enable a plugin the user scope never mentions, or disable one the user scope
- * enables. Highest precedence first; the first scope that mentions the official
- * id decides, scopes that never mention it are transparent, and a malformed
- * file fails closed (no notice).
- */
-function isOfficialRalphLoopEnabledForProject(directory) {
-  const projectRoot = resolveSettingsProjectRoot(directory);
-  const settingsPaths = [
-    join(projectRoot, '.codebuddy', 'settings.local.json'),
-    join(projectRoot, '.codebuddy', 'settings.json'),
-    join(getClaudeConfigDir(), 'settings.json'),
-  ];
-  for (const settingsPath of settingsPaths) {
-    if (!existsSync(settingsPath)) continue;
-    let settings;
-    try {
-      settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
-    } catch {
-      return false;
-    }
-    const verdict = officialRalphLoopEnablementInSettings(settings);
-    if (verdict !== null) return verdict;
-  }
-  return false;
-}
-
-function findOfficialRalphLoopNotice(directory) {
-  if (!isOfficialRalphLoopEnabledForProject(directory)) {
-    return '';
-  }
-
-  const installedPluginsPath = join(getClaudeConfigDir(), 'plugins', 'installed_plugins.json');
-  if (!existsSync(installedPluginsPath)) {
-    return '';
-  }
-
-  let registry;
-  try {
-    registry = JSON.parse(readFileSync(installedPluginsPath, 'utf-8'));
-  } catch {
-    return '';
-  }
-  if (!registry || typeof registry !== 'object' || Array.isArray(registry)) {
-    return '';
-  }
-
-  const plugins = registry.plugins ?? registry;
-  if (!plugins || typeof plugins !== 'object' || Array.isArray(plugins)) {
-    return '';
-  }
-
-  const entries = plugins[OFFICIAL_RALPH_LOOP_PLUGIN_ID];
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return '';
-  }
-
-  for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue;
-    const installPath = entry.installPath;
-    if (typeof installPath !== 'string' || installPath.length === 0) continue;
-    const commandFile = join(installPath, 'commands', 'ralph-loop.md');
-    if (existsSync(commandFile)) {
-      return 'Note: the official Anthropic `ralph-loop` plugin is also installed. `/ralph` runs OMC\'s ralph; use `/ralph-loop` for the official plugin.';
-    }
-  }
-
-  return '';
-}
 
 // Read the OMC JSONC config the way src/config/loader.ts does, inlined so the
 // standalone hook stays build-independent (mirrors scripts/lib/agent-model-config.mjs).
@@ -1539,22 +1360,19 @@ function loadDisabledKeywords(directory) {
  * Create a compact skill invocation guide without inlining SKILL.md bodies.
  * Full skill text remains available by path, avoiding UserPromptSubmit token blowups.
  */
-function createSkillInvocation(skillName, originalPrompt, args = '', directory = '') {
+function createSkillInvocation(skillName, originalPrompt, args = '') {
   const argsSection = args ? `
 Arguments: ${args}` : '';
   const skillPath = resolveSkillPath(skillName);
   const pathStatus = existsSync(skillPath)
     ? `Read fallback: open ${skillPath} and follow its SKILL.md instructions.`
     : `Read fallback: locate skills/${skillName}/SKILL.md in the active oh-my-claudecode plugin/install and follow it.`;
-  const ralphLoopNotice = skillName === 'ralph' ? findOfficialRalphLoopNotice(directory) : '';
 
   return `[MAGIC KEYWORD: ${skillName.toUpperCase()}]
 
 Skill routing detected: ${skillName}
 Preferred invocation: /omc:${skillName}${args ? ` ${args}` : ''}
-${pathStatus}${argsSection}${ralphLoopNotice ? `
-
-${ralphLoopNotice}` : ''}
+${pathStatus}${argsSection}
 
 User request (compact echo; original prompt remains authoritative):
 ${compactHookText(originalPrompt)}
@@ -1565,10 +1383,10 @@ IMPORTANT: Start the ${skillName} workflow immediately. If the slash invocation 
 /**
  * Create multi-skill invocation message for combined keywords
  */
-function createMultiSkillInvocation(skills, originalPrompt, directory = '') {
+function createMultiSkillInvocation(skills, originalPrompt) {
   if (skills.length === 0) return '';
   if (skills.length === 1) {
-    return createSkillInvocation(skills[0].name, originalPrompt, skills[0].args, directory);
+    return createSkillInvocation(skills[0].name, originalPrompt, skills[0].args);
   }
 
   const skillBlocks = skills.map((s, i) => {
@@ -1581,19 +1399,12 @@ function createMultiSkillInvocation(skills, originalPrompt, directory = '') {
 Preferred invocation: /omc:${s.name}${argsText}
 ${pathStatus}`;
   }).join('\n\n');
-  // Multi-skill routing (e.g. `/ralph deep-interview`) must carry the same
-  // disambiguation notice as the single-skill path, or it becomes a bypass.
-  const ralphLoopNotice = skills.some((s) => s.name === 'ralph')
-    ? findOfficialRalphLoopNotice(directory)
-    : '';
 
   return `[MAGIC KEYWORDS DETECTED: ${skills.map(s => s.name.toUpperCase()).join(', ')}]
 
 Execute ALL detected workflows in order using compact invocation guidance. Do not inline full SKILL.md files into the prompt.
 
-${skillBlocks}${ralphLoopNotice ? `
-
-${ralphLoopNotice}` : ''}
+${skillBlocks}
 
 User request (compact echo; original prompt remains authoritative):
 ${compactHookText(originalPrompt)}
@@ -1625,7 +1436,7 @@ function resolveConflicts(matches) {
 }
 
 /**
- * Create proper hook output with additionalContext (Claude Code hooks API)
+ * Create proper hook output with additionalContext (CodeBuddy hooks API)
  * The 'message' field is NOT a valid hook output - use hookSpecificOutput.additionalContext
  */
 function createHookOutput(additionalContext) {
@@ -1717,7 +1528,7 @@ async function main() {
 
     // `/ask <provider> ...` delegates the remainder of the prompt to an
     // advisor process. Magic keywords inside that delegated payload must not
-    // activate modes in the current Claude Code session.
+    // activate modes in the current CodeBuddy session.
     if (isExplicitAskSlashInvocation(prompt)) {
       console.log(JSON.stringify({ continue: true, suppressOutput: true }));
       return;
@@ -1779,7 +1590,7 @@ async function main() {
     // Ultrapilot keywords removed — routed to team which is now explicit-only (/team).
 
     // Team keyword detection removed — team mode is now explicit-only via /team skill.
-    // This prevents infinite spawning when Claude workers receive prompts containing "team".
+    // This prevents infinite spawning when CLI workers receive prompts containing "team".
 
     // Ralplan keyword
     if (hasActionableRalplanKeyword(cleanPrompt, /\b(ralplan)\b|(랄플랜)|(ラルプラン)/i)) {

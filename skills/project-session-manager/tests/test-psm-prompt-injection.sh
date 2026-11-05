@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regression tests for PSM prompt injection (issue #2506)
-# Root cause: psm_launch_claude only sent "claude Enter" with no task context injected.
+# Root cause: psm_launch_agent only sent "codebuddy Enter" with no task context injected.
 # Fix: psm_render_template + psm_inject_prompt + context file written to worktree.
 #
 # Usage: bash skills/project-session-manager/tests/test-psm-prompt-injection.sh
@@ -113,64 +113,64 @@ printf '{{VAL}}' > "$TEMPLATE_TMP"
 result=$(psm_render_template "$TEMPLATE_TMP" "VAL=foo&bar")
 assert_equals "handles ampersand in value" "foo&bar" "$result"
 
-# ── _psm_pane_has_claude_prompt ───────────────────────────────────────────────
+# ── _psm_pane_has_agent_prompt ───────────────────────────────────────────────
 
 echo ""
-echo "=== _psm_pane_has_claude_prompt ==="
+echo "=== _psm_pane_has_agent_prompt ==="
 
 # 8. Detects bare '>' prompt
-if _psm_pane_has_claude_prompt ">"; then
+if _psm_pane_has_agent_prompt ">"; then
     pass "detects bare '>' prompt"
 else
     fail "detects bare '>' prompt" "returned non-zero"
 fi
 
 # 9. Detects '> ' with trailing space
-if _psm_pane_has_claude_prompt "> "; then
+if _psm_pane_has_agent_prompt "> "; then
     pass "detects '> ' with trailing space"
 else
     fail "detects '> ' with trailing space" "returned non-zero"
 fi
 
 # 10. Detects '?' trust prompt
-if _psm_pane_has_claude_prompt "?"; then
+if _psm_pane_has_agent_prompt "?"; then
     pass "detects '?' trust prompt"
 else
     fail "detects '?' trust prompt" "returned non-zero"
 fi
 
 # 11. Detects '>' with leading whitespace
-if _psm_pane_has_claude_prompt "  > "; then
+if _psm_pane_has_agent_prompt "  > "; then
     pass "detects indented '>' prompt"
 else
     fail "detects indented '>' prompt" "returned non-zero"
 fi
 
 # 12. Does NOT match '>' that appears mid-line
-if ! _psm_pane_has_claude_prompt "Loading > modules"; then
+if ! _psm_pane_has_agent_prompt "Loading > modules"; then
     pass "rejects mid-line >"
 else
     fail "rejects mid-line >" "should have returned non-zero"
 fi
 
 # 13. Does NOT match empty string
-if ! _psm_pane_has_claude_prompt ""; then
+if ! _psm_pane_has_agent_prompt ""; then
     pass "rejects empty pane"
 else
     fail "rejects empty pane" "should have returned non-zero"
 fi
 
 # 14. Does NOT match arbitrary text
-if ! _psm_pane_has_claude_prompt "Welcome to Claude Code!"; then
+if ! _psm_pane_has_agent_prompt "Welcome to CodeBuddy!"; then
     pass "rejects non-prompt welcome text"
 else
     fail "rejects non-prompt welcome text" "should have returned non-zero"
 fi
 
-# ── psm_launch_claude with mocked tmux/inject ─────────────────────────────────
+# ── psm_launch_agent with mocked tmux/inject ─────────────────────────────────
 
 echo ""
-echo "=== psm_launch_claude (mocked) ==="
+echo "=== psm_launch_agent (mocked) ==="
 
 # Mock state
 TMUX_SEND_CALLS=()
@@ -198,7 +198,7 @@ psm_inject_prompt() {
 
 # 15. Without context file: inject is NOT called
 TMUX_SEND_CALLS=(); INJECT_CALLED=false
-psm_launch_claude "test-session"
+psm_launch_agent "test-session"
 if [[ "$INJECT_CALLED" == "false" ]]; then
     pass "no inject without context file"
 else
@@ -207,7 +207,7 @@ fi
 
 # 16. With context file: inject IS called
 TMUX_SEND_CALLS=(); INJECT_CALLED=false; INJECT_SESSION=""; INJECT_FILE=""
-psm_launch_claude "test-session" ".psm/review.md"
+psm_launch_agent "test-session" ".psm/review.md"
 if [[ "$INJECT_CALLED" == "true" ]]; then
     pass "inject called when context file provided"
 else
@@ -222,7 +222,7 @@ assert_equals "inject gets correct context file path" ".psm/review.md" "$INJECT_
 
 # 19. Result reports 'launched|'
 TMUX_SEND_CALLS=(); INJECT_CALLED=false
-result=$(psm_launch_claude "test-session" ".psm/review.md")
+result=$(psm_launch_agent "test-session" ".psm/review.md")
 assert_contains "launch reports launched| on success" "launched|" "$result"
 
 # 20. Session-not-found returns error (has-session fails)
@@ -233,7 +233,7 @@ tmux() {
     esac
 }
 # Use || true so set -e doesn't kill the script on the expected non-zero return
-result=$(psm_launch_claude "missing-session" 2>&1) || true
+result=$(psm_launch_agent "missing-session" 2>&1) || true
 assert_contains "error reported for missing session" "error|" "$result"
 
 # ── Context file creation (cmd_review simulation) ─────────────────────────────
