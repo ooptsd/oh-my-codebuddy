@@ -33,14 +33,14 @@ Set `CONFIG_TARGET` to `local` or `global` based on user's choice.
 
 **Rules**: never delete user content outside the marker block; never reorder the file; if a pre-existing malformed block (START without END, or multiple blocks) is found, stop and report it instead of guessing.
 
-For `local` installs inside a git repository, also seed `.git/info/exclude` with an omc block that ignores local `.omc/*` artifacts by default while keeping `.omc/skills/` trackable for committed project skills:
+For `local` installs inside a git repository, also seed `.git/info/exclude` with an omc block that ignores local `.omcb/*` artifacts by default while keeping `.omcb/skills/` trackable for committed project skills:
 
 ```bash
 if [ -d .git ] || git rev-parse --git-dir >/dev/null 2>&1; then
   grep -q "# omc local state" .git/info/exclude 2>/dev/null || cat >> .git/info/exclude << 'EOF'
 # omc local state
-.omc/*
-!.omc/skills/
+.omcb/*
+!.omcb/skills/
 EOF
 fi
 ```
@@ -51,7 +51,7 @@ If `CONFIG_TARGET` is `local`:
 ```
 omc Project Configuration Complete
 - CODEBUDDY.md: OMC block installed in ./CODEBUDDY.md (or ./.codebuddy/CODEBUDDY.md)
-- Git excludes: Added local `.omc/*` ignore rules to `.git/info/exclude` (keeps `.omc/skills/` trackable)
+- Git excludes: Added local `.omcb/*` ignore rules to `.git/info/exclude` (keeps `.omcb/skills/` trackable)
 - Scope: PROJECT - applies only to this project
 - Hooks: Provided by plugin (no manual installation needed)
 - Agents: available via the plugin's agents/ directory

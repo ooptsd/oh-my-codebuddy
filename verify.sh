@@ -225,6 +225,22 @@ for (const file of files) {
     if (/\bclaude_worker\b/.test(line) || /\bdefaultAgentType\b/.test(line)) {
       violations.push(rel + ':' + (i + 1) + ': legacy team lane: ' + trimmed.slice(0, 90));
     }
+    // Legacy .omc state-root residue (superseded by .omcb on 2026-11-05).
+    // Allowed: ~/.codebuddy-domain files (.omc-config.json, .omc-version.json,
+    // .omc-write-probe, .omc-guards, .omc-hud-config.json) and OMC_STATE_DIR
+    // kept ONLY adjacent to an OMCB_STATE_DIR reference (compat fallback doc).
+    const isCodebuddyDomainFile = /\.omc-(config\.json|version\.json|write-probe|guards|hud-config\.json)/.test(line);
+    if (!isCodebuddyDomainFile) {
+      if (/\.omc-workspace/.test(line)) {
+        violations.push(rel + ':' + (i + 1) + ': legacy .omc-workspace marker: ' + trimmed.slice(0, 90));
+      }
+      if (/\.omc\/(state|plans|specs|handoffs|notepad|ultragoal|research|logs|artifacts|skills|wiki|autopilot|traces|graphs|graph-runs|drafts|shared-memory|sessions|notepads|self-improve|wayfinder|prd)\b/.test(line)) {
+        violations.push(rel + ':' + (i + 1) + ': legacy .omc/ state path: ' + trimmed.slice(0, 90));
+      }
+      if (/\bOMC_STATE_DIR\b/.test(line) && !/\bOMCB_STATE_DIR\b/.test(line)) {
+        violations.push(rel + ':' + (i + 1) + ': bare OMC_STATE_DIR (must pair with OMCB_STATE_DIR): ' + trimmed.slice(0, 90));
+      }
+    }
   });
 }
 if (violations.length > 0) {

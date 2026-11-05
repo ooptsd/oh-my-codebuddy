@@ -44,10 +44,10 @@ Prefer skills that encode decision-making heuristics, constraints, pitfalls, and
        - <trigger-2>
      ---
      ```
-   - Write learned/user/project skills to flat file-backed paths:
-     - `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/omc-learned/<skill-name>.md`
-     - `.omc/skills/<skill-name>.md`
-   - Remember that uncommitted skills are still worktree-local until committed or copied to a user-level directory.
+   - Write learned/user/project skills to CodeBuddy native skill directories (one directory per skill, `SKILL.md` inside — required for native `/skills` discovery):
+     - User: `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/<skill-name>/SKILL.md`
+     - Project: `.codebuddy/skills/<skill-name>/SKILL.md`
+   - Remember that uncommitted project skills are still worktree-local until committed or copied to a user-level directory.
 5. Draft the rest of the skill file with clear triggers, steps, success criteria, and pitfalls.
 6. Point out anything still too fuzzy to encode safely.
 
@@ -56,7 +56,7 @@ Prefer skills that encode decision-making heuristics, constraints, pitfalls, and
 - Keep the skill practical and scoped.
 - Prefer explicit success criteria over vague prose.
 - If the workflow still has unresolved branching decisions, note them before drafting.
-- Keep `omc-learned` as the storage directory name for compatibility; do not present it as the public invocation name.
+- Learned skills live directly under CodeBuddy native skills directories; there is no `omc-learned` nesting layer.
 
 ## Output
 - Proposed skill name

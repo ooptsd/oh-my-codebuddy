@@ -67,7 +67,7 @@ omc CLI HELPERS (if installed):
 - omc hud         - Render the current HUD statusline
 - omc teleport    - Create an isolated git worktree
 - omc team status - Inspect a running team job
-- Session summaries are written to `.omc/sessions/*.json`
+- Session summaries are written to `.omcb/sessions/*.json`
 
 That's it! Just use CodeBuddy normally.
 ```

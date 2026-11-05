@@ -57,7 +57,7 @@
 | `plugin.json` 位置 | `.claude-plugin/plugin.json` | `.codebuddy-plugin/plugin.json` | CodeBuddy 优先查找 `.codebuddy-plugin/`，再查找 `.claude-plugin/` |
 | Hook stdin/stdout 协议 | JSON 入参，JSON 出参 | 同 | 遵循同一份 hook 契约 |
 | `${CODEBUDDY_PLUGIN_ROOT}` 替换 | ✅（注入 `${CLAUDE_PLUGIN_ROOT}`） | ✅（注入 `${CODEBUDDY_PLUGIN_ROOT}`） | `${CODEBUDDY_PLUGIN_ROOT}` 为权威环境变量，`hooks/hooks.json` 全部使用该引用；本插件自 v5.4.3 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 兼容别名 |
-| `.omc/` 磁盘状态文件 | ✅ | ✅ | 同路径、同 JSON 结构；skill 直接读取 |
+| `.omcb/` 磁盘状态文件 | ✅ | ✅ | 同路径、同 JSON 结构；skill 直接读取 |
 | `package.json` / `npm`（hook 脚本） | 必需 | 无要求 | 本发行版 hook 脚本全部用纯 Node + stdin/stdout；唯一可选原生模块（`better-sqlite3`）在已安装时被兼容 |
 
 ### Hook 事件
@@ -114,15 +114,15 @@ MCP 服务器按用途分组暴露以下工具，全部在本插件中不可用�
 
 | 分类 | 工具 | 用途 | 迁移 |
 |------|------|------|------|
-| **State** | `state_write`、`state_read`、`state_list_active`、`state_get_status`、`state_clear`、`state_migrate_non_git` | 每个项目的工作流状态（`.omc/state/`） | 状态文件仍在磁盘上。读取它们的 skill（如 `plan`、`execute`）回退到直接用 `Read` 工具读文件，不需要 MCP |
-| **项目记忆** | `project_memory_write`、`project_memory_read`、`project_memory_add_note`、`project_memory_add_directive` | 持久化项目上下文（`.omc/project-memory.json`） | 直接用 `Read` / `Edit` / `Write` 操作 `.omc/project-memory.json`，或调用 **`remember`** skill（封装相同逻辑） |
-| **记事本** | `notepad_write_working`、`notepad_write_priority`、`notepad_write_manual`、`notepad_read`、`notepad_stats`、`notepad_prune` | 工作中的会话笔记（`.omc/notepad.md`） | 调用 **`remember`** skill 或直接读写 `.omc/notepad.md`。`persistent-mode.mjs` Stop hook 已在会话结束时自动持久化记事本 |
-| **共享记忆** | `shared_memory_write`、`shared_memory_read`、`shared_memory_list`、`shared_memory_delete`、`shared_memory_cleanup` | 跨会话、跨项目的知识库 | 直接读写 `.omc/shared-memory/` 下的文件。`wiki` skill 提供类似能力，结构更严谨 |
+| **State** | `state_write`、`state_read`、`state_list_active`、`state_get_status`、`state_clear`、`state_migrate_non_git` | 每个项目的工作流状态（`.omcb/state/`） | 状态文件仍在磁盘上。读取它们的 skill（如 `plan`、`execute`）回退到直接用 `Read` 工具读文件，不需要 MCP |
+| **项目记忆** | `project_memory_write`、`project_memory_read`、`project_memory_add_note`、`project_memory_add_directive` | 持久化项目上下文（`.omcb/project-memory.json`） | 直接用 `Read` / `Edit` / `Write` 操作 `.omcb/project-memory.json`，或调用 **`remember`** skill（封装相同逻辑） |
+| **记事本** | `notepad_write_working`、`notepad_write_priority`、`notepad_write_manual`、`notepad_read`、`notepad_stats`、`notepad_prune` | 工作中的会话笔记（`.omcb/notepad.md`） | 调用 **`remember`** skill 或直接读写 `.omcb/notepad.md`。`persistent-mode.mjs` Stop hook 已在会话结束时自动持久化记事本 |
+| **共享记忆** | `shared_memory_write`、`shared_memory_read`、`shared_memory_list`、`shared_memory_delete`、`shared_memory_cleanup` | 跨会话、跨项目的知识库 | 直接读写 `.omcb/shared-memory/` 下的文件。`wiki` skill 提供类似能力，结构更严谨 |
 | **Wiki** | `wiki_ingest`、`wiki_read`、`wiki_query`、`wiki_add`、`wiki_delete`、`wiki_list`、`wiki_lint` | 结构化知识图谱 | 直接调用 **`wiki`** skill（聊天中 `$wiki`），所有 wiki 操作都以文件编辑形式封装 |
 | **LSP** | `lsp_servers`、`lsp_diagnostics`、`lsp_diagnostics_directory`、`lsp_hover`、`lsp_goto_definition`、`lsp_find_references`、`lsp_document_symbols`、`lsp_workspace_symbols`、`lsp_code_actions`、`lsp_code_action_resolve`、`lsp_prepare_rename`、`lsp_rename` | 代码智能 | **使用 CodeBuddy 内置的 `Read` / `Grep` / `Glob` 工具** 已覆盖大部分导航需求。重构 / 重命名依靠编辑器原生 LSP 或 CodeBuddy 的 `Edit` 工具 |
 | **AST grep** | `ast_grep_search`、`ast_grep_replace` | 结构化代码搜索/替换 | 用 **`Grep`** + 正则即可。编排工作流中很少需要 AST 级精度 |
 | **Python REPL** | `python_repl` | 进程内执行 Python | 用 **`Bash`** + `python3 -c '...'` 或写入临时文件 |
-| **追踪 (Trace)** | `trace_summary`、`trace_timeline` | 查看历史会话的执行追踪 | 直接用 `Read` 读追踪文件（`.omc/traces/`） |
+| **追踪 (Trace)** | `trace_summary`、`trace_timeline` | 查看历史会话的执行追踪 | 直接用 `Read` 读追踪文件（`.omcb/traces/`） |
 | **会话检索** | `session_search` | 跨会话搜索 | `Bash` + `grep -r` 检索本地 transcripts 目录 |
 | **oh-my-claudecode skills 加载器** | `list_omc_skills`、`load_omc_skills_global`、`load_omc_skills_local` | 发现可用的 oh-my-claudecode skills | CodeBuddy 中通过 `$skill-name` 直接调用 skill，无需枚举工具 |
 | **Deepinit manifest** | `deepinit_manifest` | 生成项目初始化清单 | 调用 **`deepinit`** skill（`$deepinit`），效果相同 |
@@ -175,20 +175,20 @@ cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/.codebuddy-plugin/plugin.js
 
 ---
 
-## 持久化文件（`.omc/` 目录）
+## 持久化文件（`.omcb/` 目录）
 
 两个发行版（Claude Code oh-my-claudecode 和 CodeBuddy omc）写入相同的磁盘位置。区别在于**写入方式**：在 Claude Code oh-my-claudecode 中，hook 与 MCP 工具完成写入；在 CodeBuddy omc 中，hook 完成全部写入（因为保留了全部 11 个事件），MCP 触发的写入需要替换为 skill 调用或直接文件编辑。
 
 | 路径 | 用途 | CodeBuddy omc 下的读写方式 |
 |------|------|--------------------------|
-| `.omc/state/*.json` | 每个项目的工作流状态 | `Read` / `Edit` / `Write` 工具，或由 hook 驱动 |
-| `.omc/project-memory.json` | 持久化的项目上下文 | 同上；`project-memory-session.mjs` / `project-memory-posttool.mjs` 自动写入 |
-| `.omc/notepad.md` | 工作中的会话笔记 | 同上；`persistent-mode.mjs` Stop hook 会自动持久化 |
-| `.omc/wiki/` | 结构化知识图谱 | 任何变更都通过 `$wiki` 调用；`wiki-session-start.mjs` / `wiki-session-end.mjs` 自动加载与保存 |
-| `.omc/shared-memory/` | 跨会话知识库 | `Read` / `Write` 工具 |
-| `.omc/traces/` | 执行追踪日志 | `Read` 工具；`subagent-tracker.mjs` 在 `SubagentStart` / `SubagentStop` 时写入 |
-| `.omc/plans/*.md` | `$plan` / `$ralplan` 产出的计划文件 | `Read` / `Edit` 工具 |
-| `.omc/handoffs/` | Team 模式的 handoff 文档 | 同上 |
+| `.omcb/state/*.json` | 每个项目的工作流状态 | `Read` / `Edit` / `Write` 工具，或由 hook 驱动 |
+| `.omcb/project-memory.json` | 持久化的项目上下文 | 同上；`project-memory-session.mjs` / `project-memory-posttool.mjs` 自动写入 |
+| `.omcb/notepad.md` | 工作中的会话笔记 | 同上；`persistent-mode.mjs` Stop hook 会自动持久化 |
+| `.omcb/wiki/` | 结构化知识图谱 | 任何变更都通过 `$wiki` 调用；`wiki-session-start.mjs` / `wiki-session-end.mjs` 自动加载与保存 |
+| `.omcb/shared-memory/` | 跨会话知识库 | `Read` / `Write` 工具 |
+| `.omcb/traces/` | 执行追踪日志 | `Read` 工具；`subagent-tracker.mjs` 在 `SubagentStart` / `SubagentStop` 时写入 |
+| `.omcb/plans/*.md` | `$plan` / `$ralplan` 产出的计划文件 | `Read` / `Edit` 工具 |
+| `.omcb/handoffs/` | Team 模式的 handoff 文档 | 同上 |
 
 ---
 

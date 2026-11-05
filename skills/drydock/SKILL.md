@@ -15,7 +15,7 @@ The four pillars and where they physically live:
 |---|---|
 | Context (shared background) | `CONTEXT.md` (glossary) + `docs/business/` + `docs/adr/` + omc wiki |
 | Rules (boundaries) | `CODEBUDDY.md` (thin entry: conventions, principles, index) + `docs/standards/` |
-| Tools (composable capability) | `.omc/skills/` + `.mcp.json` + `scripts/` |
+| Tools (composable capability) | `.omcb/skills/` + `.mcp.json` + `scripts/` |
 | Standards (the classification society) | `design-system/` (tokens, components, patterns) + `docs/standards/` |
 
 Metaphor map: the shipyard is the shared facility; the classification society (`docs/standards/` + `design-system/`) sets the rules a ship must pass to be seaworthy; drydock lays the keel; launch ships it.
@@ -38,7 +38,7 @@ Metaphor map: the shipyard is the shared facility; the classification society (`
 Inventory what exists before writing anything:
 
 - `CODEBUDDY.md` present? `AGENTS.md` present? (rule: if either exists, extend it in place; create the missing one as a one-line pointer to the other; **never create both fresh**)
-- `CONTEXT.md`, `docs/adr/`, `docs/standards/`, `docs/business/`, `design-system/`, `.omc/skills/`, `.mcp.json`, `scripts/`, `.gitattributes` — which exist, which are missing?
+- `CONTEXT.md`, `docs/adr/`, `docs/standards/`, `docs/business/`, `design-system/`, `.omcb/skills/`, `.mcp.json`, `scripts/`, `.gitattributes` — which exist, which are missing?
 - omc installed? — only worth checking when running inside an omc session; outside one, skip this check silently (the harness works with or without omc)
 
 Report the map first, then act.
@@ -98,7 +98,7 @@ docs/standards/process.md
 docs/business/README.md        # seed D
 design-system/README.md        # seed E (UI repos only; stub otherwise)
 design-system/tokens/README.md
-.omc/skills/README.md          # seed F
+.omcb/skills/README.md          # seed F
 .mcp.json                      # {"mcpServers": {}}
 scripts/README.md
 ```
@@ -133,7 +133,7 @@ Seed A — CODEBUDDY.md, en (thin entry; extend in place if the file exists):
 ## Agent guide
 - Delivery follows the canonical workflow plan → execute → review → verify; `/omc:launch` is an optional governed delivery pipeline (opt-in, invoke explicitly)
 - On term conflicts CONTEXT.md wins; new terms are recorded the moment they settle
-- Reusable capability goes to .omc/skills/; UI patterns go to design-system/
+- Reusable capability goes to .omcb/skills/; UI patterns go to design-system/
 ```
 <!-- shipyard-seed-a:en:end -->
 
@@ -163,7 +163,7 @@ Seed A — zh-Hans companion (结构一致，二选一按文档语言渲染):
 ## Agent 指南
 - 交付遵循 canonical 工作流 plan → execute → review → verify；`/omc:launch` 是可选的受治理交付管道（opt-in，需要时显式调用）
 - 术语冲突以 CONTEXT.md 为准；新术语当场补录
-- 可复用能力沉淀到 .omc/skills/；UI 模式沉淀到 design-system/
+- 可复用能力沉淀到 .omcb/skills/；UI 模式沉淀到 design-system/
 ```
 <!-- shipyard-seed-a:zh-Hans:end -->
 
@@ -193,7 +193,7 @@ Seed A — zh-Hant companion（結構一致，只渲染此版本）:
 ## Agent 指南
 - 交付遵循 canonical 工作流 plan → execute → review → verify；`/omc:launch` 是可選的治理交付管道（opt-in，必須明確呼叫）
 - 術語衝突以 CONTEXT.md 為準；新術語確定時立即補錄
-- 可重用能力沉澱到 .omc/skills/；UI 模式沉澱到 design-system/
+- 可重用能力沉澱到 .omcb/skills/；UI 模式沉澱到 design-system/
 ```
 <!-- shipyard-seed-a:zh-Hant:end -->
 
@@ -287,13 +287,13 @@ Seed E — design-system/README.md:
 ## patterns/  Interaction patterns (forms, feedback, loading, empty states — sediment reused patterns)
 ```
 
-Seed F — .omc/skills/README.md:
+Seed F — .omcb/skills/README.md:
 
 ````markdown
 # Project Skills
 
 Reusable capabilities sedimented by this project: specialized tools, prompt templates, specialized practices.
-One skill per file `.omc/skills/<name>.md`, frontmatter must contain a stable ASCII `id` plus name + description +
+One skill per file `.omcb/skills/<name>.md`, frontmatter must contain a stable ASCII `id` plus name + description +
 **non-empty triggers** (loader validation hard requirement: missing or empty means the skill is never loaded):
 
 ```markdown
@@ -322,7 +322,7 @@ Tell the user, and rely on these flows to fill the skeleton:
 
 - **launch** writes CONTEXT.md vocabulary, ADRs, and docs/business/ as decisions settle (paper trail)
 - **launch C5 sediment / code-review** sediment recurring corrections into docs/standards/ and CODEBUDDY.md principles
-- **anyone** can add a project skill to .omc/skills/ — the barrier is the skillify quality gate, not permission
+- **anyone** can add a project skill to .omcb/skills/ — the barrier is the skillify quality gate, not permission
 - **wiki** (omc) compounds session knowledge; promote anything referenced twice into docs/business/
 
 The rule that keeps 先动手 aligned: **starting needs no permission; landing goes into a shipyard slot.** A change that cannot say which slot it lands in (or explicitly none) is the smell.

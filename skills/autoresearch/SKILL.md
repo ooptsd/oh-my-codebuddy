@@ -12,7 +12,7 @@ Autoresearch is a stateful skill for bounded, evaluator-driven iterative improve
 <Use_When>
 - You already have a mission and evaluator from `/deep-interview --autoresearch`
 - You want persistent single-mission improvement with strict evaluation
-- You need durable experiment logs under `.omc/autoresearch/`
+- You need durable experiment logs under `.omcb/autoresearch/`
 - You want a supported path for periodic reruns via CodeBuddy native cron
 </Use_When>
 
@@ -31,7 +31,7 @@ Autoresearch is a stateful skill for bounded, evaluator-driven iterative improve
 </Contract>
 
 <Required_Artifacts>
-Canonical persistent storage lives under `.omc/autoresearch/<mission-slug>/` and/or `.omc/logs/autoresearch/<run-id>/`.
+Canonical persistent storage lives under `.omcb/autoresearch/<mission-slug>/` and/or `.omcb/logs/autoresearch/<run-id>/`.
 
 Minimum required artifacts:
 - mission spec
@@ -41,7 +41,7 @@ Minimum required artifacts:
 
 Recommended canonical shape:
 ```text
-.omc/autoresearch/<mission-slug>/
+.omcb/autoresearch/<mission-slug>/
   mission.md
   evaluator.json
   runs/<run-id>/

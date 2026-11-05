@@ -1,2 +1,4 @@
 # Runtime state from running omc/omb/CodeBuddy in this directory
+.omcb/
+# Legacy pre-.omcb runtime state (never commit)
 .omc/

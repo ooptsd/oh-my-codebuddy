@@ -434,19 +434,19 @@ const SESSION_END_MODE_STATE_FILES = [
 /**
  * Validate that a candidate cwd is a real OMC workspace anchor.
  * Returns the candidate unchanged if it is non-empty AND contains a
- * `.omc-workspace` marker OR a `.git` directory.
+ * `.omcb-workspace` marker OR a `.git` directory.
  * Otherwise emits a one-line warning to stderr and returns null,
  * signalling the caller to skip all state mutations.
  */
 function validateCwd(candidate) {
   if (!candidate || typeof candidate !== 'string') {
     process.stderr.write(
-      `[OMC] session-start: refusing to use cwd '${candidate}' as workspace anchor (no .omc-workspace or .git marker)\n`
+      `[OMC] session-start: refusing to use cwd '${candidate}' as workspace anchor (no .omcb-workspace or .git marker)\n`
     );
     return null;
   }
   // cwd is commonly a subdirectory of the repo/workspace root, so walk up
-  // looking for a `.omc-workspace` marker or `.git` dir. Stop before scanning
+  // looking for a `.omcb-workspace` marker or `.git` dir. Stop before scanning
   // $HOME (or above) so a stray marker/repo in $HOME cannot validate an
   // unrelated directory. Returns the original candidate so downstream root
   // resolution (getOmcRoot/resolveOmcStateRoot) can anchor it.
@@ -455,7 +455,7 @@ function validateCwd(candidate) {
   let cursor = candidate;
   while (true) {
     if (home && cursor === home) break;
-    if (existsSync(join(cursor, '.omc-workspace')) || existsSync(join(cursor, '.git'))) {
+    if (existsSync(join(cursor, '.omcb-workspace')) || existsSync(join(cursor, '.git'))) {
       return candidate;
     }
     const parent = dirname(cursor);
@@ -463,7 +463,7 @@ function validateCwd(candidate) {
     cursor = parent;
   }
   process.stderr.write(
-    `[OMC] session-start: refusing to use cwd '${candidate}' as workspace anchor (no .omc-workspace or .git marker)\n`
+    `[OMC] session-start: refusing to use cwd '${candidate}' as workspace anchor (no .omcb-workspace or .git marker)\n`
   );
   return null;
 }

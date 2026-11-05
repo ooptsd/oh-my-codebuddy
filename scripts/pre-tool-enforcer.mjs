@@ -551,38 +551,41 @@ function getQuietLevel() {
 }
 
 /**
- * Resolve the .omc root directory for a given starting directory.
+ * Resolve the .omcb root directory for a given starting directory.
  *
  * Resolution order (mirrors src/lib/worktree-paths.ts getOmcRoot):
- *   1) OMC_STATE_DIR env — log a warning and fall through (full project-id
- *      derivation lives in the TS layer; use resolveOmcStateRoot() for async
- *      TS-backed OMC_STATE_DIR support in main()).
- *   2) Walk up from startDir looking for a .omc-workspace marker file.
+ *   1) OMCB_STATE_DIR / legacy OMC_STATE_DIR env — log a warning and fall
+ *      through (full project-id derivation lives in the TS layer; use
+ *      resolveOmcStateRoot() for async TS-backed OMCB_STATE_DIR/OMC_STATE_DIR
+ *      support in main()).
+ *   2) Walk up from startDir looking for a .omcb-workspace marker file.
  *      The first directory containing that file is the workspace anchor.
  *   3) git rev-parse --show-toplevel from startDir.
  *   4) Fallback to startDir itself.
  *
  * @param {string} startDir - Directory to resolve from (usually cwd from hook payload)
- * @returns {string} Absolute path to the .omc root directory
+ * @returns {string} Absolute path to the .omcb root directory
  */
 function resolveOmcRoot(startDir) {
   const dir = startDir || process.cwd();
 
-  // 1) OMC_STATE_DIR: full project-id derivation is TS-only; warn and fall through.
-  if (process.env.OMC_STATE_DIR) {
+  // 1) OMCB_STATE_DIR / legacy OMC_STATE_DIR: full project-id derivation is
+  // TS-only; warn and fall through.
+  const customStateDir = process.env.OMCB_STATE_DIR || process.env.OMC_STATE_DIR;
+  if (customStateDir) {
     process.stderr.write(
-      '[omc] OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
-      'resolution. Use resolveOmcStateRoot() for full OMC_STATE_DIR support.\n'
+      '[omc] OMCB_STATE_DIR/OMC_STATE_DIR is set; resolveOmcRoot() falling through to workspace-marker ' +
+      'resolution. Use resolveOmcStateRoot() for full OMCB_STATE_DIR/OMC_STATE_DIR support.\n'
     );
   }
 
-  // 2) Walk up looking for .omc-workspace marker
+  // 2) Walk up looking for .omcb-workspace marker
   try {
     let cursor = resolve(dir);
     const home = (() => { try { return resolve(homedir()); } catch { return null; } })();
     while (true) {
-      if (existsSync(join(cursor, '.omc-workspace'))) {
-        return join(cursor, '.omc');
+      if (existsSync(join(cursor, '.omcb-workspace'))) {
+        return join(cursor, '.omcb');
       }
       const parent = dirname(cursor);
       if (parent === cursor) break;
@@ -602,13 +605,13 @@ function resolveOmcRoot(startDir) {
       timeout: BOUNDED_GIT_TIMEOUT_MS,
       windowsHide: true,
     }).trim();
-    if (top) return join(top, '.omc');
+    if (top) return join(top, '.omcb');
   } catch {
     // not in a git repo — fall through
   }
 
   // 4) Fallback to startDir
-  return join(dir, '.omc');
+  return join(dir, '.omcb');
 }
 
 
@@ -859,7 +862,7 @@ function isUltragoalTerminalState(state, directory) {
   const phase = normalizePhase(state.current_phase ?? state.phase ?? state.status);
   if (phase && ULTRAGOAL_TERMINAL_PHASES.has(phase)) return true;
 
-  const plan = readJsonFile(join(directory, '.omc', 'ultragoal', 'goals.json'));
+  const plan = readJsonFile(join(directory, '.omcb', 'ultragoal', 'goals.json'));
   if (!plan || typeof plan !== 'object') return false;
   if (plan.aggregateCompletion?.status === 'complete') return true;
   if (!Array.isArray(plan.goals) || plan.goals.length === 0) return false;
@@ -894,7 +897,7 @@ function getExpectedUltragoalObjective(state, directory) {
     if (typeof value === 'string' && value.trim()) return value.trim();
   }
 
-  const plan = readJsonFile(join(directory, '.omc', 'ultragoal', 'goals.json'));
+  const plan = readJsonFile(join(directory, '.omcb', 'ultragoal', 'goals.json'));
   if (typeof plan?.aggregateCompletion?.objective === 'string' && plan.aggregateCompletion.objective.trim()) {
     return plan.aggregateCompletion.objective.trim();
   }
@@ -1105,7 +1108,7 @@ function evaluateUltragoalPreToolEnforcement(stateDir, directory, sessionId, dat
   const mismatch = actualObjective
     ? `current /goal appears unrelated: "${actual.objective}".`
     : 'no active /goal snapshot was visible to the hook.';
-  return `[ULTRAGOAL /GOAL REQUIRED] Active ultragoal state requires the matching /goal before tools run; ${mismatch} Activate /goal with the ultragoal objective, or set ALLOW_ULTRAGOAL_WITHOUT_GOAL=1 to bypass this guard intentionally. Expected objective: ${expected || '<record one in ultragoal-state.json or .omc/ultragoal/goals.json>'}`;
+  return `[ULTRAGOAL /GOAL REQUIRED] Active ultragoal state requires the matching /goal before tools run; ${mismatch} Activate /goal with the ultragoal objective, or set ALLOW_ULTRAGOAL_WITHOUT_GOAL=1 to bypass this guard intentionally. Expected objective: ${expected || '<record one in ultragoal-state.json or .omcb/ultragoal/goals.json>'}`;
 }
 
 function hasActiveJsonMode(stateDir, { allowSessionTagged = false } = {}) {
@@ -1367,7 +1370,7 @@ function getSkillProtectionLevel(skillName, rawSkillName) {
 function loadOmcConfig() {
   const configPaths = [
     join(getConfigDir(), '.omc-config.json'),
-    join(process.cwd(), '.omc', 'config.json'),
+    join(process.cwd(), '.omcb', 'config.json'),
   ];
   for (const configPath of configPaths) {
     try {
@@ -1521,7 +1524,7 @@ async function main() {
     const toolName = extractJsonField(input, 'tool_name') || extractJsonField(input, 'toolName', 'unknown');
     const directory = extractJsonField(input, 'cwd') || extractJsonField(input, 'directory', process.cwd());
 
-    // Resolve the .omc state root once, honoring OMC_STATE_DIR.
+    // Resolve the .omc state root once, honoring OMCB_STATE_DIR/OMC_STATE_DIR.
     // All helpers receive stateDir so they stay in sync with the centralized
     // resolver used by session-start.mjs and persistent-mode (issue #2518, PR #2532).
     const omcRoot = await resolveOmcStateRoot(directory);
@@ -1635,7 +1638,7 @@ async function main() {
     // preflight blocks Task/Agent spawning when context is exhausted, this
     // evaluator blocks raw Read/Edit/Write/Grep/Glob when configured rules
     // indicate the work should be delegated to a specialised agent. Default OFF
-    // — only fires when `.omc/config.json` has `routing.forceDelegation.enforce`.
+    // — only fires when `.omcb/config.json` has `routing.forceDelegation.enforce`.
     const delegationBlock = evaluateForceAgentDelegation({
       toolName,
       stateDir,

@@ -24,7 +24,7 @@ Both yes → no map is needed; run `/omc:launch` (its fog gate sends efforts her
 The map is a **single issue** labelled `navigator:map` on the repo's issue tracker; its decision tickets are child issues of the map. The tracker should have been recorded by `/omc:drydock`; if none was recorded, ask once (GitHub / GitLab / local markdown) and remember the answer inside the map's Notes.
 
 - **Tracker-backed (GitHub, GitLab, or recorded tracker)**: one map issue, child issues per ticket, native blocking/sub-issue relationships. Concurrent sessions and the tracker's own UI render the frontier — the map lives where humans already look. Create the `navigator:map` label if the tracker doesn't have it yet; ticket types live in the ticket body, not in labels.
-- **Local markdown fallback**: `.omc/wayfinder/<map-slug>/map.md` plus `decisions/NN-<slug>.md`, one file per ticket, numbered in dependency order. Local mode has no concurrent-claim guarantee: it is single-driver by convention, stated once in the map's Notes.
+- **Local markdown fallback**: `.omcb/wayfinder/<map-slug>/map.md` plus `decisions/NN-<slug>.md`, one file per ticket, numbered in dependency order. Local mode has no concurrent-claim guarantee: it is single-driver by convention, stated once in the map's Notes.
 
 The map is an **index, not a store**: a decision lives in exactly one place — its ticket. The map gists each resolution in one line and links; it never restates the detail.
 
@@ -111,8 +111,8 @@ When the yard is not laid (the captain declined drydock at charting time), **def
 
 The map is done when no open tickets remain and **Not yet specified** is empty. Then:
 
-1. Collapse **Decisions so far** into a **mission brief**: objective, scope boundary, non-goals — writable now because the way is clear. Write it to `.omc/wayfinder/<map-slug>/brief.md` so the handoff passes a pointer, not content.
-2. Recommend: "The way is clear. Run `/omc:launch` with the brief at `.omc/wayfinder/<map-slug>/brief.md`." The map stays as the effort's logbook; launch's yard gate owns every check from there.
+1. Collapse **Decisions so far** into a **mission brief**: objective, scope boundary, non-goals — writable now because the way is clear. Write it to `.omcb/wayfinder/<map-slug>/brief.md` so the handoff passes a pointer, not content.
+2. Recommend: "The way is clear. Run `/omc:launch` with the brief at `.omcb/wayfinder/<map-slug>/brief.md`." The map stays as the effort's logbook; launch's yard gate owns every check from there.
 3. Default entry is launch Phase 1 (the paper trail is already half-full; its frontier clears fast). Only when the decisions already read like a spec may a spec be drafted and launch entered at Phase 2 with the spec path.
 
 ## Scope and non-goals

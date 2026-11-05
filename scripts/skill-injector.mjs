@@ -12,8 +12,6 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, openSync, closeSync, unlinkSync, writeSync, constants as fsConstants } from 'fs';
 import { join, basename, dirname } from 'path';
-import { homedir } from 'os';
-import { getConfigDir } from './lib/config-dir.mjs';
 import { readStdin } from './lib/stdin.mjs';
 import { createRequire } from 'module';
 import { atomicWriteFileSync, ensureDirSync } from './lib/atomic-write.mjs';
@@ -24,8 +22,6 @@ const isDisabled = process.env.DISABLE_OMC === '1' ||
   skipHooks.includes('skill-injector');
 
 let bridge = null;
-let USER_SKILLS_DIR;
-let GLOBAL_SKILLS_DIR;
 let PROJECT_SKILLS_SUBDIR;
 let SKILL_EXTENSION;
 let MAX_SKILLS_PER_SESSION;
@@ -88,27 +84,28 @@ function validateSessionId(sessionId) {
 // ============================================================================
 
 /**
- * Walk up from startDir looking for .omc-workspace, then .git, then fallback
- * to startDir itself. Returns the .omc subdirectory of the found root.
+ * Walk up from startDir looking for .omcb-workspace, then .git, then fallback
+ * to startDir itself. Returns the .omcb subdirectory of the found root.
  * Mirrors getOmcRoot from src/lib/worktree-paths.ts — inlined synchronously for .mjs.
  *
- * NOTE: OMC_STATE_DIR with content-hash is handled asynchronously in state-root.mjs.
- * This inline sync resolver skips OMC_STATE_DIR and always uses the walk-up result,
- * which is correct for the fallback path (bridge handles OMC_STATE_DIR when available).
+ * NOTE: OMCB_STATE_DIR (or legacy OMC_STATE_DIR) with content-hash is handled
+ * asynchronously in state-root.mjs. This inline sync resolver skips both env
+ * vars and always uses the walk-up result, which is correct for the fallback
+ * path (bridge handles OMCB_STATE_DIR/OMC_STATE_DIR when available).
  *
  * @param {string} startDir - Directory to start from (data.cwd)
- * @returns {string} Absolute path to the .omc root directory
+ * @returns {string} Absolute path to the .omcb root directory
  */
 function resolveOmcRootSync(startDir) {
   let dir = startDir;
 
-  // Walk up looking for .omc-workspace or .git
+  // Walk up looking for .omcb-workspace or .git
   while (dir) {
-    if (existsSync(join(dir, '.omc-workspace'))) {
-      return join(dir, '.omc');
+    if (existsSync(join(dir, '.omcb-workspace'))) {
+      return join(dir, '.omcb');
     }
     if (existsSync(join(dir, '.git'))) {
-      return join(dir, '.omc');
+      return join(dir, '.omcb');
     }
     const parent = dirname(dir);
     if (parent === dir) break; // filesystem root reached
@@ -116,7 +113,7 @@ function resolveOmcRootSync(startDir) {
   }
 
   // Fallback: use startDir
-  return join(startDir, '.omc');
+  return join(startDir, '.omcb');
 }
 
 // ============================================================================
@@ -333,11 +330,14 @@ function parseSkillFrontmatterFallback(content) {
 }
 
 // Find all skill files (fallback - NON-RECURSIVE for backward compat)
+// Operational skills only: project-level .omcb/skills (dual-track design —
+// business/learned skills live in CodeBuddy native .codebuddy/skills and
+// ~/.codebuddy/skills, discovered natively by the host, not injected here).
 function findSkillFilesFallback(directory) {
   const candidates = [];
   const seenPaths = new Set();
 
-  // Project-level skills (higher priority)
+  // Project-level operational skills (higher priority)
   const projectDir = join(directory, PROJECT_SKILLS_SUBDIR);
   if (existsSync(projectDir)) {
     try {
@@ -358,32 +358,6 @@ function findSkillFilesFallback(directory) {
       }
     } catch {
       // Ignore directory read errors
-    }
-  }
-
-  // User-level skills (search both global and legacy directories)
-  const userDirs = [GLOBAL_SKILLS_DIR, USER_SKILLS_DIR];
-  for (const userDir of userDirs) {
-    if (existsSync(userDir)) {
-      try {
-        const files = readdirSync(userDir, { withFileTypes: true });
-        for (const file of files) {
-          if (file.isFile() && file.name.endsWith(SKILL_EXTENSION)) {
-            const fullPath = join(userDir, file.name);
-            try {
-              const realPath = realpathSync(fullPath);
-              if (!seenPaths.has(realPath)) {
-                seenPaths.add(realPath);
-                candidates.push({ path: fullPath, scope: 'user' });
-              }
-            } catch {
-              // Ignore symlink resolution errors
-            }
-          }
-        }
-      } catch {
-        // Ignore directory read errors
-      }
     }
   }
 
@@ -630,10 +604,11 @@ if (isDisabled) {
     // Bridge not available - use fallback (first run before build, or dist/ missing)
   }
 
-  const cfgDir = getConfigDir();
-  USER_SKILLS_DIR = join(cfgDir, 'skills', 'omc-learned');
-  GLOBAL_SKILLS_DIR = join(homedir(), '.omc', 'skills');
-  PROJECT_SKILLS_SUBDIR = join('.omc', 'skills');
+  // Dual-track skills: injector only serves project-level operational skills
+  // under .omcb/skills. Business/learned skills are written to CodeBuddy
+  // native paths (.codebuddy/skills, ~/.codebuddy/skills) and discovered by
+  // the host natively — they are NOT injected here.
+  PROJECT_SKILLS_SUBDIR = join('.omcb', 'skills');
   SKILL_EXTENSION = '.md';
   MAX_SKILLS_PER_SESSION = 5;
   MAX_LEARNED_SKILL_DESCRIPTOR_CHARS = 1000;

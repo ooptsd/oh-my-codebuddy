@@ -1,12 +1,12 @@
 ---
 name: agent-doc-discipline
-description: Writing-time discipline for documents agents consume (the five surfaces, specs, tickets, .omc/skills/) — every rule checkable and carrying a why, steps before reference, one meaning in one home, no restating what the environment already says. Mandatory at drydock seed generation and the launch C5 sediment pass; opt-in for any other agent-facing doc edit. The companion of minimal-code-discipline: that one disciplines code, this one disciplines papers.
+description: Writing-time discipline for documents agents consume (the five surfaces, specs, tickets, .omcb/skills/) — every rule checkable and carrying a why, steps before reference, one meaning in one home, no restating what the environment already says. Mandatory at drydock seed generation and the launch C5 sediment pass; opt-in for any other agent-facing doc edit. The companion of minimal-code-discipline: that one disciplines code, this one disciplines papers.
 level: 3
 ---
 
 # Agent Doc Discipline
 
-Use this skill to apply a writing-time discipline while creating or editing any document an agent consumes to act: the five surfaces (`CODEBUDDY.md`, `CONTEXT.md`, `docs/standards/`, `design-system/`, `.omc/skills/`), specs, tickets, and skill files. The test a document must pass: **a fresh agent session can act on it by reading alone.**
+Use this skill to apply a writing-time discipline while creating or editing any document an agent consumes to act: the five surfaces (`CODEBUDDY.md`, `CONTEXT.md`, `docs/standards/`, `design-system/`, `.omcb/skills/`), specs, tickets, and skill files. The test a document must pass: **a fresh agent session can act on it by reading alone.**
 
 Mandatory when: drydock generates surface seeds, the launch C5 sediment pass writes a lesson into a slot. Opt-in for every other edit — but any edit to an agent-facing document should survive these rules.
 

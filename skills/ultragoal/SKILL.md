@@ -1,6 +1,6 @@
 ---
 name: ultragoal
-description: Durable multi-goal workflow that persists plan/ledger artifacts under .omc/ultragoal and prints /goal handoff text for the active session
+description: Durable multi-goal workflow that persists plan/ledger artifacts under .omcb/ultragoal and prints /goal handoff text for the active session
 argument-hint: "<brief or subcommand>"
 level: 3
 ---
@@ -45,7 +45,7 @@ The host `/goal` is a session-scoped Stop hook: it blocks the session from stopp
    **Multi-repo workspaces / parallel sessions:** when several sessions
    in the same workspace need to run `/ultragoal` concurrently, pass either
    `--plan-id <stable-id>` or `--auto-plan-id` so the plan is written to
-   `.omc/ultragoal/plans/{planId}/` instead of the shared single-plan path.
+   `.omcb/ultragoal/plans/{planId}/` instead of the shared single-plan path.
    Without that flag, two sessions creating goals would clobber each other.
    `--auto-plan-id` derives `{epochMs}-{slug}` from the brief title. Then thread
    the same `--plan-id <id>` through every subsequent subcommand in that session.
@@ -97,7 +97,7 @@ The host `/goal` is a session-scoped Stop hook: it blocks the session from stopp
 
 ## Parallel session caveats
 
-- **Multi-repo workspace anchor:** drop a `.omc-workspace` marker at the parent directory so multiple sessions across sub-repos share one `.omc/`. Resolution order: `OMC_STATE_DIR > .omc-workspace > git > cwd`. See `docs/REFERENCE.md`.
+- **Multi-repo workspace anchor:** drop a `.omcb-workspace` marker at the parent directory so multiple sessions across sub-repos share one `.omcb/`. Resolution order: `OMCB_STATE_DIR > OMC_STATE_DIR (legacy fallback) > .omcb-workspace > git > cwd`. See `docs/REFERENCE.md`.
 - **Session id source:** OMC_SESSION_ID env var wins in CLI contexts; hook payload data.session_id wins in hook contexts.
 - **Plan id (when applicable):** Two runs in the same workspace will conflict on shared plan artifacts. Use distinct session IDs (the hook payload session_id is already isolated per session), or pass `--plan-id` to keep parallel ultragoal runs on separate ledgers.
 - **Parallel verdict:** supported (each session writes its own session-scoped state)

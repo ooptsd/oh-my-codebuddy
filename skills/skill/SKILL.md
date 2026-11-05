@@ -17,8 +17,8 @@ Show all available skills organized by scope.
 
 **Behavior:**
 1. Scan bundled built-in skills in the plugin `skills/` directory (read-only)
-2. Scan user skills at `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/omc-learned/`
-3. Scan project skills at `.omc/skills/`
+2. Scan user skills at `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/`
+3. Scan project skills at `.codebuddy/skills/`
 4. Parse YAML frontmatter for metadata
 5. Display in organized table format:
 
@@ -29,13 +29,13 @@ BUILT-IN SKILLS (bundled with the omc plugin):
 | visual-verdict    | Structured visual QA verdicts  | built-in |
 | ralph             | Persistence loop               | built-in |
 
-USER SKILLS (~/.codebuddy/skills/omc-learned/):
+USER SKILLS (~/.codebuddy/skills/):
 | Name              | Triggers           | Quality | Usage | Scope |
 |-------------------|--------------------|---------|-------|-------|
 | error-handler     | fix, error         | 95%     | 42    | user  |
 | api-builder       | api, endpoint      | 88%     | 23    | user  |
 
-PROJECT SKILLS (.omc/skills/):
+PROJECT SKILLS (.codebuddy/skills/):
 | Name              | Triggers           | Quality | Usage | Scope   |
 |-------------------|--------------------|---------|-------|---------|
 | test-runner       | test, run          | 92%     | 15    | project |
@@ -61,8 +61,8 @@ Interactive wizard for creating a new skill.
 4. **Ask for argument hint** (optional)
    - Example: "<file> [options]"
 5. **Ask for scope:**
-   - `user` → `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/omc-learned/<name>/SKILL.md`
-   - `project` → `.omc/skills/<name>/SKILL.md`
+   - `user` → `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/<name>/SKILL.md`
+   - `project` → `.codebuddy/skills/<name>/SKILL.md`
 6. **Create skill file** with template:
 
 ```yaml
@@ -115,7 +115,7 @@ Triggers (comma-separated): log, logger, logging
 Argument hint (optional): <level> [message]
 Scope (user/project): user
 
-✓ Created skill at ~/.codebuddy/skills/omc-learned/custom-logger/SKILL.md
+✓ Created skill at ~/.codebuddy/skills/custom-logger/SKILL.md
 → Edit with: /skill edit custom-logger
 ```
 
@@ -127,13 +127,13 @@ Remove a skill by name.
 
 **Behavior:**
 1. **Search for skill** in both scopes:
-   - `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/omc-learned/<name>/SKILL.md`
-   - `.omc/skills/<name>/SKILL.md`
+   - `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/<name>/SKILL.md`
+   - `.codebuddy/skills/<name>/SKILL.md`
 2. **If found:**
    - Display skill info (name, description, scope)
    - **Ask for confirmation:** "Delete '<name>' skill from <scope>? (yes/no)"
 3. **If confirmed:**
-   - Delete entire skill directory (e.g., `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/omc-learned/<name>/`)
+   - Delete entire skill directory (e.g., `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/<name>/`)
    - Report: "✓ Removed skill '<name>' from <scope>"
 4. **If not found:**
    - Report: "✗ Skill '<name>' not found in user or project scope"
@@ -145,7 +145,7 @@ Remove a skill by name.
 User: /skill remove old-logger
 Assistant: Found skill 'old-logger' in user scope:
   Description: Legacy logging utility
-  Scope: user (~/.codebuddy/skills/omc-learned/)
+  Scope: user (~/.codebuddy/skills/)
 
 Delete 'old-logger' skill? (yes/no)
 
@@ -261,13 +261,13 @@ Show detailed information about a skill.
 
 ```
 Skill: custom-logger
-Scope: user (~/.codebuddy/skills/omc-learned/custom-logger/)
+Scope: user (~/.codebuddy/skills/custom-logger/)
 Description: Enhanced logging with structured output
 Triggers: log, logger, logging
 Argument Hint: <level> [message]
 Quality: 95% (if available)
 Usage Count: 42 times (if available)
-File Path: /home/user/.codebuddy/skills/omc-learned/custom-logger/SKILL.md
+File Path: /home/user/.codebuddy/skills/custom-logger/SKILL.md
 
 --- FULL CONTENT ---
 [entire markdown content]
@@ -282,7 +282,7 @@ Assistant: Skill: custom-logger
 Scope: user
 Description: Enhanced logging with structured output
 Triggers: log, logger, logging
-File: ~/.codebuddy/skills/omc-learned/custom-logger/SKILL.md
+File: ~/.codebuddy/skills/custom-logger/SKILL.md
 
 --- CONTENT ---
 # Custom Logger Skill
@@ -300,8 +300,8 @@ Sync skills between user and project scopes.
 
 **Behavior:**
 1. **Scan both scopes:**
-   - User skills: `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/omc-learned/`
-   - Project skills: `.omc/skills/`
+   - User skills: `${CODEBUDDY_CONFIG_DIR:-~/.codebuddy}/skills/`
+   - Project skills: `.codebuddy/skills/`
 2. **Compare and categorize:**
    - User-only skills (not in project)
    - Project-only skills (not in user)
@@ -349,7 +349,7 @@ Assistant: Found 5 user-only skills and 2 project-only skills.
 
 Copy 'error-handler' from user to project? (yes/no/skip)
 User: yes
-Assistant: ✓ Copied 'error-handler' to .omc/skills/
+Assistant: ✓ Copied 'error-handler' to .codebuddy/skills/
 
 Copy 'api-builder' from user to project? (yes/no/skip)
 User: skip
@@ -370,7 +370,7 @@ First, check if skill directories exist and create them if needed:
 
 ```bash
 # Check and create user-level skills directory
-USER_SKILLS_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills/omc-learned"
+USER_SKILLS_DIR="${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills"
 if [ -d "$USER_SKILLS_DIR" ]; then
   echo "User skills directory exists: $USER_SKILLS_DIR"
 else
@@ -379,7 +379,7 @@ else
 fi
 
 # Check and create project-level skills directory
-PROJECT_SKILLS_DIR=".omc/skills"
+PROJECT_SKILLS_DIR=".codebuddy/skills"
 if [ -d "$PROJECT_SKILLS_DIR" ]; then
   echo "Project skills directory exists: $PROJECT_SKILLS_DIR"
 else
@@ -394,15 +394,15 @@ Scan both directories and show a comprehensive inventory:
 
 ```bash
 # Scan user-level skills
-echo "=== USER-LEVEL SKILLS (~/.codebuddy/skills/omc-learned/) ==="
-if [ -d "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills/omc-learned" ]; then
-  USER_COUNT=$(find "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills/omc-learned" -name "*.md" 2>/dev/null | wc -l)
+echo "=== USER-LEVEL SKILLS (~/.codebuddy/skills/) ==="
+if [ -d "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills" ]; then
+  USER_COUNT=$(find "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills" -name "*.md" 2>/dev/null | wc -l)
   echo "Total skills: $USER_COUNT"
 
   if [ $USER_COUNT -gt 0 ]; then
     echo ""
     echo "Skills found:"
-    find "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills/omc-learned" -name "*.md" -type f -exec sh -c '
+    find "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}/skills" -name "*.md" -type f -exec sh -c '
       FILE="$1"
       NAME=$(grep -m1 "^name:" "$FILE" 2>/dev/null | sed "s/name: //")
       DESC=$(grep -m1 "^description:" "$FILE" 2>/dev/null | sed "s/description: //")
@@ -418,15 +418,15 @@ else
 fi
 
 echo ""
-echo "=== PROJECT-LEVEL SKILLS (.omc/skills/) ==="
-if [ -d ".omc/skills" ]; then
-  PROJECT_COUNT=$(find ".omc/skills" -name "*.md" 2>/dev/null | wc -l)
+echo "=== PROJECT-LEVEL SKILLS (.codebuddy/skills/) ==="
+if [ -d ".codebuddy/skills" ]; then
+  PROJECT_COUNT=$(find ".codebuddy/skills" -name "*.md" 2>/dev/null | wc -l)
   echo "Total skills: $PROJECT_COUNT"
 
   if [ $PROJECT_COUNT -gt 0 ]; then
     echo ""
     echo "Skills found:"
-    find ".omc/skills" -name "*.md" -type f -exec sh -c '
+    find ".codebuddy/skills" -name "*.md" -type f -exec sh -c '
       FILE="$1"
       NAME=$(grep -m1 "^name:" "$FILE" 2>/dev/null | sed "s/name: //")
       DESC=$(grep -m1 "^description:" "$FILE" 2>/dev/null | sed "s/description: //")
@@ -477,8 +477,8 @@ Ask user to provide either:
 - **Paste content**: Paste skill markdown content directly
 
 Then ask for scope:
-- **User-level** (~/.codebuddy/skills/omc-learned/) - Available across all projects
-- **Project-level** (.omc/skills/) - Only for this project
+- **User-level** (~/.codebuddy/skills/) - Available across all projects
+- **Project-level** (.codebuddy/skills/) - Only for this project
 
 Validate the skill format and save to the chosen location.
 
@@ -725,7 +725,7 @@ When invoked without arguments, run the full guided wizard.
 
 **Automatic Application**: The agent detects triggers and applies skills automatically - no need to remember or search for solutions.
 
-**Version Control**: Project-level skills (`.omc/skills/`) are intended to be committed with your code so the whole team benefits. In linked worktrees, uncommitted skills remain local to that worktree and disappear if it is removed.
+**Version Control**: Project-level skills (`.codebuddy/skills/`) are intended to be committed with your code so the whole team benefits. In linked worktrees, uncommitted skills remain local to that worktree and disappear if it is removed.
 
 **Evolving Knowledge**: Skills improve over time as you discover better approaches and refine triggers.
 
@@ -771,8 +771,8 @@ Good skills are:
 > /omc:skill list
 
 Checking skill directories...
-✓ User skills directory exists: ~/.codebuddy/skills/omc-learned/
-✓ Project skills directory exists: .omc/skills/
+✓ User skills directory exists: ~/.codebuddy/skills/
+✓ Project skills directory exists: .codebuddy/skills/
 
 Scanning for skills...
 

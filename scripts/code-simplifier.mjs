@@ -6,7 +6,7 @@
  * Intercepts Stop events to automatically delegate recently modified source files
  * to the code-simplifier agent for cleanup and simplification.
  *
- * Opt-in via ~/.omc/config.json: { "codeSimplifier": { "enabled": true } }
+ * Opt-in via ~/.omcb/config.json: { "codeSimplifier": { "enabled": true } }
  * Default: disabled (must explicitly opt in)
  */
 
@@ -38,7 +38,7 @@ function readJsonFile(filePath) {
 }
 
 function readOmcConfig() {
-  return readJsonFile(join(homedir(), '.omc', 'config.json'));
+  return readJsonFile(join(homedir(), '.omcb', 'config.json'));
 }
 
 function isEnabled(config) {

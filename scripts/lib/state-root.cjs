@@ -3,8 +3,8 @@
 /**
  * State Root Resolver (CJS)
  *
- * Single authoritative entry point for resolving the .omc root directory in
- * CJS hook scripts, respecting the OMC_STATE_DIR environment variable.
+ * Single authoritative entry point for resolving the .omcb root directory in
+ * CJS hook scripts, respecting OMCB_STATE_DIR (with legacy OMC_STATE_DIR fallback).
  *
  * See scripts/lib/state-root.mjs for full documentation.
  */
@@ -23,7 +23,7 @@ function findWorkspaceRoot(directory) {
   let cursor = resolve(directory);
   while (true) {
     if (cursor === home) return null;
-    if (existsSync(join(cursor, '.omc-workspace'))) return cursor;
+    if (existsSync(join(cursor, '.omcb-workspace'))) return cursor;
     const parent = dirname(cursor);
     if (parent === cursor) return null;
     cursor = parent;
@@ -32,7 +32,7 @@ function findWorkspaceRoot(directory) {
 
 function workspaceIdentifier(workspaceRoot) {
   try {
-    const config = JSON.parse(readFileSync(join(workspaceRoot, '.omc-workspace'), 'utf8'));
+    const config = JSON.parse(readFileSync(join(workspaceRoot, '.omcb-workspace'), 'utf8'));
     if (typeof config.id === 'string' && config.id.trim()) {
       const safeId = config.id.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
       return `${safeId}-${createHash('sha256').update(safeId).digest('hex').slice(0, 16)}`;
@@ -62,7 +62,7 @@ function isSafeWorkspaceRoot(workspaceRoot) {
   while (true) {
     const name = basename(cursor).toLowerCase();
     // '.codebuddy' is the CodeBuddy home; dot-dirs and other homes are never safe workspace roots
-  if (cursor === home || cursor === '/' || cursor === '/tmp' || name.startsWith('.') || ['.ssh', '.gnupg', '.aws', '.config', '.codebuddy', '.cache', '.npm', 'desktop', 'documents', 'downloads', 'pictures', 'music'].includes(name)) return false;
+  if (cursor === home || cursor === '/' || cursor === '/tmp' || name.startsWith('.') || ['.ssh', '.gnupg', '.aws', '.config', '.codebuddy', '.omcb', '.cache', '.npm', 'desktop', 'documents', 'downloads', 'pictures', 'music'].includes(name)) return false;
     const parent = dirname(cursor);
     if (parent === cursor) break;
     cursor = parent;
@@ -71,10 +71,11 @@ function isSafeWorkspaceRoot(workspaceRoot) {
 }
 
 /**
- * Resolve the .omc root directory, respecting OMC_STATE_DIR.
+ * Resolve the .omcb root directory, respecting OMCB_STATE_DIR (preferred)
+ * with legacy OMC_STATE_DIR as fallback (OMCB_STATE_DIR takes precedence).
  *
  * @param {string} directory - Worktree root directory
- * @returns {Promise<string>} Absolute path to the .omc root
+ * @returns {Promise<string>} Absolute path to the .omcb root
  */
 async function resolveOmcStateRoot(directory) {
   const pluginRoot = process.env.CODEBUDDY_PLUGIN_ROOT;
@@ -89,7 +90,7 @@ async function resolveOmcStateRoot(directory) {
 
   // Inline fallback: preserve the canonical non-git identity used by the
   // TypeScript resolver when the generated distribution is unavailable.
-  const customDir = process.env.OMC_STATE_DIR;
+  const customDir = process.env.OMCB_STATE_DIR || process.env.OMC_STATE_DIR;
   if (customDir) {
     const workspaceRoot = findWorkspaceRoot(directory);
     if (workspaceRoot) return join(customDir, workspaceIdentifier(workspaceRoot));
@@ -102,11 +103,11 @@ async function resolveOmcStateRoot(directory) {
     return join(customDir, `${basename(primaryRoot).replace(/[^a-zA-Z0-9_-]/g, '_')}-${hash}`);
   }
   const workspaceRoot = findWorkspaceRoot(directory);
-  if (workspaceRoot && isSafeWorkspaceRoot(workspaceRoot)) return join(workspaceRoot, '.omc');
+  if (workspaceRoot && isSafeWorkspaceRoot(workspaceRoot)) return join(workspaceRoot, '.omcb');
   const gitRoot = probeGitRoot(directory);
-  if (gitRoot) return join(gitRoot, '.omc');
+  if (gitRoot) return join(gitRoot, '.omcb');
   const home = resolve(homedir());
-  return join(home, '.omc');
+  return join(home, '.omcb');
 }
 
 /**

@@ -69,7 +69,7 @@ User: "/team 3:executor fix all TypeScript errors"
                       -> request shutdown from each teammate through the active team surface
                       <- shutdown acknowledgement from teammates
                       -> TeamDelete (teammates shut down first)
-                      -> rm .omc/state/team-state.json
+                      -> rm .omcb/state/team-state.json
 ```
 
 **Native CodeBuddy team model:**
@@ -149,7 +149,7 @@ When transitioning between stages, important context — decisions made, alterna
 
 **Each completing stage MUST produce a handoff document before transitioning.**
 
-The lead writes handoffs to `.omc/handoffs/<stage-name>.md`.
+The lead writes handoffs to `.omcb/handoffs/<stage-name>.md`.
 
 #### Handoff Format
 
@@ -167,7 +167,7 @@ The lead writes handoffs to `.omc/handoffs/<stage-name>.md`.
 
 1. **Lead reads previous handoff BEFORE spawning next stage's agents.** The handoff content is included in the next stage's agent spawn prompts, ensuring agents start with full context.
 2. **Handoffs accumulate.** The verify stage can read all prior handoffs (plan → prd → exec) for full decision history.
-3. **On team cancellation, handoffs survive** in `.omc/handoffs/` for session resume. They are not deleted by native CodeBuddy team cleanup (`TeamDelete` focuses on teammate shutdown, not omc handoffs).
+3. **On team cancellation, handoffs survive** in `.omcb/handoffs/` for session resume. They are not deleted by native CodeBuddy team cleanup (`TeamDelete` focuses on teammate shutdown, not omc handoffs).
 4. **Handoffs are lightweight.** 10-20 lines max. They capture decisions and rationale, not full specifications (those live in deliverable files like DESIGN.md).
 
 #### Example
@@ -184,8 +184,8 @@ The lead writes handoffs to `.omc/handoffs/<stage-name>.md`.
 
 ### Resume and Cancel Semantics
 
-- **Resume:** restart from the last non-terminal stage using staged state + live task status. Read `.omc/handoffs/` to recover stage transition context.
-- **Cancel:** `/omc:cancel` requests teammate shutdown, waits for responses (best effort), marks phase `cancelled` with `active=false`, captures cancellation metadata, then deletes team resources and clears/preserves Team state per policy. Handoff files in `.omc/handoffs/` are preserved for potential resume.
+- **Resume:** restart from the last non-terminal stage using staged state + live task status. Read `.omcb/handoffs/` to recover stage transition context.
+- **Cancel:** `/omc:cancel` requests teammate shutdown, waits for responses (best effort), marks phase `cancelled` with `active=false`, captures cancellation metadata, then deletes team resources and clears/preserves Team state per policy. Handoff files in `.omcb/handoffs/` are preserved for potential resume.
 - Terminal states are `complete`, `failed`, and `cancelled`.
 
 ## Workflow
@@ -404,7 +404,7 @@ When all real tasks (non-internal) are completed or failed:
    ```
 3. **Await responses** -- Each teammate responds with `shutdown_response(approve: true)` and terminates
 4. **Clean up native team state** -- after teammates acknowledge shutdown, call `TeamDelete`, then clear omc state and any local task bookkeeping.
-5. **Clean omc state** -- Remove `.omc/state/team-state.json`
+5. **Clean omc state** -- Remove `.omcb/state/team-state.json`
 6. **Report summary** -- Present results to the user
 
 ## Agent Preamble
@@ -654,7 +654,7 @@ This prevents duplicate worker spawns and allows graceful recovery from lead fai
 
 | Aspect                  | Team (Native CodeBuddy)                                         | Swarm (Legacy SQLite)                  |
 | ----------------------- | ---------------------------------------------------------------- | -------------------------------------- |
-| **Storage**             | omc state/handoffs plus CodeBuddy's current task-list surface     | SQLite in `.omc/state/swarm.db`        |
+| **Storage**             | omc state/handoffs plus CodeBuddy's current task-list surface     | SQLite in `.omcb/state/swarm.db`        |
 | **Dependencies**        | `better-sqlite3` not needed                                      | Requires `better-sqlite3` npm package  |
 | **Task claiming**       | Lead pre-assigns named workers through task-list state  | SQLite IMMEDIATE transaction -- atomic |
 | **Race conditions**     | Possible if two agents claim same task (mitigate by pre-assigning) | None (SQLite transactions)             |
@@ -756,7 +756,7 @@ On successful completion:
 
 ## Parallel session caveats
 
-- **Multi-repo workspace anchor:** drop a `.omc-workspace` marker at the parent directory so multiple sessions across sub-repos share one `.omc/`. Resolution order: `OMC_STATE_DIR > .omc-workspace > git > cwd`. See `docs/REFERENCE.md`.
+- **Multi-repo workspace anchor:** drop a `.omcb-workspace` marker at the parent directory so multiple sessions across sub-repos share one `.omcb/`. Resolution order: `OMCB_STATE_DIR > OMC_STATE_DIR (legacy fallback) > .omcb-workspace > git > cwd`. See `docs/REFERENCE.md`.
 - **Session id source:** OMC_SESSION_ID env var wins in CLI contexts; hook payload data.session_id wins in hook contexts.
-- **Plan id (when applicable):** Team state is session-scoped. Team handoffs at `.omc/handoffs/` are shared by design (see Wave G in the workspace plan).
+- **Plan id (when applicable):** Team state is session-scoped. Team handoffs at `.omcb/handoffs/` are shared by design (see Wave G in the workspace plan).
 - **Parallel verdict:** supported (session-scoped + shared handoffs by design)

@@ -162,7 +162,7 @@ When agents are running, the HUD shows detailed information on separate lines:
 
 HUD config is stored in `~/.codebuddy/settings.json` under the `omcHud` key (or your custom config directory if `CODEBUDDY_CONFIG_DIR` is set).
 
-Legacy config location (deprecated): `~/.codebuddy/.omc/hud-config.json`
+Legacy config location (deprecated): `~/.codebuddy/.omcb/hud-config.json`
 
 ## Manual Configuration
 

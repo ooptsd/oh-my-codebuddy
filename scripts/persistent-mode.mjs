@@ -203,7 +203,7 @@ function refreshNamedWorkflowDispatch(path, expected) {
 }
 
 function getIdleCooldownSeconds() {
-  const configPath = join(homedir(), ".omc", "config.json");
+  const configPath = join(homedir(), ".omcb", "config.json");
   const config = readJsonFile(configPath);
   const val = config?.notificationCooldown?.sessionIdleSeconds;
   return typeof val === "number" ? val : 60;
@@ -1093,7 +1093,7 @@ async function main() {
     const hasValidSessionId = isValidSessionId(sessionIdRaw);
     const omcRoot = await resolveOmcStateRoot(directory);
     const stateDir = join(omcRoot, "state");
-    const globalStateDir = join(homedir(), ".omc", "state");
+    const globalStateDir = join(homedir(), ".omcb", "state");
 
     // CRITICAL: Never block context-limit stops.
     // Blocking these causes a deadlock where the host cannot compact.
@@ -1311,7 +1311,7 @@ async function main() {
         }
         writeJsonFile(ultragoal.path, ultragoal.state);
 
-        let reason = `[ULTRAGOAL #${newCount}/${maxReinforcements}] Ultragoal mode is active. Continue the durable goal workflow, keep the matching /goal active, and checkpoint .omc/ultragoal/ledger.jsonl before stopping. When all ultragoal stories are complete and the final quality gate passes, run /omc:cancel to cleanly exit.`;
+        let reason = `[ULTRAGOAL #${newCount}/${maxReinforcements}] Ultragoal mode is active. Continue the durable goal workflow, keep the matching /goal active, and checkpoint .omcb/ultragoal/ledger.jsonl before stopping. When all ultragoal stories are complete and the final quality gate passes, run /omc:cancel to cleanly exit.`;
         const objective = getUltragoalObjective(ultragoal.state, omcRoot);
         if (objective) reason += `\n/goal objective: ${objective}`;
         if (errorGuidance) {

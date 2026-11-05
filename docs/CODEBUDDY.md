@@ -22,7 +22,7 @@ Route code to `executor` (use a stronger model tier for complex work). Uncertain
 <model_routing>
 Match agent tier to task shape: quick lookups, standard work, and deep analysis each route to the appropriate model.
 Delegated agents run on their pinned tier unless you pass `model` explicitly or set a per-agent `agents.<name>.model` override in `~/.codebuddy/config.jsonc`.
-Direct writes OK for: `~/.codebuddy/**`, `.omc/**`, `.codebuddy/**`, `CODEBUDDY.md`, `AGENTS.md`.
+Direct writes OK for: `~/.codebuddy/**`, `.omcb/**`, `.codebuddy/**`, `CODEBUDDY.md`, `AGENTS.md`.
 </model_routing>
 
 <skills>
@@ -40,7 +40,7 @@ If verification fails, keep iterating.
 
 <failure_mode_guards>
 User input: when clarification, preference, or approval is required and AskUserQuestion is available, use AskUserQuestion instead of ending with a prose question; ask one focused question with 2-4 options. Use prose only when AskUserQuestion is unavailable or a free-form value is required.
-Session/worktree continuity: before editing after resume/compaction or inside a linked worktree, re-check `git status --short --branch`, current cwd, and relevant `.omc/state/` or `.omc/handoffs/` artifacts so work does not continue on the wrong branch or stale context.
+Session/worktree continuity: before editing after resume/compaction or inside a linked worktree, re-check `git status --short --branch`, current cwd, and relevant `.omcb/state/` or `.omcb/handoffs/` artifacts so work does not continue on the wrong branch or stale context.
 No fake completion: TODO-style placeholder notes, `test.skip`/`.only`, stub tests, and unimplemented branches are blockers, not evidence. Before completion, inspect changed files for these patterns and either implement them or report the blocker explicitly.
 </failure_mode_guards>
 
@@ -62,7 +62,7 @@ Kill switches: `DISABLE_OMC`, `OMC_SKIP_HOOKS` (comma-separated).
 </cancellation>
 
 <worktree_paths>
-State root: `.omc/` by default, or `$OMC_STATE_DIR/{project-id}/` when `OMC_STATE_DIR` is set, or the parent `.omc/` when a `.omc-workspace` marker anchors a multi-repo workspace. Runtime state includes `.omc/state/`, `.omc/state/sessions/{sessionId}/`, `.omc/notepad.md`, `.omc/project-memory.json`, `.omc/plans/`, `.omc/research/`, `.omc/logs/`, `.omc/artifacts/`, `.omc/handoffs/`, and `.omc/ultragoal/`. These are ignored operational artifacts by default; `.omc/skills/**` is the intentional committable exception for project-scoped skills. In linked git worktrees (`.codebuddy/worktrees/`), local `.omc/` state is removed with the worktree unless centralized via `OMC_STATE_DIR`.
+State root: `.omcb/` by default, or `$OMCB_STATE_DIR/{project-id}/` when `OMCB_STATE_DIR` is set (legacy `$OMC_STATE_DIR` still honored as fallback), or the parent `.omcb/` when a `.omcb-workspace` marker anchors a multi-repo workspace. Runtime state includes `.omcb/state/`, `.omcb/state/sessions/{sessionId}/`, `.omcb/notepad.md`, `.omcb/project-memory.json`, `.omcb/plans/`, `.omcb/research/`, `.omcb/logs/`, `.omcb/artifacts/`, `.omcb/handoffs/`, and `.omcb/ultragoal/`. These are ignored operational artifacts by default; `.omcb/skills/**` is the intentional committable exception for project-scoped operational skills. Business/learned skills belong in CodeBuddy native skill directories (`.codebuddy/skills/`, `~/.codebuddy/skills/`) and are discovered natively, not injected. In linked git worktrees (`.codebuddy/worktrees/`), local `.omcb/` state is removed with the worktree unless centralized via `OMCB_STATE_DIR`.
 </worktree_paths>
 
 ## Setup

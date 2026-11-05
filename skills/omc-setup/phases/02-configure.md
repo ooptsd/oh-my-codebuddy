@@ -4,7 +4,7 @@
 
 ## Step 2.0: Check Ralph Runtime Prerequisites
 
-Ralph is an agent-driven persistence loop with no external language dependency. Its only hard prerequisites are the Node runtime that already runs omc's hooks and a writable config directory for `.omc/state/` state files. Verify both without blocking the rest of setup:
+Ralph is an agent-driven persistence loop with no external language dependency. Its only hard prerequisites are the Node runtime that already runs omc's hooks and a writable config directory for `.omcb/state/` state files. Verify both without blocking the rest of setup:
 
 ```bash
 node --version || echo "ERROR: Node is required for omc hooks and Ralph state persistence."

@@ -65,7 +65,7 @@ node -e "const p=require('path'),f=require('fs'),h=require('os').homedir(),d=pro
 
 ### Step 5: Check Ralph Runtime Prerequisites
 
-Ralph is an agent-driven persistence loop, not a compiled program: its only hard runtime prerequisites are the Node runtime that executes omc's hook scripts (`persistent-mode.mjs`, `keyword-detector.mjs`) and a writable config directory for `.omc/state/` state files such as `ralph-state.json`.
+Ralph is an agent-driven persistence loop, not a compiled program: its only hard runtime prerequisites are the Node runtime that executes omc's hook scripts (`persistent-mode.mjs`, `keyword-detector.mjs`) and a writable config directory for `.omcb/state/` state files such as `ralph-state.json`.
 
 ```bash
 node --version || echo "Node for Ralph: MISSING"

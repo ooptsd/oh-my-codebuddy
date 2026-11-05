@@ -38,7 +38,7 @@ Between checkpoints the pipeline never idles: agents keep working every frontier
 Launch is a **stateless composition over omc's existing lifecycle** — it owns no runtime state machine:
 
 - Team owns task statuses, transitions, cancellation, and runtime cleanup; Launch never mutates them outside Team's contract.
-- The canonical `plan` → `execute` → `review` → `verify` surfaces own their existing lifecycle behavior. Launch-authored artifacts are limited to `.omc/specs/<feature-slug>/`, `CONTEXT.md`, `docs/adr/`, and `docs/business/` — plus, only after C5 approval, the sediment slots named in the Phase 5 table.
+- The canonical `plan` → `execute` → `review` → `verify` surfaces own their existing lifecycle behavior. Launch-authored artifacts are limited to `.omcb/specs/<feature-slug>/`, `CONTEXT.md`, `docs/adr/`, and `docs/business/` — plus, only after C5 approval, the sediment slots named in the Phase 5 table.
 - Launch has no automatic resume. After interruption, re-read the artifacts and current Team status, but continue only through a new explicit Launch invocation after the owning Team lifecycle has reached a supported terminal/cleanup boundary. Never infer a human approval or replay an `in_progress` task.
 - Foggy efforts are the navigator's jurisdiction: when the fog gate routes to `/omc:ask-navigator`, the run never started — no artifacts, no partial state. The navigator's map is the only carrier across sessions; launch resumes only from the mission brief it hands back.
 - Launch adds no approval receipt, revision counter, replay log, cancellation path, rollback mechanism, or cleanup lifecycle of its own.
@@ -53,7 +53,7 @@ Localize prose and human-facing labels/localizable scalar values only. Paths, sl
 
 - Brief self-check before anything else: does the brief name an objective, a scope boundary, and non-goals? If two or more are missing, say so and ask for one sharpening pass — running the pipeline on a soft brief converts ambiguity into confident-looking output.
 - **Fog gate**: after the sharpening pass, apply the navigator's fog test — **Q1**: can the destination be stated in one sentence (the spec, decision, or change this effort is finding its way to)? **Q2**: can the first three decisions be stated precisely right now, even though none can be answered yet? Either answer no → the run never starts: state that plainly, note that no artifacts were produced, recommend `/omc:ask-navigator` (the shipyard's navigator charts fog as a map of decision tickets and hands back a mission brief), and stop. Hand over the residual questions and any vocabulary already settled, so the navigator's W1 does not re-ask them.
-- **Map check**: before reading a supplied spec or entering Phase 1, look for an open `navigator:map` (tracker label, or under `.omc/wayfinder/`). One exists and this invocation supplies no new brief → recommend `/omc:ask-navigator` to work the next decision on that map, and stop. One exists and a new brief is supplied → ask one question — continue the open map, or start a new effort — before proceeding.
+- **Map check**: before reading a supplied spec or entering Phase 1, look for an open `navigator:map` (tracker label, or under `.omcb/wayfinder/`). One exists and this invocation supplies no new brief → recommend `/omc:ask-navigator` to work the next decision on that map, and stop. One exists and a new brief is supplied → ask one question — continue the open map, or start a new effort — before proceeding.
 - Spec path supplied → read it, jump to Phase 2.
 - Mission brief → Phase 1.
 - Single-point fix → hand off to execute, exit.
@@ -75,7 +75,7 @@ Non-convergence here is normal work, not a failure: if the frontier will not emp
 
 ## Phase 2 — Spec synthesis (agent drafts → C2 approves)
 
-Synthesize `.omc/specs/<feature-slug>/spec.md`:
+Synthesize `.omcb/specs/<feature-slug>/spec.md`:
 
 ```
 # <Feature> Spec
@@ -93,7 +93,7 @@ Durability gate (agent-enforced, no approval needed): spec and tickets carry con
 
 ## Phase 3 — Ticket decomposition (agent drafts → C3 approves)
 
-Split into vertical slices under `.omc/specs/<feature-slug>/tickets/`:
+Split into vertical slices under `.omcb/specs/<feature-slug>/tickets/`:
 
 - `NN-slug.md`, one file per ticket, dependency-ordered, each declaring `blockedBy: [ids]`
 - each ticket crosses every layer, is independently demonstrable, and fits one fresh context
@@ -116,7 +116,7 @@ The frontier is every ticket whose blockers are all complete.
 - **Standards axis** — the diff against the matching `docs/standards/` volume, plus a judgement-call-only smell baseline (a documented repo standard overrides the baseline; anything tooling already enforces is skipped). This is the standing consumer that keeps the standards surfaces referenced.
 - **Spec axis** — the diff against *this ticket's* acceptance criteria (the spec is the total ledger the tickets were decomposed from; it is consulted only to trace where a criterion came from and to rule on smuggled scope — behavior no ticket asked for): requirements missing or partial, behavior nobody asked for, and requirements that look implemented but look wrong — each finding quoting its source line.
 
-**C4 — decisions that emerge mid-run.** When a parallel Team worker hits a decision passing the ADR test, it stops before decision-dependent mutation, records the question (options, recommendation, reversibility note) in the failed transition's `error` field and `.omc/specs/<feature-slug>/decisions-pending.md`, and exits through Team's supported `in_progress` → `failed` transition. This is a terminal Launch outcome: do not reopen the task, create an in-run successor, force cleanup, or start another Team from this invocation. Surface the blocker with pointers to the failed task and decision artifact.
+**C4 — decisions that emerge mid-run.** When a parallel Team worker hits a decision passing the ADR test, it stops before decision-dependent mutation, records the question (options, recommendation, reversibility note) in the failed transition's `error` field and `.omcb/specs/<feature-slug>/decisions-pending.md`, and exits through Team's supported `in_progress` → `failed` transition. This is a terminal Launch outcome: do not reopen the task, create an in-run successor, force cleanup, or start another Team from this invocation. Surface the blocker with pointers to the failed task and decision artifact.
 
 On a later explicit Launch invocation, first require the owning Team lifecycle to be terminal and cleaned up through its supported owner. Then batch every pending C4 question for the human, record the answers in the decision log/ADRs, and rebuild the ticket frontier before starting execution. All ticket dependencies are declared before dispatch: ticket `blockedBy` metadata maps to the public Team `blocked_by` field with numeric task IDs when tasks are created through the Team task API. Team's existing task-ID dependency resolution rejects early claims and makes dependents eligible only after their predecessors complete. The team lead never claims a task unless it is explicitly registered as a Team worker. Launch never dynamically mutates a claimed task's dependencies and never promises automatic re-dispatch after C4.
 
@@ -139,7 +139,7 @@ On a later explicit Launch invocation, first require the owning Team lifecycle t
   | hard-to-reverse decisions | `docs/adr/` (C4 answers already land here) |
   | business rules / background | `docs/business/` |
   | UI patterns / component contracts | `design-system/` |
-  | reusable craft | `.omc/skills/` (through the skillify gate) |
+  | reusable craft | `.omcb/skills/` (through the skillify gate) |
   | repeatedly needed automation / integrations | `scripts/` or `.mcp.json` |
   | no slot fits | decline explicitly with the reason |
 
