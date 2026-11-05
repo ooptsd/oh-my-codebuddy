@@ -28,13 +28,12 @@ import { isSkillVisibleToUser } from './lib/skill-entitlements.mjs';
 // ---------------------------------------------------------------------------
 // Skill vs agent namespace guard (issue #3667)
 //
-// Task/Agent subagent_type identifiers and bundled skills share the same
-// `omc:` namespace, so a caller can hand a skill name to
-// Task(subagent_type=...) and receive only the host's generic native
-// "Agent type not found". OMC owns both registries (agents/*.md and
-// skills/*/SKILL.md), so the PreToolUse hook denies the call BEFORE the
-// native boundary with an error that names the Skill tool and the exact
-// identifier, and forbids closest-match substitution.
+// Agent subagent_type identifiers and bundled skills can collide by name,
+// so a caller can hand a skill name to the Agent tool and receive only the
+// host's generic native "Agent type not found". OMC owns both registries
+// (agents/*.md and skills/*/SKILL.md), so the PreToolUse hook denies the
+// call BEFORE the native boundary with an error that names the Skill tool
+// and the exact identifier, and forbids closest-match substitution.
 // ---------------------------------------------------------------------------
 
 const SKILL_AGENT_NAMESPACE_PREFIXES = ['omc:'];
@@ -1291,12 +1290,13 @@ function generateMessage(toolName, todoStatus, modeActive = false) {
   if (QUIET_LEVEL >= 1 && ['Bash', 'Edit', 'Write', 'Read', 'Grep', 'Glob'].includes(toolName)) {
     return '';
   }
-  if (QUIET_LEVEL >= 2 && toolName === 'TodoWrite') {
+  if (QUIET_LEVEL >= 2 && (toolName === 'TaskCreate' || toolName === 'TaskUpdate')) {
     return '';
   }
 
   const messages = {
-    TodoWrite: `${todoStatus}Mark todos in_progress BEFORE starting, completed IMMEDIATELY after finishing.`,
+    TaskCreate: `${todoStatus}Create task entries for each discrete step before starting work.`,
+    TaskUpdate: `${todoStatus}Mark tasks in_progress BEFORE starting, completed IMMEDIATELY after finishing.`,
     Bash: `${todoStatus}Use parallel execution for independent tasks. Use run_in_background for long operations (npm install, builds, tests).`,
     Edit: `${todoStatus}Verify changes work after editing. Test functionality before marking complete.`,
     Write: `${todoStatus}Verify changes work after editing. Test functionality before marking complete.`,

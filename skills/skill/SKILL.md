@@ -7,7 +7,7 @@ level: 2
 
 # Skill Management CLI
 
-Meta-skill for managing oh-my-claudecode skills via CLI-like commands.
+Meta-skill for managing omc skills via CLI-like commands.
 
 ## Subcommands
 
@@ -23,7 +23,7 @@ Show all available skills organized by scope.
 5. Display in organized table format:
 
 ```
-BUILT-IN SKILLS (bundled with oh-my-claudecode):
+BUILT-IN SKILLS (bundled with the omc plugin):
 | Name              | Description                    | Scope    |
 |-------------------|--------------------------------|----------|
 | visual-verdict    | Structured visual QA verdicts  | built-in |
@@ -43,7 +43,7 @@ PROJECT SKILLS (.omc/skills/):
 
 **Fallback:** If quality/usage stats not available, show "N/A"
 
-**Built-in skill note:** Built-in skills are bundled with oh-my-claudecode and are discoverable/readable, but not removed or edited through `/skill remove` or `/skill edit`.
+**Built-in skill note:** Built-in skills are bundled with the omc plugin and are discoverable/readable, but not removed or edited through `/skill remove` or `/skill edit`.
 
 ---
 

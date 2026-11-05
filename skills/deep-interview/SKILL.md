@@ -59,7 +59,7 @@ When arguments include `--autoresearch`, Deep Interview becomes the zero-learnin
 - After the mission is clear, collect an evaluator command. If the user leaves it blank, infer one only when repo evidence is strong; otherwise keep interviewing until an evaluator is explicit enough to launch safely.
 - Keep the usual one-question-per-round rule, but treat **mission clarity** and **evaluator clarity** as hard readiness gates in addition to the normal ambiguity threshold.
 - Once ready, do **not** bridge into `omc-plan`, `autopilot`, `ralph`, `team`, or the hard-deprecated `omc autoresearch` CLI. Instead write the mission/evaluator setup artifacts and invoke:
-  - `Skill("omc:autoresearch")`
+  - `Skill("autoresearch")`
 - This handoff enters the real stateful autoresearch skill. After a successful handoff, announce the mission slug, evaluator command/script, max-runtime ceiling, and artifact location.
 </Autoresearch_Mode>
 
@@ -67,7 +67,7 @@ When arguments include `--autoresearch`, Deep Interview becomes the zero-learnin
 
 ## Native Plugin Invocation Guard (Issue #3030)
 
-If this raw bundled skill is loaded by CodeBuddy's native plugin skill loader through `/omc:deep-interview` or `Skill("omc:deep-interview")`, do not treat that path as permission to skip rendered omc setup. The user-facing preferred invocation is `/deep-interview`; do not recommend or advertise `/omc:deep-interview` as the deep-interview entrypoint. Regardless of invocation path, Phase 0 below remains blocking and must resolve `omc.deepInterview.ambiguityThreshold` from settings before any announcement, state write, question, or ambiguity score.
+If this raw bundled skill is loaded by CodeBuddy's native plugin skill loader through `/omc:deep-interview` or `Skill("deep-interview")`, do not treat that path as permission to skip rendered omc setup. The user-facing preferred invocation is `/deep-interview`; do not recommend or advertise `/omc:deep-interview` as the deep-interview entrypoint. Regardless of invocation path, Phase 0 below remains blocking and must resolve `omc.deepInterview.ambiguityThreshold` from settings before any announcement, state write, question, or ambiguity score.
 
 ## Phase 0: Resolve Ambiguity Threshold (blocking prerequisite)
 
@@ -490,7 +490,7 @@ Spec structure:
 
 ## Phase 5: Execution Bridge
 
-**Autoresearch override:** if `--autoresearch` is active, skip the standard execution options below. The only valid bridge is the `Skill("omc:autoresearch")` handoff described above. The `omc autoresearch` CLI is a hard-deprecated shim and must not be used for execution.
+**Autoresearch override:** if `--autoresearch` is active, skip the standard execution options below. The only valid bridge is the `Skill("autoresearch")` handoff described above. The `omc autoresearch` CLI is a hard-deprecated shim and must not be used for execution.
 
 After the spec is written, mark it `pending approval` and present execution options via `AskUserQuestion`. Until the user selects an execution option, the deep-interview module MUST NOT run mutation-oriented shell commands, edit source files, commit, push, open PRs, invoke execution skills, or delegate implementation tasks:
 
@@ -500,20 +500,20 @@ After the spec is written, mark it `pending approval` and present execution opti
 
 1. **Refine with omc-plan consensus (Recommended)**
    - Description: "Consensus-refine this spec with Planner/Architect/Critic, then stop for explicit execution approval. Maximum quality."
-   - Action: Only after the user selects this option, invoke `Skill("omc:plan")` with `--consensus --direct` flags and the spec file path as context. The `--direct` flag skips the omc-plan skill's interview phase (the deep interview already gathered requirements), while `--consensus` triggers the Planner/Architect/Critic loop. When consensus completes and produces a plan in `.omc/plans/`, stop with that plan marked `pending approval`; do not automatically invoke autopilot or any other execution skill.
+   - Action: Only after the user selects this option, invoke `Skill("plan")` with `--consensus --direct` flags and the spec file path as context. The `--direct` flag skips the omc-plan skill's interview phase (the deep interview already gathered requirements), while `--consensus` triggers the Planner/Architect/Critic loop. When consensus completes and produces a plan in `.omc/plans/`, stop with that plan marked `pending approval`; do not automatically invoke autopilot or any other execution skill.
    - Pipeline: `deep-interview spec → explicit approval to refine → omc-plan --consensus --direct → pending approval → separate execution approval`
 
 2. **Execute with autopilot**
    - Description: "Full autonomous pipeline — planning, parallel implementation, QA, validation. Faster but without consensus refinement."
-   - Action: Invoke `Skill("omc:autopilot")` with the spec file path as context only after the user explicitly selects this execution option. The spec replaces autopilot's Phase 0 — autopilot starts at Phase 1 (Planning).
+   - Action: Invoke `Skill("autopilot")` with the spec file path as context only after the user explicitly selects this execution option. The spec replaces autopilot's Phase 0 — autopilot starts at Phase 1 (Planning).
 
 3. **Execute with ralph**
    - Description: "Persistence loop with architect verification — keeps working until all acceptance criteria pass"
-   - Action: Invoke `Skill("omc:ralph")` with the spec file path as the task definition.
+   - Action: Invoke `Skill("ralph")` with the spec file path as the task definition.
 
 4. **Execute with team**
    - Description: "N coordinated parallel agents — fastest execution for large specs"
-   - Action: Invoke `Skill("omc:team")` with the spec file path as the shared plan.
+   - Action: Invoke `Skill("team")` with the spec file path as the shared plan.
 
 5. **Refine further**
    - Description: "Continue interviewing to improve clarity (current: {score}%)"
@@ -550,7 +550,7 @@ Skipping any stage is possible but reduces quality assurance:
 <Tool_Usage>
 - Use `AskUserQuestion` for each interview question — provides clickable UI with contextual options
 - Preserve the AskUserQuestion path for omc-native interaction; do not introduce OMX-only structured-question transport into this skill
-- Use `Task(subagent_type="omc:explore", model="haiku")` for brownfield codebase exploration (run BEFORE asking user about codebase)
+- Use `Agent(subagent_type="explore", model="lite")` for brownfield codebase exploration (run BEFORE asking user about codebase)
 - Use opus model (temperature 0.1) for ambiguity scoring — consistency is critical
 - Round 0 topology confirmation happens before ambiguity scoring; Phase 2 scoring must honor locked topology and rotate targeting across active components when more than one is present
 - Use `state_write` / `state_read` for interview state persistence; the initial and subsequent deep-interview state payloads must include `threshold_source` alongside `threshold`
@@ -740,7 +740,7 @@ The recommended refinement path chains clarity and feasibility gates, then stops
   → Socratic Q&A until ambiguity ≤ <resolvedThresholdPercent>
   → Spec written to .omc/specs/deep-interview-{slug}.md
   → User explicitly selects "Refine with omc-plan consensus"
-  → Skill("omc:plan") with --consensus --direct (spec as input, skip interview)
+  → Skill("plan") with --consensus --direct (spec as input, skip interview)
     → Planner creates implementation plan from spec
     → Architect reviews for architectural soundness
     → Critic validates quality and testability

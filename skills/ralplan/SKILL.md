@@ -62,9 +62,9 @@ The consensus workflow:
    f. If 5 iterations are reached without `APPROVE`, present the best version to the user
 6. On Critic approval, mark the plan `pending approval` unless explicit execution approval has already been captured. *(--interactive only)* If `--interactive` is set, use `AskUserQuestion` to present the plan with approval options (Approve execution via team (Recommended) / Approve execution via ralph / Compact then return for execution approval / Request changes / Reject). Final plan must include ADR (Decision, Drivers, Alternatives considered, Why chosen, Consequences, Follow-ups). Otherwise, output the final plan and stop before any mutation or delegation.
 7. *(--interactive only)* User chooses: Approve (team or ralph), Request changes, or Reject
-8. *(--interactive only)* On approval: invoke `Skill("omc:team")` for parallel team execution (recommended) or `Skill("omc:ralph")` for sequential execution -- never implement directly
+8. *(--interactive only)* On approval: invoke `Skill("team")` for parallel team execution (recommended) or `Skill("ralph")` for sequential execution -- never implement directly
 
-> **Important:** Steps 3 and 4 MUST run sequentially. Do NOT issue both agent Task calls in the same parallel batch. Always await the Architect result before issuing the Critic Task. Both reviews consume the same fixed plan snapshot; no Architect output passes to Critic; results combine only during Planner synthesis after both reviews complete.
+> **Important:** Steps 3 and 4 MUST run sequentially. Do NOT issue both agent calls in the same parallel batch. Always await the Architect result before issuing the Critic agent call. Both reviews consume the same fixed plan snapshot; no Architect output passes to Critic; results combine only during Planner synthesis after both reviews complete.
 
 Follow the Plan skill's full documentation for consensus mode details.
 

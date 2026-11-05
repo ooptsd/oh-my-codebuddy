@@ -44,12 +44,12 @@ Given a query, decompose into 2-5 independent search facets:
 
 ### Step 2: Parallel Agent Invocation
 
-Fire independent facets in parallel via Task tool:
+Fire independent facets in parallel via the Agent tool:
 
 ```
-Task(subagent_type="omc:document-specialist", model="sonnet", prompt="Search for: <facet 1 description>. Use WebSearch and WebFetch to find official documentation and examples. Cite all sources with URLs.")
+Agent(subagent_type="document-specialist", model="default", prompt="Search for: <facet 1 description>. Use WebSearch and WebFetch to find official documentation and examples. Cite all sources with URLs.")
 
-Task(subagent_type="omc:document-specialist", model="sonnet", prompt="Search for: <facet 2 description>. Use WebSearch and WebFetch to find official documentation and examples. Cite all sources with URLs.")
+Agent(subagent_type="document-specialist", model="default", prompt="Search for: <facet 2 description>. Use WebSearch and WebFetch to find official documentation and examples. Cite all sources with URLs.")
 ```
 
 Maximum 5 parallel document-specialist agents.

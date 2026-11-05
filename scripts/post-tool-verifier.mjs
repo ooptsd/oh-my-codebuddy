@@ -999,11 +999,12 @@ function generateMessage(toolName, toolOutput, sessionId, toolCount, directory, 
       }
       break;
 
-    case 'TodoWrite':
+    case 'TaskCreate':
+    case 'TaskUpdate':
       if (QUIET_LEVEL === 0 && /created|added/i.test(toolOutput)) {
-        message = 'Todo list updated. Proceed with next task on the list.';
+        message = 'Task list updated. Proceed with next task on the list.';
       } else if (QUIET_LEVEL === 0 && /completed|done/i.test(toolOutput)) {
-        message = 'Task marked complete. Continue with remaining todos.';
+        message = 'Task marked complete. Continue with remaining tasks.';
       } else if (QUIET_LEVEL === 0 && /in_progress/i.test(toolOutput)) {
         message = 'Task marked in progress. Focus on completing this task.';
       }

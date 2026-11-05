@@ -149,11 +149,13 @@ node -e "
 " || fail "banned-imports check failed"
 
 # 7. Claude-config residue audit (CodeBuddy-native conventions)
-# Zero-tolerance: any CLAUDE_* env var, active .claude path, or CLAUDE.md
-# target is a violation. Allow-list is limited to (a) the upstream project
-# name "oh-my-claudecode" family, (b) .claude-plugin/ compat notes that
-# describe host lookup behavior, (c) the upstream-shaped worktree-dir
-# encoding --claude-worktrees-X, and (d) omc ask provider routing where
+# Zero-tolerance: any CLAUDE_* env var, active .claude path, CLAUDE.md
+# target, Claude Code tool-call syntax (Task/omc: namespace, Claude model
+# tiers, TodoWrite), or legacy team CLI-lane vocabulary is a violation.
+# Allow-list is limited to (a) the upstream project name "oh-my-claudecode"
+# family, (b) .claude-plugin/ compat notes that describe host lookup
+# behavior, (c) the upstream-shaped worktree-dir encoding
+# --claude-worktrees-X, and (d) omc ask provider routing where
 # "claude" names an external CLI provider, not the host.
 AUDIT_TMP="$(mktemp)"
 cat > "$AUDIT_TMP" <<'AUDIT_EOF'
@@ -200,6 +202,28 @@ for (const file of files) {
     // CLAUDE.md as active target.
     if (/CLAUDE\.md/.test(line)) {
       violations.push(rel + ':' + (i + 1) + ': CLAUDE.md ref: ' + trimmed.slice(0, 90));
+    }
+    // Claude Code tool-call syntax — the host Agent tool takes bare names.
+    if (/subagent_type="\s*omc:|subagent_type":\s*"omc:/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': omc: subagent_type: ' + trimmed.slice(0, 90));
+    }
+    if (/Task\(\s*subagent_type/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': Task(subagent_type: ' + trimmed.slice(0, 90));
+    }
+    if (/Skill\(\s*"omc:/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': Skill("omc:..."): ' + trimmed.slice(0, 90));
+    }
+    // Claude model tiers — CodeBuddy uses default/lite/reasoning.
+    if (/model="(sonnet|haiku|opus)"/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': Claude model tier: ' + trimmed.slice(0, 90));
+    }
+    // Claude Code task tool name.
+    if (/\bTodoWrite\b/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': TodoWrite: ' + trimmed.slice(0, 90));
+    }
+    // Deleted legacy team CLI lane vocabulary.
+    if (/\bclaude_worker\b/.test(line) || /\bdefaultAgentType\b/.test(line)) {
+      violations.push(rel + ':' + (i + 1) + ': legacy team lane: ' + trimmed.slice(0, 90));
     }
   });
 }

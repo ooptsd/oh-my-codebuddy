@@ -156,7 +156,7 @@ Rules:
 
 7.5 **Mandatory Deslop Pass** (runs unconditionally after Step 7 approval, unless `{{PROMPT}}` contains `--no-deslop`):
 
-- **Invoke the `ai-slop-cleaner` skill via the Skill tool: `Skill("omc:ai-slop-cleaner")`** — it is a Skill, not an agent. If you mistakenly call it via `Task(subagent_type="omc:ai-slop-cleaner")`, omc's PreToolUse hook denies the call with the correct Skill-tool identifier; do not substitute a similarly-named agent. Run in standard mode (not `--review`) on the files changed during the current Ralph session only.
+- **Invoke the `ai-slop-cleaner` skill via the Skill tool: `Skill("ai-slop-cleaner")`** — it is a Skill, not an agent. Do not call it via the Agent tool; do not substitute a similarly-named agent. Run in standard mode (not `--review`) on the files changed during the current Ralph session only.
 - Keep the scope bounded to the Ralph changed-file set; do not broaden the cleanup pass to unrelated files.
 - If the reviewer approved the implementation but the deslop pass introduces follow-up edits, keep those edits inside the same changed-file scope before proceeding.
 
@@ -174,13 +174,13 @@ Rules:
 
 <Tool_Usage>
 
-- Use `Task(subagent_type="omc:architect", ...)` for architect verification cross-checks when changes are security-sensitive, architectural, or involve complex multi-system integration
-- Use `Task(subagent_type="omc:critic", ...)` when `--critic=critic`
+- Use `Agent(subagent_type="architect", ...)` for architect verification cross-checks when changes are security-sensitive, architectural, or involve complex multi-system integration
+- Use `Agent(subagent_type="critic", ...)` when `--critic=critic`
 - Use `omc ask codex --agent-prompt critic "..."` when `--critic=codex`. Construct the prompt to include: (a) prd.json acceptance criteria, (b) files changed + related files, (c) explicit optimality question: "Is there a meaningfully simpler, faster, or more maintainable approach that achieves the same acceptance criteria?"
 - Skip architect consultation for simple feature additions, well-tested changes, or time-critical verification
 - Proceed with architect agent verification alone -- never block on unavailable tools
 - Use `state_write` / `state_read` for ralph mode state persistence between iterations
-- **Skill vs agent invocation**: skills (e.g. `ai-slop-cleaner`) are invoked via the Skill tool: `Skill("omc:ai-slop-cleaner")`; agents (e.g. `architect`, `critic`, `executor`) via `Task(subagent_type="omc:<name>")`. omc's PreToolUse hook denies a Task/Agent call whose `subagent_type` names a bundled skill and returns the correct Skill-tool identifier — do not substitute a similarly-named agent as a "closest match".
+- **Skill vs agent invocation**: skills (e.g. `ai-slop-cleaner`) are invoked via the Skill tool: `Skill("ai-slop-cleaner")`; agents (e.g. `architect`, `critic`, `executor`) via the Agent tool: `Agent(subagent_type="<name>")`. Never substitute a similarly-named agent for a skill as a "closest match".
   </Tool_Usage>
 
 <Examples>
@@ -205,9 +205,9 @@ Why good: Generic criteria replaced with specific, testable criteria.
 Correct parallel delegation:
 ```
 
-Task(subagent_type="omc:executor", model="haiku", prompt="Add type export for UserConfig")
-Task(subagent_type="omc:executor", model="sonnet", prompt="Implement the caching layer for API responses")
-Task(subagent_type="omc:executor", model="opus", prompt="Refactor auth module to support OAuth2 flow")
+Agent(subagent_type="executor", model="lite", prompt="Add type export for UserConfig")
+Agent(subagent_type="executor", model="default", prompt="Implement the caching layer for API responses")
+Agent(subagent_type="executor", model="reasoning", prompt="Refactor auth module to support OAuth2 flow")
 
 ```
 Why good: Three independent tasks fired simultaneously at appropriate tiers.

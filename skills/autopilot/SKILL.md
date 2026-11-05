@@ -116,9 +116,9 @@ V1 does not support `stageModels`, model routing, provider or role selection; in
 </Steps>
 
 <Tool_Usage>
-- Use `Task(subagent_type="omc:architect", ...)` for Phase 4 architecture validation
-- Use `Task(subagent_type="omc:security-reviewer", ...)` for Phase 4 security review
-- Use `Task(subagent_type="omc:code-reviewer", ...)` for Phase 4 quality review
+- Use `Agent(subagent_type="architect", ...)` for Phase 4 architecture validation
+- Use `Agent(subagent_type="security-reviewer", ...)` for Phase 4 security review
+- Use `Agent(subagent_type="code-reviewer", ...)` for Phase 4 quality review
 - Agents form their own analysis and return it; the LEAD then spawns any cross-validation agents itself. Do not rely on a subagent spawning further subagents: the active runtime's spawn-depth setting controls subagent layers. Keep cross-validation at the LEAD level unless nested delegation is deliberate and supported by the active runtime.
 - Never block on external tools; proceed with available agents if delegation fails
 </Tool_Usage>
@@ -188,32 +188,18 @@ Optional settings in `.codebuddy/omc.jsonc` (project) or `~/.codebuddy/config.js
 }
 ```
 
-To run autopilot implementation through the tmux CLI team runtime and prefer Cursor executor workers:
+To run autopilot implementation through the native team runtime:
 
 ```jsonc
 {
   "autopilot": {
     "execution": "team",
-    "team": { "agentTypes": ["cursor"] }
+    "team": { "agentTypes": ["executor"] }
   }
 }
 ```
 
-With that config, the execution stage must launch executor-style work through:
-
-```sh
-omc team 1:cursor "<implementation task>"
-```
-
-or the host slash compatibility surface:
-
-```text
-/omc-teams 1:cursor "<implementation task>"
-```
-
-Limitations:
-- Cursor workers support implementation and reviewer-style team roles. `critic`, `code-reviewer`, `security-reviewer`, and `test-engineer` workers must emit the structured verdict file consumed by the team leader; final approval remains a lead-session responsibility.
-- Cursor requires the `cursor-agent` CLI to be installed and authenticated. If `cursor-agent` is unavailable, report that setup requirement instead of silently falling back to a single-provider execution.
+With that config, the execution stage must launch executor-style work through the `team` skill, which spawns native teammates via the Agent tool and coordinates them through the shared task list.
 
 ## Resume
 

@@ -55,9 +55,8 @@ autopilot→ralph) must be cleared separately by running the fallback once per m
 
 Replace `MODE` with the specific mode (e.g. `ralplan`, `ralph`, `ultrawork`, `ultragoal`).
 
-**WARNING:** Do NOT use this fallback for `autopilot` or `omc-teams`. Autopilot requires
-`state_write(active=false)` to preserve resume data. omc-teams requires tmux session
-cleanup that cannot be done via file deletion alone.
+**WARNING:** Do NOT use this fallback for `autopilot`. Autopilot requires
+`state_write(active=false)` to preserve resume data.
 
 ```bash
 # Fallback: direct file removal when state_clear MCP tool is unavailable
@@ -118,9 +117,8 @@ Active modes are still cancelled in dependency order:
 6. Ultrapilot (standalone)
 7. Pipeline (standalone)
 8. Team (CodeBuddy native)
-9. omc Teams (tmux CLI workers)
-10. Plan Consensus (standalone)
-11. Self-Improve (standalone — clear state, clean orphaned worktrees, preserve iteration_state for resume, set status: "user_stopped" in the resolved `<self-improve-root>/state/agent-settings.json`; new runs use `.omc/self-improve/topics/<topic-slug>/`, with flat `.omc/self-improve/` retained only for legacy single-track resumes)
+9. Plan Consensus (standandalone)
+10. Self-Improve (standalone — clear state, clean orphaned worktrees, preserve iteration_state for resume, set status: "user_stopped" in the resolved `<self-improve-root>/state/agent-settings.json`; new runs use `.omc/self-improve/topics/<topic-slug>/`, with flat `.omc/self-improve/` retained only for legacy single-track resumes)
 
 ## Force Clear All
 
@@ -139,7 +137,6 @@ Steps under the hood:
 2. `state_clear` runs once per session to drop that session’s files.
 3. A global `state_clear` without `session_id` removes legacy files under `.omc/state/*.json`, `.omc/state/swarm*.db`, and compatibility artifacts (see list).
 4. Team artifacts (`~/.codebuddy/teams/*/`, `~/.codebuddy/tasks/*/`, `.omc/state/team-state.json`) are best-effort cleared as part of the legacy fallback.
-   - Cancel for native team does NOT affect omc-teams state, and vice versa.
 
 Every `state_clear` command honors the `session_id` argument, so even force mode still uses the session-aware paths first before deleting legacy files.
 
@@ -234,28 +231,8 @@ After graceful pass:
   1. Clear team state: state_clear(mode="team")
   2. Check for linked ralph: state_read(mode="ralph") — if linked_team is true:
      a. Clear ralph state: state_clear(mode="ralph")
-  3. Run omc tmux/CLI orphan scan only for legacy `omc team` / `/omc-teams` workers (see below)
-  4. Emit structured cancel report
+  3. Emit structured cancel report
 ```
-
-**Orphan Detection (Post-Cleanup):**
-
-For legacy omc tmux/CLI worker runs, verify no worker processes remain (only when the plugin ships the scanner):
-```bash
-PLUGIN_ROOT="${CODEBUDDY_PLUGIN_ROOT}"
-if [ -f "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" ]; then
-  node "$PLUGIN_ROOT/scripts/cleanup-orphans.mjs" --team-name "{team_name}"
-else
-  pgrep -af "omc.*--team-name" || echo "No orphan worker processes found"
-fi
-```
-
-The orphan scanner:
-1. Checks `ps aux` (Unix) or `tasklist` (Windows) for omc worker processes with `--team-name` matching the cleaned-up team
-2. Sends SIGTERM, waits 5s, sends SIGKILL if still alive
-3. Reports cleanup results as JSON
-
-Use `--dry-run` to inspect without killing. The scanner is safe to run multiple times.
 
 **Structured Cancel Report:**
 ```
@@ -264,8 +241,6 @@ Team "{team_name}" cancelled:
   - Responses received: M
   - Unresponsive: K (list names if any)
   - omc state cleared: yes/no
-  - Manual cleanup needed: yes/no
-    Path: omc team state / tmux worker processes, if any
 ```
 
 **Implementation note:** The cancel skill is executed by the LLM, not as a bash script. When you detect an active team:
@@ -369,23 +344,3 @@ Mode-specific subsections below describe what extra cleanup each handler perform
 - **Local-only**: Clears state files in `.omc/state/` directory
 - **Resume-friendly**: Autopilot state is preserved for seamless resume
 - **Team-aware**: Detects native CodeBuddy teams and performs graceful shutdown
-
-## MCP Worker Cleanup
-
-When cancelling modes that may have spawned MCP workers (team bridge daemons), the cancel skill should also:
-
-1. **Check for active MCP workers**: Look for heartbeat files at `.omc/state/team-bridge/{team}/*.heartbeat.json`
-2. **Send shutdown signals**: Write shutdown signal files for each active worker
-3. **Kill tmux sessions**: Run `tmux kill-session -t omc-team-{team}-{worker}` for each worker
-4. **Clean up heartbeat files**: Remove all heartbeat files for the team
-5. **Clean up shadow registry**: Remove `.omc/state/team-mcp-workers.json`
-
-### Force Clear Addition
-
-When `--force` is used, also clean up:
-```bash
-rm -rf .omc/state/team-bridge/       # Heartbeat files
-rm -f .omc/state/team-mcp-workers.json  # Shadow registry
-# Kill all omc-team-* tmux sessions
-tmux list-sessions -F '#{session_name}' 2>/dev/null | grep '^omc-team-' | while read s; do tmux kill-session -t "$s" 2>/dev/null; done
-```

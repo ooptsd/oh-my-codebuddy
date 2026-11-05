@@ -54,13 +54,6 @@ Use AskUserQuestion:
 2. **5 agents (maximum)** - Maximum parallelism for large tasks
 3. **2 agents** - Conservative, for smaller projects
 
-**Question 2:** "Which subagent type should teammates use by default?"
-
-**Options:**
-1. **executor (Recommended)** - Implementation-focused workers
-2. **debugger** - Root-cause analysis workers
-3. **code-reviewer** - Review-focused workers
-
 Store the team configuration in the active config directory's `.omc-config.json`:
 
 ```bash
@@ -85,13 +78,12 @@ else
   EXISTING='{}'
 fi
 
-# Replace MAX_AGENTS, AGENT_TYPE with user choices
+# Replace MAX_AGENTS with user choice
 TEMP_FILE=$(mktemp "${CONFIG_FILE}.tmp.XXXXXX")
 trap 'rm -f "$TEMP_FILE"' EXIT
 if printf '%s\n' "$EXISTING" | jq \
   --argjson maxAgents MAX_AGENTS \
-  --arg agentType "AGENT_TYPE" \
-  '. + {team: {ops: {maxAgents: $maxAgents, defaultAgentType: $agentType, monitorIntervalMs: 30000, shutdownTimeoutMs: 15000}}}' > "$TEMP_FILE" \
+  '. + {team: {ops: {maxAgents: $maxAgents, monitorIntervalMs: 30000, shutdownTimeoutMs: 15000}}}' > "$TEMP_FILE" \
   && mv "$TEMP_FILE" "$CONFIG_FILE"; then
   :
 else
@@ -103,7 +95,6 @@ trap - EXIT
 
 echo "Team configuration saved:"
 echo "  Max agents: MAX_AGENTS"
-echo "  Default agent type: AGENT_TYPE"
 echo "  Model: teammates inherit your session model"
 ```
 
