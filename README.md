@@ -2,7 +2,7 @@
 
 > 为 AI 编程代理提供多代理编排能力。本插件是 [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) 的 CodeBuddy 适配发行版。
 >
-> **版本：** 5.4.2 · **插件名：** `omc` · **市场源：** `omc-plugins`（调用命名空间：`omc:`）
+> **版本：** 5.4.3 · **插件名：** `omc` · **市场源：** `omc-plugins`（调用命名空间：`omc:`）
 
 本插件把 omc 的 skills、commands、subagents、hooks 打包成 CodeBuddy 可直接加载的格式。**不包含 omc 的 MCP 服务器** —— 其含义与替代方案见 [限制与迁移指南](#限制与迁移指南)。
 
@@ -146,21 +146,21 @@ omc 在 `SessionStart` 里定义了一个调用 `setup-maintenance.mjs` 的 `mai
 从 marketplace 安装（方式 B）后，CodeBuddy 把插件快照克隆到本地缓存路径：
 
 ```text
-~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.2/
+~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/
 ```
 
 - 缓存根：`~/.codebuddy/plugins/cache/`
 - marketplace 目录：`omc-plugins/`（对应 `marketplace.json` 里的 name）
-- 插件目录：`omc/5.4.2/`（`omc` 是插件名，也是调用命名空间前缀，`5.4.2` 是当前版本）
+- 插件目录：`omc/5.4.3/`（`omc` 是插件名，也是调用命名空间前缀，`5.4.3` 是当前版本）
 
 **读取 cache 中的文件来定位插件根目录**：
 
 ```bash
 # 列缓存里的 hooks 文件
-ls ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.2/hooks/hooks.json
+ls ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/hooks/hooks.json
 
 # 读取插件清单（验证安装版本）
-cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.2/.codebuddy-plugin/plugin.json
+cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/.codebuddy-plugin/plugin.json
 ```
 
 **手动清理缓存**：删除上述目录后执行 `/reload-plugins` 即可让 CodeBuddy 在下次加载时重新克隆。
@@ -285,7 +285,7 @@ codebuddy --plugin-dir ./oh-my-codebuddy
 
 ## 开发
 
-### 本发行版是 5.3.0 的快照
+### 本发行版基于上游 5.4.0 快照
 
 本发行版是 oh-my-claudecode **5.4.0** 的代码快照（具体 commit 见 git log）。当上游发布新版本时，需要按以下步骤从 `/Users/lizhouyang/code2/omc/oh-my-claudecode/` 重新同步：
 
