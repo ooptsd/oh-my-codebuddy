@@ -2,7 +2,7 @@
 
 > 为 AI 编程代理提供多代理编排能力。本插件是 [oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) 的 CodeBuddy 适配发行版。
 >
-> **版本：** 5.4.3 · **插件名：** `omc` · **市场源：** `omc-plugins`（调用命名空间：`omc:`）
+> **版本：** 5.4.4 · **插件名：** `omc` · **市场源：** `omc-plugins`（调用命名空间：`omc:`）
 
 本插件把 omc 的 skills、commands、subagents、hooks 打包成 CodeBuddy 可直接加载的格式。**不包含 omc 的 MCP 服务器** —— 其含义与替代方案见 [限制与迁移指南](#限制与迁移指南)。
 
@@ -56,7 +56,7 @@
 | `marketplace.json` 格式 | Claude Code schema | 同 schema | 两个运行时都接受同一 marketplace 格式 |
 | `plugin.json` 位置 | `.claude-plugin/plugin.json` | `.codebuddy-plugin/plugin.json` | CodeBuddy 优先查找 `.codebuddy-plugin/`，再查找 `.claude-plugin/` |
 | Hook stdin/stdout 协议 | JSON 入参，JSON 出参 | 同 | 遵循同一份 hook 契约 |
-| `${CODEBUDDY_PLUGIN_ROOT}` 替换 | ✅（注入 `${CLAUDE_PLUGIN_ROOT}`） | ✅（注入 `${CODEBUDDY_PLUGIN_ROOT}`） | `${CODEBUDDY_PLUGIN_ROOT}` 为权威环境变量，`hooks/hooks.json` 全部使用该引用；本插件自 v5.4.3 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 兼容别名 |
+| `${CODEBUDDY_PLUGIN_ROOT}` 替换 | ✅（注入 `${CLAUDE_PLUGIN_ROOT}`） | ✅（注入 `${CODEBUDDY_PLUGIN_ROOT}`） | `${CODEBUDDY_PLUGIN_ROOT}` 为权威环境变量，`hooks/hooks.json` 全部使用该引用；本插件自 v5.4.4 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 兼容别名 |
 | `.omcb/` 磁盘状态文件 | ✅ | ✅ | 同路径、同 JSON 结构；skill 直接读取 |
 | `package.json` / `npm`（hook 脚本） | 必需 | 无要求 | 本发行版 hook 脚本全部用纯 Node + stdin/stdout；唯一可选原生模块（`better-sqlite3`）在已安装时被兼容 |
 
@@ -146,21 +146,21 @@ omc 在 `SessionStart` 里定义了一个调用 `setup-maintenance.mjs` 的 `mai
 从 marketplace 安装（方式 B）后，CodeBuddy 把插件快照克隆到本地缓存路径：
 
 ```text
-~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/
+~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.4/
 ```
 
 - 缓存根：`~/.codebuddy/plugins/cache/`
 - marketplace 目录：`omc-plugins/`（对应 `marketplace.json` 里的 name）
-- 插件目录：`omc/5.4.3/`（`omc` 是插件名，也是调用命名空间前缀，`5.4.3` 是当前版本）
+- 插件目录：`omc/5.4.4/`（`omc` 是插件名，也是调用命名空间前缀，`5.4.4` 是当前版本）
 
 **读取 cache 中的文件来定位插件根目录**：
 
 ```bash
 # 列缓存里的 hooks 文件
-ls ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/hooks/hooks.json
+ls ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.4/hooks/hooks.json
 
 # 读取插件清单（验证安装版本）
-cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/.codebuddy-plugin/plugin.json
+cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.4/.codebuddy-plugin/plugin.json
 ```
 
 **手动清理缓存**：删除上述目录后执行 `/reload-plugins` 即可让 CodeBuddy 在下次加载时重新克隆。
@@ -184,7 +184,7 @@ cat ~/.codebuddy/plugins/cache/omc-plugins/omc/5.4.3/.codebuddy-plugin/plugin.js
 | `.omcb/state/*.json` | 每个项目的工作流状态 | `Read` / `Edit` / `Write` 工具，或由 hook 驱动 |
 | `.omcb/project-memory.json` | 持久化的项目上下文 | 同上；`project-memory-session.mjs` / `project-memory-posttool.mjs` 自动写入 |
 | `.omcb/notepad.md` | 工作中的会话笔记 | 同上；`persistent-mode.mjs` Stop hook 会自动持久化 |
-| `.omcb/wiki/` | 结构化知识图谱 | 任何变更都通过 `$wiki` 调用；`wiki-session-start.mjs` / `wiki-session-end.mjs` 自动加载与保存 |
+| `.omcb/wiki/`（默认；可用 `OMCB_WIKI_DIR`/`OMC_WIKI_DIR` 覆盖到任意目录，如项目根 `wiki/`） | 结构化知识图谱 | 任何变更都通过 `$wiki` 调用；`wiki-session-start.mjs` / `wiki-session-end.mjs` 自动加载与保存 |
 | `.omcb/shared-memory/` | 跨会话知识库 | `Read` / `Write` 工具 |
 | `.omcb/traces/` | 执行追踪日志 | `Read` 工具；`subagent-tracker.mjs` 在 `SubagentStart` / `SubagentStop` 时写入 |
 | `.omcb/plans/*.md` | `$plan` / `$ralplan` 产出的计划文件 | `Read` / `Edit` 工具 |
@@ -266,7 +266,7 @@ codebuddy --plugin-dir ./oh-my-codebuddy
 - Stop 时刻的上下文守卫、漂移守卫、persistent mode、code simplifier（`Stop`）。
 - 会话结束异步清理（`SessionEnd`）。
 
-变量 `${CODEBUDDY_PLUGIN_ROOT}`（出现在每条 hook 命令中）由 CodeBuddy 在 hook 执行时替换为插件根目录。**CodeBuddy 注入机制**：权威环境变量是 `${CODEBUDDY_PLUGIN_ROOT}`，指向插件根目录。`hooks/hooks.json` 全部使用权威的 `${CODEBUDDY_PLUGIN_ROOT}` 引用；脚本读取统一为 `process.env.CODEBUDDY_PLUGIN_ROOT`（自 v5.4.3 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 历史别名）。包装脚本 `scripts/run.cjs` 按 hook 契约从 stdin 读取、向 stdout 写入 JSON。
+变量 `${CODEBUDDY_PLUGIN_ROOT}`（出现在每条 hook 命令中）由 CodeBuddy 在 hook 执行时替换为插件根目录。**CodeBuddy 注入机制**：权威环境变量是 `${CODEBUDDY_PLUGIN_ROOT}`，指向插件根目录。`hooks/hooks.json` 全部使用权威的 `${CODEBUDDY_PLUGIN_ROOT}` 引用；脚本读取统一为 `process.env.CODEBUDDY_PLUGIN_ROOT`（自 v5.4.4 起不再读取 `${CLAUDE_PLUGIN_ROOT}` 历史别名）。包装脚本 `scripts/run.cjs` 按 hook 契约从 stdin 读取、向 stdout 写入 JSON。
 
 ---
 

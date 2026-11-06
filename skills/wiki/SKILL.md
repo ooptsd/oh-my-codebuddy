@@ -52,9 +52,11 @@ View wiki operation history by reading `.omcb/wiki/log.md`.
 Pages are organized by category: `architecture`, `decision`, `pattern`, `debugging`, `environment`, `session-log`
 
 ## Storage
-- Pages: `.omcb/wiki/*.md` (markdown with YAML frontmatter)
-- Index: `.omcb/wiki/index.md` (auto-maintained catalog)
-- Log: `.omcb/wiki/log.md` (append-only operation chronicle)
+- Default location: `.omcb/wiki/` (under the omc state root)
+- Override: set `OMCB_WIKI_DIR` (legacy `OMC_WIKI_DIR` honored as fallback) to an absolute path or a worktree-relative path (e.g. `wiki` → project-root `wiki/`). Resolution order: `OMCB_WIKI_DIR` > `OMC_WIKI_DIR` > `{state root}/wiki`
+- Pages: `{wiki dir}/*.md` (markdown with YAML frontmatter)
+- Index: `{wiki dir}/index.md` (auto-maintained catalog)
+- Log: `{wiki dir}/log.md` (append-only operation chronicle)
 
 ## Cross-References
 Use `[[page-name]]` wiki-link syntax to create cross-references between pages.
@@ -64,7 +66,7 @@ At session end, significant discoveries are automatically captured as session-lo
 
 ## Hard Constraints
 - NO vector embeddings — query uses keyword + tag matching only
-- Wiki pages are git-ignored by default (`.omcb/wiki/` is project-local)
+- Wiki pages are git-ignored by default (`.omcb/wiki/` is project-local). With a `OMCB_WIKI_DIR`/`OMC_WIKI_DIR` override outside the state root, gitignore management is left to the user — the wiki is presumed intentionally committable there
 
 ## Model Routing
 
